@@ -1,27 +1,27 @@
-### ENGINY
+# ENGINY
 
-# Integrants
+## Integrants
 
  * Fiona Mondelo Giaramita
  * Judit Sarrat Andújar
  * Fabrizzio Rodriguez Gonzales
  * Marta Haro Font
 
-# Descripció
+## Descripció
 
 dasdas
 
-# Taiga/Jira/Trello
+## Taiga/Jira/Trello
 
 link
 
-# Penpot/Figma/Moqups
+## Penpot/Figma/Moqups
 
 link
 
-# URL Producció
+## URL Producció
 
 link
 
-# Estat
+## Estat
 
