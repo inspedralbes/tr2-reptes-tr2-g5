@@ -1,11 +1,9 @@
 <template>
-  <v-app>
-    <v-main>
+  <footeriheader>
       <router-view />
-    </v-main>
-  </v-app>
+  </footeriheader>
 </template>
 
 <script setup>
-  //
+  import Footeriheader from './components/footeriheader.vue';
 </script>
