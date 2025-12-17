@@ -18,7 +18,6 @@ async function connectDB() {
         throw error;
     }
 }
-
 function getDB() {
     if (!database) {
         throw new Error(' Base de dades no connectada! Crida connectDB() primer.');
