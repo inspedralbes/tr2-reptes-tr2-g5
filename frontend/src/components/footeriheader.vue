@@ -2,13 +2,7 @@
   <v-app>
     <v-app-bar app color="white" elevation="1" height="90" class="px-md-4">
       <div class="d-flex align-center">
-        <v-img 
-          src="/logo.jpg" 
-          alt="Consorci d'Educació de Barcelona"
-          max-height="70"
-          width="320"
-          contain
-        ></v-img>
+        <v-img src="/logo.jpg" alt="Consorci d'Educació de Barcelona" max-height="70" width="320" contain></v-img>
       </div>
 
       <v-spacer></v-spacer>
@@ -43,31 +37,6 @@
     <v-footer app color="white" class="d-flex flex-column pa-0" elevation="2">
       <v-divider class="w-100 border-opacity-50" color="grey" thickness="2"></v-divider>
 
-      <div class="d-flex w-100 align-center justify-space-between px-4 py-2 content-wrap">
-        <div class="d-flex align-center flex-wrap justify-center">
-          <div class="d-flex mr-3">
-            <a v-for="social in socialItems" :key="social.icon" :href="social.href" class="social-icon-link mx-1" target="_blank">
-              <v-icon :icon="social.icon" color="black" size="22"></v-icon>
-            </a>
-          </div>
-          <span class="text-grey mx-2 hidden-xs">|</span>
-          <div class="d-flex align-center text-body-2 font-weight-bold" style="color: #000000;">
-            <a href="#" class="footer-link">RSS</a>
-            <span class="mx-1">|</span>
-            <a href="#" class="footer-link">Què és l'RSS?</a>
-          </div>
-        </div>
-
-        <div class="d-flex flex-wrap justify-end text-body-2 font-weight-bold link-group" style="color: #000000;">
-          <template v-for="(link, i) in footerLinks" :key="link.title">
-            <a :href="link.href" class="footer-link mx-1">{{ link.title }}</a>
-            <span v-if="i < footerLinks.length - 1" class="text-grey mx-1 hidden-sm-and-down">|</span>
-          </template>
-        </div>
-      </div>
-
-      <v-divider class="w-100 border-opacity-50" color="grey" thickness="2"></v-divider>
-
       <div class="w-100 text-center py-2 text-caption text-grey-darken-1">
         &copy; Consorci d'Educació de Barcelona. Tots els drets reservats
       </div>
@@ -80,24 +49,6 @@
     { title: 'Idioma', href: '#' },
     { title: 'Notícies', href: '#' },
     { title: 'Bloc', href: '#' },
-    { title: 'Agenda', href: '#' },
-    { title: 'Mapa web', href: '#' },
-    { title: 'Contacte', href: '#' },
-  ]
-
-  const socialItems = [
-    { icon: 'mdi-twitter', href: '#' },
-    { icon: 'mdi-facebook', href: '#' },
-    { icon: 'mdi-instagram', href: '#' },
-    { icon: 'mdi-youtube', href: '#' },
-  ]
-
-  const footerLinks = [
-    { title: 'Peticions i consultes de famílies i ciutadania', href: '#' },
-    { title: 'Accessibilitat', href: '#' },
-    { title: 'Mapa web', href: '#' },
-    { title: 'Contacte', href: '#' },
-    { title: 'Avís legal', href: '#' },
   ]
 </script>
 
