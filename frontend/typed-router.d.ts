@@ -19,7 +19,13 @@ declare module 'vue-router/auto-routes' {
    */
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
-    '/formulari': RouteRecordInfo<'/formulari', '/formulari', Record<never, never>, Record<never, never>>,
+    '/admin/indexadmin': RouteRecordInfo<'/admin/indexadmin', '/admin/indexadmin', Record<never, never>, Record<never, never>>,
+    '/admin/loginadmin': RouteRecordInfo<'/admin/loginadmin', '/admin/loginadmin', Record<never, never>, Record<never, never>>,
+    '/Centre/estatassignacions': RouteRecordInfo<'/Centre/estatassignacions', '/Centre/estatassignacions', Record<never, never>, Record<never, never>>,
+    '/Centre/estatpeticionsscreen': RouteRecordInfo<'/Centre/estatpeticionsscreen', '/Centre/estatpeticionsscreen', Record<never, never>, Record<never, never>>,
+    '/Centre/formularialumnes': RouteRecordInfo<'/Centre/formularialumnes', '/Centre/formularialumnes', Record<never, never>, Record<never, never>>,
+    '/Centre/iniciCentreScreen': RouteRecordInfo<'/Centre/iniciCentreScreen', '/Centre/iniciCentreScreen', Record<never, never>, Record<never, never>>,
+    '/professor/iniciprofessor': RouteRecordInfo<'/professor/iniciprofessor', '/professor/iniciprofessor', Record<never, never>, Record<never, never>>,
   }
 
   /**
@@ -37,8 +43,32 @@ declare module 'vue-router/auto-routes' {
       routes: '/'
       views: never
     }
-    'src/pages/formulari.vue': {
-      routes: '/formulari'
+    'src/pages/admin/indexadmin.vue': {
+      routes: '/admin/indexadmin'
+      views: never
+    }
+    'src/pages/admin/loginadmin.vue': {
+      routes: '/admin/loginadmin'
+      views: never
+    }
+    'src/pages/Centre/estatassignacions.vue': {
+      routes: '/Centre/estatassignacions'
+      views: never
+    }
+    'src/pages/Centre/estatpeticionsscreen.vue': {
+      routes: '/Centre/estatpeticionsscreen'
+      views: never
+    }
+    'src/pages/Centre/formularialumnes.vue': {
+      routes: '/Centre/formularialumnes'
+      views: never
+    }
+    'src/pages/Centre/iniciCentreScreen.vue': {
+      routes: '/Centre/iniciCentreScreen'
+      views: never
+    }
+    'src/pages/professor/iniciprofessor.vue': {
+      routes: '/professor/iniciprofessor'
       views: never
     }
   }
