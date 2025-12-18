@@ -13,7 +13,7 @@ dasdas
 
 ## Taiga
 
-[link](https://tree.taiga.io/project/a24judsarand-enginy/backlog)
+https://tree.taiga.io/project/a24judsarand-enginy/backlog
 
 ## Penpot
 
