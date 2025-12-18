@@ -41,6 +41,26 @@ declare module 'vue-router/auto-routes' {
       routes: '/'
       views: never
     }
+    'src/pages/admin/indexadmin.vue': {
+      routes: '/admin/indexadmin'
+      views: never
+    }
+    'src/pages/admin/informesadmin.vue': {
+      routes: '/admin/informesadmin'
+      views: never
+    }
+    'src/pages/admin/peticionsadmin.vue': {
+      routes: '/admin/peticionsadmin'
+      views: never
+    }
+    'src/pages/admin/tallersadmin.vue': {
+      routes: '/admin/tallersadmin'
+      views: never
+    }
+    'src/pages/professor/iniciprofessor.vue': {
+      routes: '/professor/iniciprofessor'
+      views: never
+    }
   }
 
   /**
