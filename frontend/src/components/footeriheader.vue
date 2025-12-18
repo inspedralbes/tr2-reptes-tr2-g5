@@ -11,11 +11,39 @@
         <div class="d-flex align-center mt-2">
           <div class="d-none d-md-flex align-center">
             <template v-for="(link, i) in navLinks" :key="link.title">
-              <a :href="link.href" class="text-decoration-none font-weight-bold text-body-2 mx-2 nav-link">
-                <v-icon v-if="link.title === 'Idioma'" size="small" class="mr-1">mdi-earth</v-icon>
+              
+              <v-menu v-if="link.title === 'Idioma'" transition="slide-y-transition">
+                <template v-slot:activator="{ props }">
+                  <a 
+                    v-bind="props" 
+                    class="text-decoration-none font-weight-bold text-body-2 mx-2 nav-link cursor-pointer"
+                  >
+                    <v-icon size="small" class="mr-1">mdi-earth</v-icon>
+                    {{ link.title }}
+                    <v-icon size="small">mdi-menu-down</v-icon>
+                  </a>
+                </template>
+                
+                <v-list density="compact" elevation="4">
+                  <v-list-item 
+                    v-for="lang in languages" 
+                    :key="lang.code" 
+                    @click="changeLanguage(lang)"
+                    :active="currentLang === lang.code"
+                  >
+                    <v-list-item-title>{{ lang.name }}</v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
+
+              <a 
+                v-else 
+                :href="link.href" 
+                class="text-decoration-none font-weight-bold text-body-2 mx-2 nav-link"
+              >
                 {{ link.title }}
-                <v-icon v-if="link.title === 'Idioma'" size="small">mdi-menu-down</v-icon>
               </a>
+
               <span v-if="i < navLinks.length - 1" class="text-grey-lighten-1">|</span>
             </template>
           </div>
@@ -36,7 +64,6 @@
 
     <v-footer app color="white" class="d-flex flex-column pa-0" elevation="2">
       <v-divider class="w-100 border-opacity-50" color="grey" thickness="2"></v-divider>
-
       <div class="w-100 text-center py-2 text-caption text-grey-darken-1">
         &copy; Consorci d'Educació de Barcelona. Tots els drets reservats
       </div>
@@ -45,14 +72,36 @@
 </template>
 
 <script setup>
-  const navLinks = [
-    { title: 'Idioma', href: '#' },
-    { title: 'Notícies', href: '#' },
-    { title: 'Bloc', href: '#' },
-  ]
+import { ref } from 'vue'
+
+const currentLang = ref('ca')
+
+const navLinks = [
+  { title: 'Idioma', href: '#' },
+  { title: 'Notícies', href: '' },
+  { title: 'Bloc', href: '#' },
+  { title: 'Agenda', href: '#' },
+  { title: 'Mapa web', href: '#' },
+]
+
+const languages = [
+  { name: 'Català', code: 'ca' },
+  { name: 'Castellano', code: 'es' },
+  { name: 'English', code: 'en' }
+]
+
+const socialItems = [
+  { icon: 'mdi-account-circle', href: '#' },
+]
+
+const changeLanguage = (lang) => {
+  currentLang.value = lang.code
+  console.log("Idioma seleccionado:", lang.name)
+}
 </script>
 
 <style scoped lang="sass">
+  // Color de fondo del footer y header
   .nav-link, .footer-link
     color: #000000
     transition: color 0.2s
@@ -61,12 +110,18 @@
     &:hover
       color: #757575
 
+  // Sombreado de los iconos al pasar el ratón
+  .cursor-pointer
+    cursor: pointer
+
+  // Iconos de redes sociales
   .social-icon-link
     text-decoration: none
     transition: opacity 0.2s
     &:hover
       opacity: 0.6
 
+  // Estilos responsivos
   @media (max-width: 960px)
     .content-wrap
       flex-direction: column
