@@ -1,0 +1,28 @@
+{
+  "name": "tr2-reptes-tr2-g5",
+  "version": "1.0.0",
+  "description": "* Fiona Mondelo Giaramita  * Judit Sarrat Andújar  * Fabrizzio Rodriguez Gonzales  * Marta Haro Font",
+  "main": "index.js",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inspedralbes/tr2-reptes-tr2-g5.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/inspedralbes/tr2-reptes-tr2-g5/issues"
+  },
+  "homepage": "https://github.com/inspedralbes/tr2-reptes-tr2-g5#readme",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "mongodb": "^7.0.0"
+  }
+}
