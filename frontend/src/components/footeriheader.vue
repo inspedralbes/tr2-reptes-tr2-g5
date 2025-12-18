@@ -2,13 +2,7 @@
   <v-app>
     <v-app-bar app color="white" elevation="1" height="90" class="px-md-4">
       <div class="d-flex align-center">
-        <v-img 
-          src="/logo.jpg" 
-          alt="Consorci d'Educació de Barcelona"
-          max-height="70"
-          width="320"
-          contain
-        ></v-img>
+        <v-img src="/logo.jpg" alt="Consorci d'Educació de Barcelona" max-height="70" width="320" contain></v-img>
       </div>
 
       <v-spacer></v-spacer>
@@ -17,11 +11,39 @@
         <div class="d-flex align-center mt-2">
           <div class="d-none d-md-flex align-center">
             <template v-for="(link, i) in navLinks" :key="link.title">
-              <a :href="link.href" class="text-decoration-none font-weight-bold text-body-2 mx-2 nav-link">
-                <v-icon v-if="link.title === 'Idioma'" size="small" class="mr-1">mdi-earth</v-icon>
+              
+              <v-menu v-if="link.title === 'Idioma'" transition="slide-y-transition">
+                <template v-slot:activator="{ props }">
+                  <a 
+                    v-bind="props" 
+                    class="text-decoration-none font-weight-bold text-body-2 mx-2 nav-link cursor-pointer"
+                  >
+                    <v-icon size="small" class="mr-1">mdi-earth</v-icon>
+                    {{ link.title }}
+                    <v-icon size="small">mdi-menu-down</v-icon>
+                  </a>
+                </template>
+                
+                <v-list density="compact" elevation="4">
+                  <v-list-item 
+                    v-for="lang in languages" 
+                    :key="lang.code" 
+                    @click="changeLanguage(lang)"
+                    :active="currentLang === lang.code"
+                  >
+                    <v-list-item-title>{{ lang.name }}</v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
+
+              <a 
+                v-else 
+                :href="link.href" 
+                class="text-decoration-none font-weight-bold text-body-2 mx-2 nav-link"
+              >
                 {{ link.title }}
-                <v-icon v-if="link.title === 'Idioma'" size="small">mdi-menu-down</v-icon>
               </a>
+
               <span v-if="i < navLinks.length - 1" class="text-grey-lighten-1">|</span>
             </template>
           </div>
@@ -42,32 +64,6 @@
 
     <v-footer app color="white" class="d-flex flex-column pa-0" elevation="2">
       <v-divider class="w-100 border-opacity-50" color="grey" thickness="2"></v-divider>
-
-      <div class="d-flex w-100 align-center justify-space-between px-4 py-2 content-wrap">
-        <div class="d-flex align-center flex-wrap justify-center">
-          <div class="d-flex mr-3">
-            <a v-for="social in socialItems" :key="social.icon" :href="social.href" class="social-icon-link mx-1" target="_blank">
-              <v-icon :icon="social.icon" color="black" size="22"></v-icon>
-            </a>
-          </div>
-          <span class="text-grey mx-2 hidden-xs">|</span>
-          <div class="d-flex align-center text-body-2 font-weight-bold" style="color: #000000;">
-            <a href="#" class="footer-link">RSS</a>
-            <span class="mx-1">|</span>
-            <a href="#" class="footer-link">Què és l'RSS?</a>
-          </div>
-        </div>
-
-        <div class="d-flex flex-wrap justify-end text-body-2 font-weight-bold link-group" style="color: #000000;">
-          <template v-for="(link, i) in footerLinks" :key="link.title">
-            <a :href="link.href" class="footer-link mx-1">{{ link.title }}</a>
-            <span v-if="i < footerLinks.length - 1" class="text-grey mx-1 hidden-sm-and-down">|</span>
-          </template>
-        </div>
-      </div>
-
-      <v-divider class="w-100 border-opacity-50" color="grey" thickness="2"></v-divider>
-
       <div class="w-100 text-center py-2 text-caption text-grey-darken-1">
         &copy; Consorci d'Educació de Barcelona. Tots els drets reservats
       </div>
@@ -76,32 +72,36 @@
 </template>
 
 <script setup>
-  const navLinks = [
-    { title: 'Idioma', href: '#' },
-    { title: 'Notícies', href: '#' },
-    { title: 'Bloc', href: '#' },
-    { title: 'Agenda', href: '#' },
-    { title: 'Mapa web', href: '#' },
-    { title: 'Contacte', href: '#' },
-  ]
+import { ref } from 'vue'
 
-  const socialItems = [
-    { icon: 'mdi-twitter', href: '#' },
-    { icon: 'mdi-facebook', href: '#' },
-    { icon: 'mdi-instagram', href: '#' },
-    { icon: 'mdi-youtube', href: '#' },
-  ]
+const currentLang = ref('ca')
 
-  const footerLinks = [
-    { title: 'Peticions i consultes de famílies i ciutadania', href: '#' },
-    { title: 'Accessibilitat', href: '#' },
-    { title: 'Mapa web', href: '#' },
-    { title: 'Contacte', href: '#' },
-    { title: 'Avís legal', href: '#' },
-  ]
+const navLinks = [
+  { title: 'Idioma', href: '#' },
+  { title: 'Notícies', href: '' },
+  { title: 'Bloc', href: '#' },
+  { title: 'Agenda', href: '#' },
+  { title: 'Mapa web', href: '#' },
+]
+
+const languages = [
+  { name: 'Català', code: 'ca' },
+  { name: 'Castellano', code: 'es' },
+  { name: 'English', code: 'en' }
+]
+
+const socialItems = [
+  { icon: 'mdi-account-circle', href: '#' },
+]
+
+const changeLanguage = (lang) => {
+  currentLang.value = lang.code
+  console.log("Idioma seleccionado:", lang.name)
+}
 </script>
 
 <style scoped lang="sass">
+  // Color de fondo del footer y header
   .nav-link, .footer-link
     color: #000000
     transition: color 0.2s
@@ -110,12 +110,18 @@
     &:hover
       color: #757575
 
+  // Sombreado de los iconos al pasar el ratón
+  .cursor-pointer
+    cursor: pointer
+
+  // Iconos de redes sociales
   .social-icon-link
     text-decoration: none
     transition: opacity 0.2s
     &:hover
       opacity: 0.6
 
+  // Estilos responsivos
   @media (max-width: 960px)
     .content-wrap
       flex-direction: column
