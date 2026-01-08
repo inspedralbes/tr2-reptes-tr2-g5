@@ -1,31 +1,48 @@
 <template>
   <div class="form-container">
-    <h2>Sol·licitud de Tallers ENGINY</h2>
+    <h2 class="form-title">Sol·licitud de Tallers ENGINY</h2>
     <form @submit.prevent="enviarFormulari">
-      <label>Nom del Centre:</label>
-      <input v-model="form.nom_centre" placeholder="Ex: Escola Torrent" required />
+      <div class="field-group">
+        <label>Nom del Centre:</label>
+        <input v-model="form.nom_centre" placeholder="Ex: Escola Torrent" required />
+      </div>
       
-      <label>Nom del Coordinador/a:</label>
-      <input v-model="form.nom_coordinador" placeholder="Nom i cognoms" required />
+      <div class="field-group">
+        <label>Nom del Coordinador/a:</label>
+        <input v-model="form.nom_coordinador" placeholder="Nom i cognoms" required />
+      </div>
 
-      <label>Taller sol·licitat:</label>
-      <select v-model="form.seleccio_tallers.taller_id" required>
-        <option disabled value="">Selecciona un taller del catàleg</option>
-        <option v-for="taller in tallersDisponibles" :key="taller._id" :value="taller._id">
-          {{ taller.titol }} (Modalitat {{ taller.modalitat }})
-        </option>
-      </select>
+      <div class="field-group">
+        <label>Taller sol·licitat:</label>
+        <select v-model="form.seleccio_tallers.taller_id" required>
+          <option disabled value="">Selecciona un taller del catàleg</option>
+          <option v-for="taller in tallersDisponibles" :key="taller._id" :value="taller._id">
+            {{ taller.titol }} (Modalitat {{ taller.modalitat }})
+          </option>
+        </select>
+      </div>
 
-      <label>Nombre d'alumnes:</label>
-      <input type="number" v-model="form.seleccio_tallers.num_alumnes" placeholder="Quantitat aproximada" />
+      <div class="field-group">
+        <label>Nombre d'alumnes:</label>
+        <input type="number" v-model="form.seleccio_tallers.num_alumnes" placeholder="Quantitat aproximada" />
+      </div>
 
-      <label>Professor/a Referent:</label>
-      <input v-model="form.referent_contacte.nom" placeholder="Nom del referent" />
+      <div class="field-group">
+        <label>Professor/a Referent:</label>
+        <input v-model="form.referent_contacte.nom" placeholder="Nom del referent" />
+      </div>
       
-      <label>Correu de contacte:</label>
-      <input type="email" v-model="form.referent_contacte.correu" placeholder="exemple@centre.cat" />
+      <div class="field-group">
+        <label>Correu de contacte:</label>
+        <input type="email" v-model="form.referent_contacte.correu" placeholder="exemple@centre.cat" />
+      </div>
 
-      <button type="submit">Enviar Sol·licitud</button>
+      <div class="field-group">
+        <label>Comentaris addicionals:</label>
+        <textarea v-model="form.comentaris" placeholder="Explica aquí qualsevol detall rellevant..." rows="4"></textarea>
+      </div>
+
+      <button type="submit" class="submit-btn">Enviar Sol·licitud</button>
     </form>
   </div>
 </template>
@@ -37,17 +54,11 @@ const tallersDisponibles = ref([]);
 const form = ref({
   nom_centre: '',
   nom_coordinador: '',
-  seleccio_tallers: { 
-    taller_id: '', 
-    num_alumnes: 0 
-  },
-  referent_contacte: { 
-    nom: '', 
-    correu: '' 
-  }
+  seleccio_tallers: { taller_id: '', num_alumnes: 0 },
+  referent_contacte: { nom: '', correu: '' },
+  comentaris: ''
 });
 
-// Carregar els tallers del catàleg en iniciar per omplir el select [cite: 35, 37]
 onMounted(async () => {
   try {
     const res = await fetch('http://localhost:3000/api/tallers');
@@ -57,7 +68,6 @@ onMounted(async () => {
   }
 });
 
-// Enviar la petició al backend per guardar-la a MongoDB [cite: 40]
 const enviarFormulari = async () => {
   try {
     const res = await fetch('http://localhost:3000/api/peticions', {
@@ -67,7 +77,7 @@ const enviarFormulari = async () => {
     });
 
     if (res.ok) {
-      alert("Petició guardada correctament a la base de dades!");
+      alert("Petició guardada correctament!");
     }
   } catch (error) {
     alert("Error en connectar amb el servidor.");
@@ -76,41 +86,67 @@ const enviarFormulari = async () => {
 </script>
 
 <style scoped>
-/* Apliquem el color gris als recuadres del formulari */
-input, select {
-  background-color: #ececec; /* Color gris */
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 10px;
-  margin-bottom: 15px;
-  width: 100%;
-  display: block;
-  box-sizing: border-box; /* Perquè el padding no surti del recuadrado */
+.form-container {
+  max-width: 550px;
+  margin: 30px auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #fdfdfd;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-.form-container {
-  max-width: 500px;
-  margin: 0 auto;
-  font-family: sans-serif;
-  color: black;
+.form-title {
+  color: #1a1a1a;
+  text-align: center;
+  margin-bottom: 25px;
+  font-weight: 700;
+}
+
+.field-group {
+  margin-bottom: 20px;
 }
 
 label {
-  font-weight: bold;
+  font-weight: 600;
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
+  color: #333 !important; /* Text de l'etiqueta en negre visible */
 }
 
-button {
+input, select, textarea {
+  background-color: #f2f2f2;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  padding: 12px;
+  width: 100%;
+  display: block;
+  box-sizing: border-box;
+  font-size: 1rem;
+  color: #000 !important; /* Text que escriu l'usuari en negre */
+  transition: border-color 0.3s;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #4CAF50;
+  background-color: #fff;
+}
+
+.submit-btn {
   background-color: #4CAF50;
   color: white;
-  padding: 10px 20px;
+  padding: 14px 20px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
+  width: 100%;
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-top: 10px;
 }
 
-button:hover {
+.submit-btn:hover {
   background-color: #45a049;
 }
 </style>

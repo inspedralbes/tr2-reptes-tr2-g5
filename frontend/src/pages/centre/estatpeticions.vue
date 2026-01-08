@@ -16,8 +16,7 @@
       <tbody>
         <tr v-for="peticio in peticions" :key="peticio._id">
           <td>{{ peticio.nom_centre }}</td>
-          <td>{{ peticio.seleccio_tallers?.taller_id || 'No especificat' }}</td>
-          <td>{{ peticio.seleccio_tallers?.num_alumnes }}</td>
+<td>{{ peticio.taller_titol || 'No especificat' }}</td>          <td>{{ peticio.seleccio_tallers?.num_alumnes }}</td>
           <td>
             <span :class="peticio.estat?.estat_boolean ? 'completat' : 'pendent'">
               {{ peticio.estat?.estat_boolean ? 'Assignat' : 'Pendent' }}
