@@ -1,10 +1,9 @@
-const { getDB } = require('../config/db'); //utilitzem la base de dades de config
 
-const usePeticions = () => { // declarem aquesta funció que connecta amb la bd 
+const usePeticions = () => {
     const db = getDB();
 
     const getPeticions = async (res) => {
-        try { //aquí busquem les peticions de tallers a la bd
+        try {
             const peticions = await db.collection('peticions').find().toArray();
             res.status(200).json(peticions);
         } catch (error) {
@@ -12,7 +11,21 @@ const usePeticions = () => { // declarem aquesta funció que connecta amb la bd
         }
     };
 
-    return { getPeticions };
-};
+    // NOVA FUNCIÓ PER GUARDAR
+    const createPeticio = async (req, res) => {
+        try {
+            const novaPeticio = req.body;
+            // Afegim l'estat inicial segons el teu esquema
+            novaPeticio.estat = {
+                data_creacio: new Date(),
+                estat_boolean: false
+            };
+            const result = await db.collection('peticions').insertOne(novaPeticio);
+            res.status(201).json({ missatge: "Petició enviada!", id: result.insertedId });
+        } catch (error) {
+            res.status(500).json({ error: "Error al desar la petició" });
+        }
+    };
 
-module.exports = { usePeticions };
+    return { getPeticions, createPeticio };
+};

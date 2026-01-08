@@ -8,4 +8,9 @@ router.get('/', async (req, res) => {
     await getPeticions(res);
 });
 
+router.post('/', async (req, res) => {
+    const { createPeticio } = usePeticions(); 
+    await createPeticio(req, res);
+});
+
 module.exports = router;

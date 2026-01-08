@@ -23,6 +23,10 @@ declare module 'vue-router/auto-routes' {
     '/admin/informesadmin': RouteRecordInfo<'/admin/informesadmin', '/admin/informesadmin', Record<never, never>, Record<never, never>>,
     '/admin/peticionsadmin': RouteRecordInfo<'/admin/peticionsadmin', '/admin/peticionsadmin', Record<never, never>, Record<never, never>>,
     '/admin/tallersadmin': RouteRecordInfo<'/admin/tallersadmin', '/admin/tallersadmin', Record<never, never>, Record<never, never>>,
+    '/centre/assignacions': RouteRecordInfo<'/centre/assignacions', '/centre/assignacions', Record<never, never>, Record<never, never>>,
+    '/centre/estatpeticions': RouteRecordInfo<'/centre/estatpeticions', '/centre/estatpeticions', Record<never, never>, Record<never, never>>,
+    '/centre/formulariCentre': RouteRecordInfo<'/centre/formulariCentre', '/centre/formulariCentre', Record<never, never>, Record<never, never>>,
+    '/centre/indexcentre': RouteRecordInfo<'/centre/indexcentre', '/centre/indexcentre', Record<never, never>, Record<never, never>>,
     '/professor/iniciprofessor': RouteRecordInfo<'/professor/iniciprofessor', '/professor/iniciprofessor', Record<never, never>, Record<never, never>>,
   }
 
@@ -55,6 +59,22 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/admin/tallersadmin.vue': {
       routes: '/admin/tallersadmin'
+      views: never
+    }
+    'src/pages/centre/assignacions.vue': {
+      routes: '/centre/assignacions'
+      views: never
+    }
+    'src/pages/centre/estatpeticions.vue': {
+      routes: '/centre/estatpeticions'
+      views: never
+    }
+    'src/pages/centre/formulariCentre.vue': {
+      routes: '/centre/formulariCentre'
+      views: never
+    }
+    'src/pages/centre/indexcentre.vue': {
+      routes: '/centre/indexcentre'
       views: never
     }
     'src/pages/professor/iniciprofessor.vue': {
