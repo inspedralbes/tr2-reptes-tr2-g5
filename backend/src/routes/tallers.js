@@ -2,15 +2,28 @@ const express = require('express');
 const router = express.Router();
 const { useTallers } = require('../controllers/tallerController');
 
-// Definim el punt d'accés per llistar tallers (GET /api/tallers)
+// Ruta per llistar: GET /api/tallers
 router.get('/', async (req, res) => {
-    const { getCatàleg } = useTallers(); 
+    const { getCatàleg } = useTallers(); // Crida lazy (tardana)
     await getCatàleg(res);
 });
 
-// Aquesta ruta respondrà a: http://localhost:3000/api/tallers/test
-router.get('/test', (req, res) => {
-    res.json({ missatge: "L'API de tallers funciona correctament!" });
+// Ruta per crear: POST /api/tallers
+router.post('/', async (req, res) => {
+    const { createTaller } = useTallers();
+    await createTaller(req, res);
+});
+
+// Ruta per editar: PUT /api/tallers/:id
+router.put('/:id', async (req, res) => {
+    const { updateTaller } = useTallers();
+    await updateTaller(req, res);
+});
+
+// Ruta per esborrar: DELETE /api/tallers/:id
+router.delete('/:id', async (req, res) => {
+    const { deleteTaller } = useTallers();
+    await deleteTaller(req, res);
 });
 
 module.exports = router;
