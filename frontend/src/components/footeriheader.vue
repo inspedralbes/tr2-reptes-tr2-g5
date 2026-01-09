@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-app-bar app color="white" elevation="1" height="90" class="px-4">
-      <v-img src="/logo.jpg" alt="Logo" max-height="70" max-width="320" contain />
+      <v-img src="/Logo.jpg" alt="Logo" max-height="70" max-width="320" contain />
 
       <v-spacer></v-spacer>
 
@@ -10,7 +10,7 @@
           
           <v-menu v-if="link.title === 'Log in'" transition="slide-y-transition">
             <template v-slot:activator="{ props }">
-              <v-btn v-bind="props" variant="text" class="text-none font-weight-bold px-2">
+              <v-btn v-bind="props" variant="text" class="text-none font-weight-bold px-2 custom-blue">
                 <v-icon start size="small">mdi-login</v-icon>
                 {{ link.title }}
                 <v-icon end size="small">mdi-menu-down</v-icon>
@@ -20,14 +20,14 @@
             <v-list min-width="150" elevation="2" class="mt-2">
               <v-list-item v-for="opcio in loginOptions" :key="opcio.text" :to="opcio.to" link>
                 <template v-slot:prepend>
-                  <v-icon :icon="opcio.icon" size="small"></v-icon>
+                  <v-icon :icon="opcio.icon" size="small" class="custom-blue"></v-icon>
                 </template>
-                <v-list-item-title>{{ opcio.text }}</v-list-item-title>
+                <v-list-item-title class="custom-blue font-weight-bold">{{ opcio.text }}</v-list-item-title>
               </v-list-item>
             </v-list>
           </v-menu>
 
-          <v-btn v-else :to="link.to" variant="text" class="text-none font-weight-bold px-2">
+          <v-btn v-else :to="link.to" variant="text" class="text-none font-weight-bold px-2 custom-blue">
             {{ link.title }}
           </v-btn>
 
@@ -35,7 +35,7 @@
         </template>
       </div>
 
-      <v-btn icon="mdi-account-circle" href="#" variant="text" class="ml-2"></v-btn>
+      <v-btn icon="mdi-account-circle" href="#" variant="text" class="ml-2 custom-blue"></v-btn>
       <v-app-bar-nav-icon class="d-md-none" />
     </v-app-bar>
 
@@ -54,7 +54,7 @@
 
 <script setup>
 const navLinks = [
-  { title: 'Inici', to: '/' }, // Canviem href per to
+  { title: 'Inici', to: '/' },
   { title: 'Log in', to: null },
 ]
 
@@ -64,3 +64,10 @@ const loginOptions = [
   { text: 'Centre', icon: 'mdi-shield-account', to: '/login' },
 ]
 </script>
+
+<style scoped>
+/* Definim el color personalitzat 3465a4 */
+.custom-blue {
+  color: #3465a4 !important;
+}
+</style>
