@@ -1,134 +1,66 @@
 <template>
   <v-app>
-    <v-app-bar app color="white" elevation="1" height="90" class="px-md-4">
-      <div class="d-flex align-center">
-        <v-img src="/logo.jpg" alt="Consorci d'Educació de Barcelona" max-height="70" width="320" contain></v-img>
-      </div>
+    <v-app-bar app color="white" elevation="1" height="90" class="px-4">
+      <v-img src="/logo.jpg" alt="Logo" max-height="70" max-width="320" contain />
 
       <v-spacer></v-spacer>
 
-      <div class="d-flex flex-column align-end justify-center h-100">
-        <div class="d-flex align-center mt-2">
-          <div class="d-none d-md-flex align-center">
-            <template v-for="(link, i) in navLinks" :key="link.title">
-              
-              <v-menu v-if="link.title === 'Idioma'" transition="slide-y-transition">
-                <template v-slot:activator="{ props }">
-                  <a 
-                    v-bind="props" 
-                    class="text-decoration-none font-weight-bold text-body-2 mx-2 nav-link cursor-pointer"
-                  >
-                    <v-icon size="small" class="mr-1">mdi-earth</v-icon>
-                    {{ link.title }}
-                    <v-icon size="small">mdi-menu-down</v-icon>
-                  </a>
-                </template>
-                
-                <v-list density="compact" elevation="4">
-                  <v-list-item 
-                    v-for="lang in languages" 
-                    :key="lang.code" 
-                    @click="changeLanguage(lang)"
-                    :active="currentLang === lang.code"
-                  >
-                    <v-list-item-title>{{ lang.name }}</v-list-item-title>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
-
-              <a 
-                v-else 
-                :href="link.href" 
-                class="text-decoration-none font-weight-bold text-body-2 mx-2 nav-link"
-              >
+      <div class="d-none d-md-flex align-center">
+        <template v-for="(link, i) in navLinks" :key="link.title">
+          
+          <v-menu v-if="link.title === 'Log in'" transition="slide-y-transition">
+            <template v-slot:activator="{ props }">
+              <v-btn v-bind="props" variant="text" class="text-none font-weight-bold px-2">
+                <v-icon start size="small">mdi-login</v-icon>
                 {{ link.title }}
-              </a>
-
-              <span v-if="i < navLinks.length - 1" class="text-grey-lighten-1">|</span>
+                <v-icon end size="small">mdi-menu-down</v-icon>
+              </v-btn>
             </template>
-          </div>
 
-          <div class="d-flex ml-4">
-            <a v-for="social in socialItems" :key="social.icon" :href="social.href" class="mx-1 text-decoration-none" target="_blank">
-              <v-icon :icon="social.icon" color="black" size="24" class="social-icon"></v-icon>
-            </a>
-          </div>
-          <v-app-bar-nav-icon class="d-md-none ml-2" color="black"></v-app-bar-nav-icon>
-        </div>
+            <v-list min-width="150" elevation="2" class="mt-2">
+              <v-list-item v-for="opcio in loginOptions" :key="opcio.text" :to="opcio.to" link>
+                <template v-slot:prepend>
+                  <v-icon :icon="opcio.icon" size="small"></v-icon>
+                </template>
+                <v-list-item-title>{{ opcio.text }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+
+          <v-btn v-else :to="link.to" variant="text" class="text-none font-weight-bold px-2">
+            {{ link.title }}
+          </v-btn>
+
+          <v-divider v-if="i < navLinks.length - 1" vertical inset class="mx-1" length="15"></v-divider>
+        </template>
       </div>
+
+      <v-btn icon="mdi-account-circle" href="#" variant="text" class="ml-2"></v-btn>
+      <v-app-bar-nav-icon class="d-md-none" />
     </v-app-bar>
 
     <v-main class="bg-grey-lighten-5">
       <slot />
     </v-main>
 
-    <v-footer app color="white" class="d-flex flex-column pa-0" elevation="2">
-      <v-divider class="w-100 border-opacity-50" color="grey" thickness="2"></v-divider>
-      <div class="w-100 text-center py-2 text-caption text-grey-darken-1">
-        &copy; Consorci d'Educació de Barcelona. Tots els drets reservats
+    <v-footer app color="white" class="pa-0 d-flex flex-column">
+      <v-divider class="w-100"></v-divider>
+      <div class="py-2 text-caption text-grey-darken-1 text-center w-100">
+        &copy; {{ new Date().getFullYear() }} Consorci d'Educació de Barcelona.
       </div>
     </v-footer>
   </v-app>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-
-const currentLang = ref('ca')
-
 const navLinks = [
-  { title: 'Idioma', href: '#' },
-  { title: 'Notícies', href: '' },
-  { title: 'Bloc', href: '#' },
-  { title: 'Agenda', href: '#' },
-  { title: 'Mapa web', href: '#' },
+  { title: 'Inici', to: '/' }, // Canviem href per to
+  { title: 'Log in', to: null },
 ]
 
-const languages = [
-  { name: 'Català', code: 'ca' },
-  { name: 'Castellano', code: 'es' },
-  { name: 'English', code: 'en' }
+const loginOptions = [
+  { text: 'Administració', icon: 'mdi-school', to: '/login' },
+  { text: 'Professor', icon: 'mdi-briefcase-variant', to: '/login' },
+  { text: 'Centre', icon: 'mdi-shield-account', to: '/login' },
 ]
-
-const socialItems = [
-  { icon: 'mdi-account-circle', href: '#' },
-]
-
-const changeLanguage = (lang) => {
-  currentLang.value = lang.code
-  console.log("Idioma seleccionado:", lang.name)
-}
 </script>
-
-<style scoped lang="sass">
-  // Color de fondo del footer y header
-  .nav-link, .footer-link
-    color: #000000
-    transition: color 0.2s
-    text-decoration: none
-    white-space: nowrap
-    &:hover
-      color: #757575
-
-  // Sombreado de los iconos al pasar el ratón
-  .cursor-pointer
-    cursor: pointer
-
-  // Iconos de redes sociales
-  .social-icon-link
-    text-decoration: none
-    transition: opacity 0.2s
-    &:hover
-      opacity: 0.6
-
-  // Estilos responsivos
-  @media (max-width: 960px)
-    .content-wrap
-      flex-direction: column
-      align-items: center !important
-      gap: 10px
-    .link-group
-      justify-content: center !important
-      text-align: center
-      margin-top: 5px
-</style>
