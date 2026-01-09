@@ -20,4 +20,18 @@ router.patch('/:id/estat', async (req, res) => {
     await updateEstat(req, res);
 });
 
+// GET /api/peticions/professor/:nomProfessor
+router.get('/professor/:nomProfessor', async (req, res) => {
+    const { getPeticionsProfessor } = usePeticions();
+    await getPeticionsProfessor(req, res);
+});
+
+// ... (codi que ja tens)
+
+// PATCH /api/peticions/:id/finalitzar -> Per al checklist del professor
+router.patch('/:id/finalitzar', async (req, res) => {
+    const { finalitzarPeticio } = usePeticions();
+    await finalitzarPeticio(req, res);
+});
+
 module.exports = router;

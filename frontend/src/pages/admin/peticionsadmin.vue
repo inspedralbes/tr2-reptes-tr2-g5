@@ -124,61 +124,32 @@ state.dialog = true
 
 
 const accio = async (tipus) => {
+  if (tipus === 'REBUTJAR' && !confirm("Estàs segur?")) return
+  if (tipus === 'ASSIGNAR' && !state.prof) return alert("Selecciona un professor.")
 
-if (tipus === 'REBUTJAR' && !confirm("Estàs segur?")) return
+  // SEMPRE fem servir la ruta de peticions per actualitzar l'estat i el professor
+  const url = `peticions/${state.selected._id}/estat`
+  
+  const body = tipus === 'REBUTJAR' 
+    ? { estat: 'REBUTJADA' } 
+    : { estat: 'ASSIGNAT', professorId: state.prof } // Enviem el nom del professor aquí
 
-if (tipus === 'ASSIGNAR' && !state.prof) return alert("Selecciona un professor.")
+  try {
+    const res = await fetch(`http://localhost:3000/api/${url}`, {
+      method: 'PATCH', // Sempre PATCH per a l'estat
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    })
 
-const url = tipus === 'REBUTJAR' ? `peticions/${state.selected._id}/estat` : 'assignacions'
-
-const body = tipus === 'REBUTJAR'
-
-? { estat: 'REBUTJADA' }
-
-: {
-
-peticioId: state.selected._id,
-
-professorId: state.prof,
-
-dataTaller: new Date().toISOString()
-
-}
-
-try {
-
-const res = await fetch(`http://localhost:3000/api/${url}`, {
-
-method: tipus === 'REBUTJAR' ? 'PATCH' : 'POST',
-
-headers: {'Content-Type': 'application/json'},
-
-body: JSON.stringify(body)
-
-})
-
-if (res.ok) {
-
-state.dialog = false
-
-state.accepted = false
-
-state.prof = null
-
-await carregar()
-
-} else {
-
-alert("Error al guardar l'assignació")
-
-}
-
-} catch (error) {
-
-console.error("Error connectant amb el backend:", error)
-
-}
-
+    if (res.ok) {
+      state.dialog = false
+      state.accepted = false
+      state.prof = null
+      await carregar() // Això refrescarà la taula de l'admin
+    }
+  } catch (error) {
+    console.error("Error connectant amb el backend:", error)
+  }
 }
 
 </script>
@@ -284,40 +255,37 @@ prepend-icon="mdi-check-all"
 <v-table class="bg-dark-table">
 
 <thead>
-
-<tr class="header-black">
-
-<th class="text-white text-left">CENTRE EDUCATIU</th>
-
-<th class="text-white text-center">TALLER</th>
-
-<th class="text-white text-center">COMENTARI</th>
-
-<th class="text-white text-center">ESTAT</th>
-
-<th class="text-white text-center">GESTIÓ</th>
-
-</tr>
-
+  <tr class="header-black">
+    <th class="text-white text-left">CENTRE EDUCATIU</th>
+    <th class="text-white text-center">TALLER</th>
+    <th class="text-white text-center">RESPONSABLE</th> <th class="text-white text-center">COMENTARI</th>
+    <th class="text-white text-center">ESTAT</th>
+    <th class="text-white text-center">GESTIÓ</th>
+  </tr>
 </thead>
 
 <tbody>
 
 <tr v-for="p in filtered" :key="p._id" :class="{'opacity-50': p.estat === 'ASSIGNAT'}">
+  <td class="font-weight-bold text-white">{{ p.nom_centre || p.centreId?.nom }}</td>
+  
+  <td class="text-center text-white">
+    <div class="font-weight-bold">{{ p.tallerId?.titol || 'Pendent' }}</div>
+    <v-chip v-if="p.tallerId?.modalitat" size="x-small" variant="outlined" color="blue-lighten-3" class="mt-1">
+      {{ p.tallerId.modalitat }}
+    </v-chip>
+  </td>
 
-<td class="font-weight-bold text-white">{{ p.nom_centre || p.centreId?.nom }}</td>
+  <td class="text-center">
+    <div v-if="p.estat === 'ASSIGNAT'" class="d-flex flex-column align-center">
+      <v-chip size="small" variant="tonal" color="blue-lighten-4" prepend-icon="mdi-account-check">
+        {{ p.professorId }}
+      </v-chip>
+    </div>
+    <v-icon v-else color="grey-darken-3" size="small">mdi-account-minus-outline</v-icon>
+  </td>
 
-<td class="text-center text-white">
 
-<div class="font-weight-bold">{{ p.tallerId?.titol || 'Pendent' }}</div>
-
-<v-chip v-if="p.tallerId?.modalitat" size="x-small" variant="outlined" color="blue-lighten-3" class="mt-1">
-
-{{ p.tallerId.modalitat }}
-
-</v-chip>
-
-</td>
 
 <td class="text-center">
 
