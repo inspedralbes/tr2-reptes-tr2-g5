@@ -22,13 +22,17 @@ async function startServer() {
         await connectDB(); 
         console.log("✅ MongoDB Connectat");
 
+        // 1. IMPORTAR LAS RUTAS
         const tallersRoutes = require('./src/routes/tallers');
         const peticionsRoutes = require('./src/routes/peticions');
         const assignacionsRoutes = require('./src/routes/assignacions'); 
+        const authRoutes = require('./src/routes/auth'); // <--- AÑADIDO
 
+        // 2. USAR LAS RUTAS
         app.use('/api/tallers', tallersRoutes);
         app.use('/api/peticions', peticionsRoutes);
         app.use('/api/assignacions', assignacionsRoutes); 
+        app.use('/api/auth', authRoutes); // <--- AÑADIDO (Esto soluciona el error 404)
 
         const PORT = process.env.PORT || 3000;
         app.listen(PORT, () => {

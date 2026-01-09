@@ -1,124 +1,103 @@
 <template>
-  <v-container fluid class="fill-height bg-white pa-0">
-    <v-row justify="center" align="center" class="fill-height ma-0">
-      <v-col cols="12" sm="8" md="6" lg="4" xl="3">
+  <v-container fluid class="fill-height bg-grey-lighten-4 pa-0">
+    <v-row no-gutters class="fill-height justify-center align-center">
+      <v-col cols="12" sm="8" md="6" lg="4">
         
-        <div class="text-center mb-8">
-          <h1 class="text-h4 font-weight-bold text-black mb-2">
-            Benvingut/da
-          </h1>
-          <p class="text-body-1 text-grey-darken-1">
-            Àrea privada de gestió
-          </p>
-        </div>
-
-        <div class="login-form-wrapper pa-4 pa-sm-8">
-          
-          <v-form @submit.prevent="handleSubmit">
+        <v-card class="elevation-4 rounded-lg">
+          <v-card-text class="pa-8">
             
-            <div class="text-subtitle-2 text-black font-weight-bold mb-1">
-              Usuari
+            <div class="text-center mb-6">
+              <h2 class="text-h4 font-weight-bold text-blue-darken-4">
+                {{ isRegister ? 'Crear Nou Usuari' : 'Iniciar Sessió' }}
+              </h2>
+              <p class="text-body-2 text-grey-darken-1 mt-2">
+                {{ isRegister ? 'Omple les dades per registrar-te' : 'Introdueix les teves credencials' }}
+              </p>
             </div>
-            <v-text-field
-              v-model="email"
-              placeholder="Introdueix el teu usuari"
-              variant="outlined"
-              color="#0d47a1"
-              bg-color="grey-lighten-5"
-              density="comfortable"
-              hide-details="auto"
-              class="mb-5 input-corporativo"
-              rounded="0"
-            ></v-text-field>
 
-            <div class="text-subtitle-2 text-black font-weight-bold mb-1">
-              Contrasenya
-            </div>
-            <v-text-field
-              v-model="password"
-              type="password"
-              placeholder="••••••••"
-              variant="outlined"
-              color="#0d47a1"
-              bg-color="grey-lighten-5"
-              density="comfortable"
-              hide-details="auto"
-              class="mb-6 input-corporativo"
-              rounded="0"
-            ></v-text-field>
-
-            <div class="d-flex align-center justify-space-between mb-6 flex-wrap">
-              <v-checkbox
-                v-model="rememberMe"
-                label="Recorda'm"
-                color="#0d47a1"
-                density="compact"
-                hide-details
-                class="mr-2"
-              ></v-checkbox>
+            <v-form @submit.prevent="handleSubmit">
               
-              <a href="#" class="text-caption text-decoration-none text-grey-darken-1 hover-link">
-                Has oblidat la contrasenya?
-              </a>
-            </div>
+              <div v-if="isRegister">
+                <v-text-field
+                  v-model="nom"
+                  label="Nom complet"
+                  variant="outlined"
+                  density="comfortable"
+                  class="mb-2"
+                  prepend-inner-icon="mdi-account"
+                  bg-color="white"
+                ></v-text-field>
 
-            <v-btn
-              block
-              color="#0d47a1"
-              size="large"
-              class="text-white font-weight-bold text-capitalize"
-              height="50"
-              flat
-              rounded="0"
-              type="submit"
-              :loading="loading"
-            >
-              Iniciar sessió
-            </v-btn>
+                <v-select
+                  v-model="rol"
+                  :items="rolesDisponibles"
+                  label="Rol d'usuari"
+                  variant="outlined"
+                  density="comfortable"
+                  class="mb-2"
+                  prepend-inner-icon="mdi-badge-account"
+                  bg-color="white"
+                ></v-select>
+              </div>
 
-            <div class="mt-6 text-center">
-              <span class="text-body-2 text-grey-darken-1">
-                No tens accés? 
+              <v-text-field
+                v-model="email"
+                label="Correu electrònic"
+                placeholder="usuari@exemple.cat"
+                type="email"
+                variant="outlined"
+                density="comfortable"
+                class="mb-2"
+                prepend-inner-icon="mdi-email-outline"
+                bg-color="white"
+              ></v-text-field>
+
+              <v-text-field
+                v-model="password"
+                label="Contrasenya"
+                type="password"
+                variant="outlined"
+                density="comfortable"
+                class="mb-4"
+                prepend-inner-icon="mdi-lock-outline"
+                bg-color="white"
+              ></v-text-field>
+
+              <v-alert v-if="error" type="error" variant="tonal" class="mb-4" density="compact">
+                {{ error }}
+              </v-alert>
+
+              <v-alert v-if="successMsg" type="success" variant="tonal" class="mb-4" density="compact">
+                {{ successMsg }}
+              </v-alert>
+
+              <v-btn
+                type="submit"
+                block
+                color="blue-darken-4"
+                size="large"
+                class="text-none font-weight-bold mb-4"
+                :loading="loading"
+              >
+                {{ isRegister ? 'Registrar-se' : 'Entrar' }}
+              </v-btn>
+
+              <div class="text-center">
+                <span class="text-caption text-grey-darken-1">
+                  {{ isRegister ? 'Ja tens compte?' : 'No tens compte?' }}
+                </span>
                 <a 
-                  @click="toggleMode" 
-                  class="font-weight-bold cursor-pointer text-decoration-none"
-                  style="color: #0d47a1 !important;"
+                  class="text-caption font-weight-bold text-blue-darken-4 ml-1 cursor-pointer"
+                  style="cursor: pointer; text-decoration: underline;"
+                  @click="toggleMode"
                 >
-                  Sol·licita l'alta
+                  {{ isRegister ? 'Inicia sessió' : 'Registra\'t ara' }}
                 </a>
-              </span>
-            </div>
+              </div>
 
-          </v-form>
-
-          <v-slide-y-transition>
-            <v-alert
-              v-if="error"
-              type="error"
-              variant="tonal"
-              class="mt-4 rounded-0"
-              density="compact"
-              border="start"
-              border-color="error"
-            >
-              {{ error }}
-            </v-alert>
-          </v-slide-y-transition>
-
-          <v-slide-y-transition>
-            <v-alert
-              v-if="successMsg"
-              type="success"
-              variant="tonal"
-              class="mt-4 rounded-0"
-              density="compact"
-              border="start"
-              border-color="success"
-            >
-              {{ successMsg }}
-            </v-alert>
-          </v-slide-y-transition>
-        </div>
+            </v-form>
+          </v-card-text>
+        </v-card>
 
       </v-col>
     </v-row>
@@ -127,72 +106,106 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-const email = ref('');
-const password = ref('');
-const rememberMe = ref(false);
+const router = useRouter(); 
+
+// Estados
+const isRegister = ref(false); // Empieza en Login
+const loading = ref(false);
 const error = ref('');
 const successMsg = ref('');
-const loading = ref(false);
 
+// Datos del formulario
+const nom = ref('');
+const email = ref('');
+const password = ref('');
+const rol = ref('centre'); // Valor por defecto
+const rolesDisponibles = ['admin', 'centre', 'professor'];
+
+// Cambiar entre Login y Registro
 const toggleMode = () => {
-    alert("Contacta amb l'administrador del centre per sol·licitar l'accés.");
-}
+  isRegister.value = !isRegister.value;
+  error.value = '';
+  successMsg.value = '';
+};
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   error.value = '';
   successMsg.value = '';
   loading.value = true;
 
-  setTimeout(() => {
-    loading.value = false;
-    
-    if (!email.value || !password.value) {
-        error.value = "Si us plau, omple tots els camps.";
-        return;
-    }
-    successMsg.value = 'Accedint al sistema...';
-  }, 1000);
+  // Validación simple
+  if (!email.value || !password.value || (isRegister.value && !nom.value)) {
+      error.value = "Si us plau, omple tots els camps.";
+      loading.value = false;
+      return;
+  }
+
+  try {
+      // Determinar la URL (Login o Register)
+      const endpoint = isRegister.value ? '/api/auth/register' : '/api/auth/login';
+      const url = `http://localhost:3000${endpoint}`;
+      
+      const payload = { 
+          email: email.value, 
+          password: password.value 
+      };
+      
+      // Si es registro, añadimos nombre y rol
+      if (isRegister.value) {
+          payload.nom = nom.value;
+          payload.rol = rol.value;
+      }
+
+      // Hacemos la petición
+      const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+      });
+
+      // Leemos la respuesta
+      const data = await response.json();
+
+      if (!response.ok) {
+          throw new Error(data.error || 'Error en la petició');
+      }
+
+      // LÓGICA DE ÉXITO
+      if (isRegister.value) {
+          // Si nos acabamos de registrar
+          successMsg.value = 'Usuari creat correctament! Redirigint al login...';
+          setTimeout(() => {
+              toggleMode(); // Cambiamos a la vista de login
+              password.value = ''; // Limpiamos password
+          }, 1500);
+      } else {
+          // Si hemos hecho login
+          localStorage.setItem('userRole', data.usuari.rol);
+          localStorage.setItem('userId', data.usuari.id);
+          
+          successMsg.value = 'Login correcte. Accedint...';
+          
+          // Redirección según ROL
+          setTimeout(() => {
+              if (data.usuari.rol === 'admin') {
+                  router.push('/admin/indexadmin'); 
+              } else if (data.usuari.rol === 'centre') {
+                  router.push('/centre/indexcentre');
+              } else if (data.usuari.rol === 'professor') {
+                  router.push('/professor/iniciprofessor');
+              } else {
+                  router.push('/');
+              }
+          }, 1000);
+      }
+
+  } catch (err) {
+      console.error(err);
+      error.value = err.message || "Error de connexió amb el servidor";
+  } finally {
+      loading.value = false;
+  }
 };
 </script>
-
-<style scoped>
-/* Fondo blanco puro */
-.bg-white {
-  background-color: #ffffff !important;
-}
-
-.login-form-wrapper {
-  background-color: #ffffff;
-  /* Borde muy suave para delimitar ligeramente */
-  border: 1px solid #e0e0e0; 
-  max-width: 100%;
-}
-
-/* Estilos de los inputs */
-.input-corporativo :deep(.v-field__outline__start),
-.input-corporativo :deep(.v-field__outline__end),
-.input-corporativo :deep(.v-field__outline__notch) {
-  border-color: #cccccc !important;
-}
-
-/* AL HACER FOCO: Se usa el color #0d47a1
-   Esto asegura que lo único que destaque sea el color corporativo.
-*/
-.input-corporativo :deep(.v-field--focused .v-field__outline__start),
-.input-corporativo :deep(.v-field--focused .v-field__outline__end),
-.input-corporativo :deep(.v-field--focused .v-field__outline__notch) {
-  border-color: #0d47a1 !important;
-  border-width: 2px;
-}
-
-/* Enlaces con efecto hover al color corporativo */
-.hover-link:hover {
-  color: #0d47a1 !important;
-  text-decoration: underline !important;
-}
-
-.cursor-pointer {
-  cursor: pointer;
-}
-</style>
