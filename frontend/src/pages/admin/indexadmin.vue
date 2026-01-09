@@ -3,7 +3,17 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter(); const notifs = ref([]); const resum = ref([])
+
+// CARREGA L'ESTAT: Mira si al navegador ja hem guardat que les notificacions s'han vist
+const vistes = ref(localStorage.getItem('notificacionsVistes') === 'true')
+
 const nav = (r) => router.push(`/admin/${r}`)
+
+// Funció per marcar com a vistes i guardar al navegador
+const marcarComVistes = () => {
+  vistes.value = true
+  localStorage.setItem('notificacionsVistes', 'true')
+}
 
 onMounted(async () => {
   try {
@@ -19,7 +29,13 @@ onMounted(async () => {
     <header class="mb-10 d-flex justify-space-between align-start">
       <div><h1 class="text-h4 font-weight-bold mb-2" style="color: black;">Panell de Control Administració</h1><p class="text-subtitle-1 text-grey-darken-1">Gestió integral de tallers, sol·licituds i seguiment de mètriques.</p></div>
       <v-menu width="320" location="bottom end" :close-on-content-click="false">
-        <template v-slot:activator="{ props }"><v-btn icon v-bind="props" class="mt-2" variant="text"><v-badge :model-value="!!notifs.length" dot color="red" offset-x="3" offset-y="3"><v-icon size="30" color="black">mdi-bell-outline</v-icon></v-badge></v-btn></template>
+        <template v-slot:activator="{ props }">
+          <v-btn icon v-bind="props" class="mt-2" variant="text" @click="marcarComVistes">
+            <v-badge :model-value="notifs.length > 0 && !vistes" dot color="red" offset-x="3" offset-y="3">
+              <v-icon size="30" color="black">mdi-bell-outline</v-icon>
+            </v-badge>
+          </v-btn>
+        </template>
         <v-card class="border-consorci shadow-xl menu-notificacions">
           <v-card-title class="text-subtitle-1 font-weight-bold pa-4 bg-white text-black d-flex justify-space-between align-center">Noves Peticions <v-btn v-if="notifs.length" variant="text" size="x-small" color="grey-darken-3" @click="notifs = []">Marcar com a vistes</v-btn></v-card-title>
           <v-divider/>

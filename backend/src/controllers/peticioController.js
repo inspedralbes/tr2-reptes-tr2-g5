@@ -41,7 +41,6 @@ const usePeticions = () => {
                     ...p,
                     centreId: { nom: p.nom_centre || 'Centre' },
                     tallerId: { titol: taller ? taller.titol : 'Pendent' },
-                    // Afegim aquest objecte detalls per a la vista de l'admin
                     detalls: {
                         coordinador: p.nom_coordinador,
                         alumnes: p.seleccio_tallers?.num_alumnes,
@@ -59,17 +58,29 @@ const usePeticions = () => {
         }
     };
 
+    // 3. Crear petició amb LOG formatejat per la terminal
     const createPeticio = async (req, res) => {
         try {
             const db = getDB();
             const nova = { ...req.body, estat: "PENDENT", data_creacio: new Date() };
             const result = await db.collection('peticions').insertOne(nova);
+            
+            // --- LOG FORMATEJAT PER VS CODE ---
+            console.log("📩 Nova petició rebuda al servidor:", {
+                peticioId: result.insertedId,
+                centre: req.body.nom_centre,
+                tallerId: req.body.seleccio_tallers?.taller_id,
+                alumnes: req.body.seleccio_tallers?.num_alumnes,
+                estat: "PENDENT"
+            });
+            
             res.status(201).json({ id: result.insertedId });
         } catch (error) {
             res.status(500).json({ error: "Error al crear" });
         }
     };
 
+    // 4. Actualitzar estat amb LOG formatejat
     const updateEstat = async (req, res) => {
         try {
             const db = getDB();
@@ -78,6 +89,14 @@ const usePeticions = () => {
                 { _id: new ObjectId(id) },
                 { $set: { estat: req.body.estat, professorId: req.body.professorId } }
             );
+            
+            // Log per saber quan s'accepta o rebutja
+            console.log("✅ Estat de petició actualitzat:", {
+                peticioId: id,
+                nouEstat: req.body.estat,
+                professor: req.body.professorId || 'Cap'
+            });
+
             res.status(200).json({ missatge: "Fet" });
         } catch (error) {
             res.status(500).json({ error: "Error" });

@@ -17,7 +17,7 @@
         <select v-model="form.seleccio_tallers.taller_id" required>
           <option disabled value="">Selecciona un taller del catàleg</option>
           <option v-for="taller in tallersDisponibles" :key="taller._id" :value="taller._id">
-            {{ taller.titol }} (Modalitat {{ taller.modalitat }})
+            {{ taller.titol }} ({{ taller.modalitat }})
           </option>
         </select>
       </div>
