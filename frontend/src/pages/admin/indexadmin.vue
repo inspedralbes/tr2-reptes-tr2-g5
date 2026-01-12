@@ -108,7 +108,7 @@ onMounted(async () => {
     </header>
 
     <v-row class="mb-6">
-      <v-col v-for="c in [{t:'Gestió de Tallers',d:'Modificar el catàleg i places.',i:'mdi-hammer-wrench',r:'tallersadmin'},{t:'Peticions i Assignació',d:`Motor d'assignació i checklists.`,i:'mdi-clipboard-list-outline',r:'peticionsadmin'},{t:'Informes i Mètriques',d:'Exportar PDF/CSV i gràfics.',i:'mdi-chart-bar',r:'informesadmin'}]" :key="c.t" cols="12" md="4">
+      <v-col v-for="c in [{t:'Gestió de Tallers',d:'Modificar el catàleg i places.',i:'mdi-hammer-wrench',r:'tallersadmin'},{t:'Peticions i Assignació',d:`Motor d'assignació i checklists.`,i:'mdi-clipboard-list-outline',r:'peticionsadmin'},{t:'Informes i Mètriques',d:'Exportar PDF/CSV i gràfics.',i:'mdi-chart-bar',r:'informesadmin'},{t:'Gestió d\'Usuaris',d:'Administrar comptes i rols.',i:'mdi-account-group',r:'usuaris'}]" :key="c.t" cols="12" md="4">
         <v-card variant="outlined" class="pa-6 text-center h-100 admin-card bg-white" @click="nav(c.r)" hover>
           <v-icon size="48" color="black" class="mb-4">{{ c.i }}</v-icon>
           <h3 class="text-h6 font-weight-bold mb-3" style="color: black;">{{ c.t }}</h3>

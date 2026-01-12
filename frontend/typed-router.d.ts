@@ -23,6 +23,7 @@ declare module 'vue-router/auto-routes' {
     '/admin/informesadmin': RouteRecordInfo<'/admin/informesadmin', '/admin/informesadmin', Record<never, never>, Record<never, never>>,
     '/admin/peticionsadmin': RouteRecordInfo<'/admin/peticionsadmin', '/admin/peticionsadmin', Record<never, never>, Record<never, never>>,
     '/admin/tallersadmin': RouteRecordInfo<'/admin/tallersadmin', '/admin/tallersadmin', Record<never, never>, Record<never, never>>,
+    '/admin/usuaris': RouteRecordInfo<'/admin/usuaris', '/admin/usuaris', Record<never, never>, Record<never, never>>,
     '/centre/assignacions': RouteRecordInfo<'/centre/assignacions', '/centre/assignacions', Record<never, never>, Record<never, never>>,
     '/centre/estatpeticions': RouteRecordInfo<'/centre/estatpeticions', '/centre/estatpeticions', Record<never, never>, Record<never, never>>,
     '/centre/formulariCentre': RouteRecordInfo<'/centre/formulariCentre', '/centre/formulariCentre', Record<never, never>, Record<never, never>>,
@@ -62,6 +63,10 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/admin/tallersadmin.vue': {
       routes: '/admin/tallersadmin'
+      views: never
+    }
+    'src/pages/admin/usuaris.vue': {
+      routes: '/admin/usuaris'
       views: never
     }
     'src/pages/centre/assignacions.vue': {

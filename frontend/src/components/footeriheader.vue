@@ -6,32 +6,32 @@
       <v-spacer></v-spacer>
 
       <div class="d-none d-md-flex align-center">
-        <template v-for="(link, i) in navLinks" :key="link.title">
-          
-          <v-menu v-if="link.title === 'Log in'" transition="slide-y-transition">
-            <template v-slot:activator="{ props }">
-              <v-btn v-bind="props" variant="text" class="text-none font-weight-bold px-2 custom-blue">
+        <!-- BOTÓN INICIO -->
+        <v-btn to="/" variant="text" class="text-none font-weight-bold px-2 custom-blue">
+            Inici
+        </v-btn>
+        <v-divider vertical inset class="mx-1" length="15"></v-divider>
+
+        <!-- SI NO ESTÁ LOGIN: MOSTRAR LOG IN BUTTON -->
+        <template v-if="!isLoggedIn">
+            <v-btn to="/login" variant="text" class="text-none font-weight-bold px-2 custom-blue">
                 <v-icon start size="small">mdi-login</v-icon>
-                {{ link.title }}
-                <v-icon end size="small">mdi-menu-down</v-icon>
-              </v-btn>
-            </template>
+                Log in
+            </v-btn>
+        </template>
 
-            <v-list min-width="150" elevation="2" class="mt-2">
-              <v-list-item v-for="opcio in loginOptions" :key="opcio.text" :to="opcio.to" link>
-                <template v-slot:prepend>
-                  <v-icon :icon="opcio.icon" size="small" class="custom-blue"></v-icon>
-                </template>
-                <v-list-item-title class="custom-blue font-weight-bold">{{ opcio.text }}</v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
-
-          <v-btn v-else :to="link.to" variant="text" class="text-none font-weight-bold px-2 custom-blue">
-            {{ link.title }}
-          </v-btn>
-
-          <v-divider v-if="i < navLinks.length - 1" vertical inset class="mx-1" length="15"></v-divider>
+        <!-- SI ESTÁ LOGIN: MOSTRAR PANEL Y LOGOUT -->
+        <template v-else>
+            <v-btn @click="goToDashboard" variant="text" class="text-none font-weight-bold px-2 custom-blue">
+                <v-icon start size="small">mdi-view-dashboard</v-icon>
+                El meu Espai
+            </v-btn>
+            <v-divider vertical inset class="mx-1" length="15"></v-divider>
+            
+            <v-btn @click="logout" variant="text" class="text-none font-weight-bold px-2 text-red">
+                <v-icon start size="small">mdi-logout</v-icon>
+                Sortir
+            </v-btn>
         </template>
       </div>
 
@@ -53,9 +53,44 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+
+const router = useRouter();
+const route = useRoute();
+
+const role = ref(null);
+
+const checkSession = () => {
+    role.value = localStorage.getItem('userRole');
+};
+
+onMounted(() => {
+    checkSession();
+});
+
+// Re-check session on route change
+watch(() => route.path, () => {
+    checkSession();
+});
+
+const isLoggedIn = computed(() => !!role.value);
+
+const logout = () => {
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userId');
+    role.value = null;
+    router.push('/');
+};
+
+const goToDashboard = () => {
+    if (role.value === 'admin') router.push('/admin/indexadmin');
+    else if (role.value === 'centre') router.push('/centre/indexcentre');
+    else if (role.value === 'professor') router.push('/professor/iniciprofessor');
+};
+
 const navLinks = [
   { title: 'Inici', to: '/' },
-  { title: 'Log in', to: null },
 ]
 
 const loginOptions = [

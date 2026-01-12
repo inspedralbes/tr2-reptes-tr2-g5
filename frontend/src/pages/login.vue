@@ -8,38 +8,15 @@
             
             <div class="text-center mb-6">
               <h2 class="text-h4 font-weight-bold text-blue-darken-4">
-                {{ isRegister ? 'Crear Nou Usuari' : 'Iniciar Sessió' }}
+                Iniciar Sessió
               </h2>
               <p class="text-body-2 text-grey-darken-1 mt-2">
-                {{ isRegister ? 'Omple les dades per registrar-te' : 'Introdueix les teves credencials' }}
+                Introdueix les teves credencials per accedir
               </p>
             </div>
 
             <v-form @submit.prevent="handleSubmit">
               
-              <div v-if="isRegister">
-                <v-text-field
-                  v-model="nom"
-                  label="Nom complet"
-                  variant="outlined"
-                  density="comfortable"
-                  class="mb-2"
-                  prepend-inner-icon="mdi-account"
-                  bg-color="white"
-                ></v-text-field>
-
-                <v-select
-                  v-model="rol"
-                  :items="rolesDisponibles"
-                  label="Rol d'usuari"
-                  variant="outlined"
-                  density="comfortable"
-                  class="mb-2"
-                  prepend-inner-icon="mdi-badge-account"
-                  bg-color="white"
-                ></v-select>
-              </div>
-
               <v-text-field
                 v-model="email"
                 label="Correu electrònic"
@@ -79,22 +56,11 @@
                 class="text-none font-weight-bold mb-4"
                 :loading="loading"
               >
-                {{ isRegister ? 'Registrar-se' : 'Entrar' }}
+                Entrar
               </v-btn>
 
-              <div class="text-center">
-                <span class="text-caption text-grey-darken-1">
-                  {{ isRegister ? 'Ja tens compte?' : 'No tens compte?' }}
-                </span>
-                <a 
-                  class="text-caption font-weight-bold text-blue-darken-4 ml-1 cursor-pointer"
-                  style="cursor: pointer; text-decoration: underline;"
-                  @click="toggleMode"
-                >
-                  {{ isRegister ? 'Inicia sessió' : 'Registra\'t ara' }}
-                </a>
-              </div>
-
+              <!-- Eliminated Registration Link -->
+              
             </v-form>
           </v-card-text>
         </v-card>
@@ -111,24 +77,13 @@ import { useRouter } from 'vue-router';
 const router = useRouter(); 
 
 // Estados
-const isRegister = ref(false); // Empieza en Login
 const loading = ref(false);
 const error = ref('');
 const successMsg = ref('');
 
 // Datos del formulario
-const nom = ref('');
 const email = ref('');
 const password = ref('');
-const rol = ref('centre'); // Valor por defecto
-const rolesDisponibles = ['admin', 'centre', 'professor'];
-
-// Cambiar entre Login y Registro
-const toggleMode = () => {
-  isRegister.value = !isRegister.value;
-  error.value = '';
-  successMsg.value = '';
-};
 
 const handleSubmit = async () => {
   error.value = '';
@@ -136,70 +91,50 @@ const handleSubmit = async () => {
   loading.value = true;
 
   // Validación simple
-  if (!email.value || !password.value || (isRegister.value && !nom.value)) {
+  if (!email.value || !password.value) {
       error.value = "Si us plau, omple tots els camps.";
       loading.value = false;
       return;
   }
 
   try {
-      // Determinar la URL (Login o Register)
-      const endpoint = isRegister.value ? '/api/auth/register' : '/api/auth/login';
-      const url = `http://localhost:3000${endpoint}`;
+      // Login
+      const url = '/api/auth/login';
       
       const payload = { 
           email: email.value, 
           password: password.value 
       };
       
-      // Si es registro, añadimos nombre y rol
-      if (isRegister.value) {
-          payload.nom = nom.value;
-          payload.rol = rol.value;
-      }
-
-      // Hacemos la petición
       const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
       });
 
-      // Leemos la respuesta
       const data = await response.json();
 
       if (!response.ok) {
           throw new Error(data.error || 'Error en la petició');
       }
 
-      // LÓGICA DE ÉXITO
-      if (isRegister.value) {
-          // Si nos acabamos de registrar
-          successMsg.value = 'Usuari creat correctament! Redirigint al login...';
-          setTimeout(() => {
-              toggleMode(); // Cambiamos a la vista de login
-              password.value = ''; // Limpiamos password
-          }, 1500);
-      } else {
-          // Si hemos hecho login
-          localStorage.setItem('userRole', data.usuari.rol);
-          localStorage.setItem('userId', data.usuari.id);
-          
-          successMsg.value = 'Login correcte. Accedint...';
-          
-          // Redirección según ROL
-          setTimeout(() => {
-              if (data.usuari.rol === 'admin') {
-                  router.push('/admin/indexadmin'); 
-              } else if (data.usuari.rol === 'centre') {
-                  router.push('/centre/indexcentre');
-              } else if (data.usuari.rol === 'professor') {
-                  router.push('/professor/iniciprofessor');
-              } else {
-                  router.push('/');
-              }
-          }, 1000);
-      }
+      // Login correcte
+      localStorage.setItem('userRole', data.usuari.rol);
+      localStorage.setItem('userId', data.usuari.id);
+      
+      successMsg.value = 'Login correcte. Accedint...';
+      
+      setTimeout(() => {
+          if (data.usuari.rol === 'admin') {
+              router.push('/admin/indexadmin'); 
+          } else if (data.usuari.rol === 'centre') {
+              router.push('/centre/indexcentre');
+          } else if (data.usuari.rol === 'professor') {
+              router.push('/professor/iniciprofessor');
+          } else {
+              router.push('/');
+          }
+      }, 1000);
 
   } catch (err) {
       console.error(err);
