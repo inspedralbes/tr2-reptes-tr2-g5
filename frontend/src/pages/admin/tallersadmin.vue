@@ -2,7 +2,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-const router = useRouter(); const API_URL = 'http://localhost:3000/api/tallers'; const MAX_DESC = 300
+const router = useRouter(); const API_URL = '/api/tallers'; const MAX_DESC = 300
 const tallers = ref([])
 const state = reactive({ dialog: false, dialogEdit: false, filter: 'Totes', form: {}, editIdx: -1 })
 const initForm = () => ({ titol: '', descripcio: '', durada: '', places: '', modalitat: '' })

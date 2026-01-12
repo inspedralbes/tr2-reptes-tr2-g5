@@ -85,23 +85,34 @@ const usePeticions = () => {
         }
     };
 
+    // --- FUNCIÓ MODIFICADA AMB VALIDACIÓ D'ALUMNES ---
     const createPeticio = async (req, res) => {
         try {
             const db = getDB();
+            const { taller_id, num_alumnes } = req.body.seleccio_tallers;
+
+            // 1. Busquem el taller per comprovar el seu límit
+            const taller = await db.collection('tallers').findOne({ 
+                _id: new ObjectId(taller_id) 
+            });
+
+            // 2. Validació de seguretat al servidor
+            if (taller && num_alumnes > taller.max_alumnes) {
+                console.log(`⚠️ Intent de petició bloquejat: ${num_alumnes} alumnes superen el límit de ${taller.max_alumnes}`);
+                return res.status(400).json({ 
+                    error: `El nombre d'alumnes (${num_alumnes}) supera el màxim permès (${taller.max_alumnes}).` 
+                });
+            }
+
+            // 3. Si tot és correcte, guardem
             const nova = { ...req.body, estat: "PENDENT", data_creacio: new Date() };
             const result = await db.collection('peticions').insertOne(nova);
             
-            console.log("📩 Nova petició rebuda al servidor:", {
-                peticioId: result.insertedId,
-                centre: req.body.nom_centre,
-                tallerId: req.body.seleccio_tallers?.taller_id,
-                alumnes: req.body.seleccio_tallers?.num_alumnes,
-                estat: "PENDENT"
-            });
-            
+            console.log("📩 Nova petició guardada amb èxit:", result.insertedId);
             res.status(201).json({ id: result.insertedId });
         } catch (error) {
-            res.status(500).json({ error: "Error al crear" });
+            console.error("Error al crear petició:", error);
+            res.status(500).json({ error: "Error al crear la petició" });
         }
     };
 
@@ -114,12 +125,6 @@ const usePeticions = () => {
                 { $set: { estat: req.body.estat, professorId: req.body.professorId } }
             );
             
-            console.log("✅ Estat de petició actualitzat:", {
-                peticioId: id,
-                nouEstat: req.body.estat,
-                professor: req.body.professorId || 'Cap'
-            });
-
             res.status(200).json({ missatge: "Fet" });
         } catch (error) {
             res.status(500).json({ error: "Error" });
@@ -143,7 +148,6 @@ const usePeticions = () => {
                 }
             );
 
-            console.log("🏁 Taller finalitzat pel professor:", { peticioId: id });
             res.status(200).json({ missatge: "Taller finalitzat amb èxit" });
         } catch (error) {
             res.status(500).json({ error: "Error al finalitzar el taller" });
