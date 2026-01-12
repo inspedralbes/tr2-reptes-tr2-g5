@@ -2,31 +2,48 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-const router = useRouter(); 
-const resum = ref([]) // Aquí guardarem els tallers per al resum
+const router = useRouter()
 
-// Funció de navegació
-const nav = (ruta) => router.push(`/centre/${ruta}`)
+// Variables para guardar datos
+const resum = ref([]) 
 
-// Carregar dades en entrar
+// Funciones para ir a las diferentes paginas
+function irANovaSolicitud() {
+  console.log("Yendo a formulario...")
+  router.push('/centre/formulariCentre')
+}
+
+function irAEstatPeticions() {
+  console.log("Yendo a estado peticiones...")
+  router.push('/centre/estatpeticions')
+}
+
+function irAAssignacions() {
+  console.log("Yendo a assignaciones...")
+  router.push('/centre/assignacions')
+}
+
+// Cuando se carga la pagina traemos los datos del servidor
 onMounted(async () => {
-  try {
-    const resposta = await fetch('http://localhost:3000/api/tallers')
-    if (resposta.ok) {
-      const dades = await resposta.json()
-      resum.value = dades.slice(0, 5) // Només mostrem els 5 primers
+    console.log("Cargando la pagina de centro...")
+    try {
+        // Hacemos el fetch
+        const respuesta = await fetch('http://localhost:3000/api/tallers')
+        
+        // Comprobamos si ha ido bien
+        if (respuesta.ok) {
+            const datos = await respuesta.json()
+            console.log("Datos recibidos:", datos)
+            
+            // Guardamos solo los 5 primeros
+            resum.value = datos.slice(0, 5)
+        }
+    } catch (error) {
+        // Si falla mostramos error
+        console.error("Ha habido un error cargando:", error)
     }
-  } catch (e) { 
-    console.error("Error carregar dades", e) 
-  }
 })
 
-// Configuració de les targetes del menú
-const menuAccions = [
-  { t: 'Nova Sol·licitud', d: 'Inscriure el centre a un taller.', i: 'mdi-hammer-wrench', r: 'formulariCentre' },
-  { t: 'Estat Peticions', d: 'Veure l\'estat de les teves sol·licituds.', i: 'mdi-clipboard-list-outline', r: 'estatpeticions' },
-  { t: 'Assignacions', d: 'Consultar tallers i horaris confirmats.', i: 'mdi-chart-bar', r: 'assignacions' }
-]
 </script>
 
 <template>
@@ -37,20 +54,42 @@ const menuAccions = [
     </header>
 
     <v-row class="mb-8">
-      <v-col v-for="item in menuAccions" :key="item.t" cols="12" md="4">
-        <v-card variant="outlined" class="pa-6 text-center h-100" @click="nav(item.r)" hover>
-          <v-icon size="48" color="#3465a4" class="mb-4">{{ item.i }}</v-icon>
-          <h3 class="text-h6 font-weight-bold mb-2">{{ item.t }}</h3>
-          <p class="text-body-2 text-grey-darken-1">{{ item.d }}</p>
+      
+      <!-- Primera tarjeta: Nova Sol·licitud -->
+      <v-col cols="12" md="4">
+        <v-card variant="outlined" class="pa-6 text-center h-100" @click="irANovaSolicitud()" hover>
+          <v-icon size="48" color="#3465a4" class="mb-4">mdi-hammer-wrench</v-icon>
+          <h3 class="text-h6 font-weight-bold mb-2">Nova Sol·licitud</h3>
+          <p class="text-body-2 text-grey-darken-1">Inscriure el centre a un taller.</p>
         </v-card>
       </v-col>
-    </v-row>
 
+      <!-- Segunda tarjeta: Estat Peticions -->
+      <v-col cols="12" md="4">
+        <v-card variant="outlined" class="pa-6 text-center h-100" @click="irAEstatPeticions()" hover>
+          <v-icon size="48" color="#3465a4" class="mb-4">mdi-clipboard-list-outline</v-icon>
+          <h3 class="text-h6 font-weight-bold mb-2">Estat Peticions</h3>
+          <p class="text-body-2 text-grey-darken-1">Veure l'estat de les teves sol·licituds.</p>
+        </v-card>
+      </v-col>
+
+      <!-- Tercera tarjeta: Assignacions -->
+      <v-col cols="12" md="4">
+        <v-card variant="outlined" class="pa-6 text-center h-100" @click="irAAssignacions()" hover>
+          <v-icon size="48" color="#3465a4" class="mb-4">mdi-chart-bar</v-icon>
+          <h3 class="text-h6 font-weight-bold mb-2">Assignacions</h3>
+          <p class="text-body-2 text-grey-darken-1">Consultar tallers i horaris confirmats.</p>
+        </v-card>
+      </v-col>
+
+    </v-row>
     
   </v-container>
 </template>
 
 <style scoped>
-/* Estil per a la vora de les llistes */
-.v-list-item { border-bottom: 1px solid #f0f0f0; }
+/* Estilo para los bordes */
+.v-list-item { 
+    border-bottom: 1px solid #f0f0f0; 
+}
 </style>
