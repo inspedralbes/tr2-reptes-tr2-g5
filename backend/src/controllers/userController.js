@@ -31,7 +31,7 @@ const createUser = async (req, res) => {
         const nouUsuari = {
             nom,
             email,
-            password, 
+            password,
             rol,
             data_registre: new Date()
         };
@@ -74,6 +74,32 @@ const deleteUser = async (req, res) => {
         const db = getDB();
         const { id } = req.params;
 
+        // Comprobar si l'usuari és admin abans d'esborrar
+        const userToDelete = await db.collection('usuaris').findOne({ _id: new ObjectId(id) });
+
+        if (!userToDelete) {
+            return res.status(404).json({ error: "Usuari no trobat" });
+        }
+
+        // --- SEGURETAT FETA SIMPLE ---
+        // Recuperem qui està fent la petició des del Header que hem enviat al Frontend
+        const requesterEmail = req.headers['x-user-email'];
+
+        // 1. NINGÚ pot esborrar al 'admin@admin.com'
+        if (userToDelete.email === 'admin@admin.com') {
+            return res.status(403).json({ error: "No es pot eliminar el Admin Principal" });
+        }
+
+        // 2. Si l'usuari a esborrar és ADMIN
+        if (userToDelete.rol === 'admin') {
+            // Nomes el 'admin@admin.com' pot esborrar altres admins
+            if (requesterEmail !== 'admin@admin.com') {
+                return res.status(403).json({ error: "No tens permisos per eliminar un administrador" });
+            }
+        }
+
+        // Si passa els filtres, esborrem
+
         await db.collection('usuaris').deleteOne({ _id: new ObjectId(id) });
         res.status(200).json({ missatge: "Usuari eliminat" });
     } catch (error) {
@@ -89,18 +115,46 @@ const getProfessors = async (req, res) => {
         const professors = await db.collection('usuaris')
             .find({ rol: 'professor' })
             .toArray();
-        
+
         res.status(200).json(professors.map(p => p.nom));
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: "Error al carregar professors" });
     }
 };
 
+// OBTENIR USUARI PER ID
+const getUserById = async (req, res) => {
+    try {
+        const db = getDB();
+        const { id } = req.params;
+
+        if (!ObjectId.isValid(id)) {
+            return res.status(400).json({ error: "ID no vàlid" });
+        }
+
+        const user = await db.collection('usuaris').findOne(
+            { _id: new ObjectId(id) },
+            { projection: { password: 0 } }
+        );
+
+        if (!user) {
+            return res.status(404).json({ error: "Usuari no trobat" });
+        }
+
+        res.status(200).json(user);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al obtenir l'usuari" });
+    }
+};
+
 // EXPORTACIÓN ÚNICA (Correcta)
-module.exports = { 
-    getUsers, 
-    createUser, 
-    updateUser, 
-    deleteUser, 
-    getProfessors 
+module.exports = {
+    getUsers,
+    createUser,
+    updateUser,
+    deleteUser,
+    getProfessors,
+    getUserById
 };

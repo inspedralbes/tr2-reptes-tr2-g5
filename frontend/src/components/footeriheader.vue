@@ -35,7 +35,7 @@
         </template>
       </div>
 
-      <v-btn icon="mdi-account-circle" href="#" variant="text" class="ml-2 custom-blue"></v-btn>
+      <v-btn icon="mdi-account-circle" to="/account" variant="text" class="ml-2 custom-blue"></v-btn>
       <v-app-bar-nav-icon class="d-md-none" />
     </v-app-bar>
 

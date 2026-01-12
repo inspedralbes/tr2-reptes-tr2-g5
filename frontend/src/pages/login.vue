@@ -114,6 +114,8 @@ const handleSubmit = async () => {
       // Login correcte
       localStorage.setItem('userRole', data.usuari.rol);
       localStorage.setItem('userId', data.usuari.id);
+      localStorage.setItem('userName', data.usuari.nom);
+      localStorage.setItem('userEmail', data.usuari.email);
       
       if (data.usuari.rol === 'admin') {
           router.push('/admin/indexadmin'); 
