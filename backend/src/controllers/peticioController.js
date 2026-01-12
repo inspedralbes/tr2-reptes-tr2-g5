@@ -3,37 +3,33 @@ const { ObjectId } = require('mongodb');
 
 const usePeticions = () => {
     const getPeticionsProfessor = async (req, res) => {
-    try {
-        const db = getDB();
-        const { nomProfessor } = req.params; // Filtramos por el nombre que asigna el admin
+        try {
+            const db = getDB();
+            const { nomProfessor } = req.params; 
 
-        // Buscamos peticiones que estén en estado ASSIGNAT y tengan ese profesor
-        const peticions = await db.collection('peticions').find({ 
-            professorId: nomProfessor,
-            estat: 'ASSIGNAT' 
-        }).toArray();
+            const peticions = await db.collection('peticions').find({ 
+                professorId: nomProfessor,
+                estat: 'ASSIGNAT' 
+            }).toArray();
 
-        // Poblamos los títulos de los talleres manualmente como haces en getPeticionsAdmin
-        const promeses = peticions.map(async (p) => {
-            const taller = await db.collection('tallers').findOne({ 
-                _id: new ObjectId(p.seleccio_tallers.taller_id) 
+            const promeses = peticions.map(async (p) => {
+                const taller = await db.collection('tallers').findOne({ 
+                    _id: new ObjectId(p.seleccio_tallers.taller_id) 
+                });
+                return {
+                    ...p,
+                    taller_titol: taller ? taller.titol : 'Taller no trobat'
+                };
             });
-            return {
-                ...p,
-                taller_titol: taller ? taller.titol : 'Taller no trobat'
-            };
-        });
 
-        const resultat = await Promise.all(promeses);
-        res.status(200).json(resultat);
-    } catch (error) {
-        console.error("Error en peticions professor:", error);
-        res.status(500).json({ error: "Error en carregar tallers del professor" });
-    }
-};
+            const resultat = await Promise.all(promeses);
+            res.status(200).json(resultat);
+        } catch (error) {
+            console.error("Error en peticions professor:", error);
+            res.status(500).json({ error: "Error en carregar tallers del professor" });
+        }
+    };
 
-    
-    // 1. Funció per al Centre
     const getPeticions = async (req, res) => {
         try {
             const db = getDB();
@@ -57,8 +53,8 @@ const usePeticions = () => {
         }
     };
 
-    // 2. Funció per a l'Admin (Amb tots els detalls del formulari)
-    const getPeticionsAdmin = async (res) => {
+    // CORREGIT: Afegit req per evitar error 500
+    const getPeticionsAdmin = async (req, res) => {
         try {
             const db = getDB();
             const peticions = await db.collection('peticions').find().toArray();
@@ -84,18 +80,17 @@ const usePeticions = () => {
             const resultat = await Promise.all(promeses);
             res.status(200).json(resultat);
         } catch (error) {
+            console.error("Error en getPeticionsAdmin:", error);
             res.status(500).json({ error: "Error admin" });
         }
     };
 
-    // 3. Crear petició amb LOG formatejat per la terminal
     const createPeticio = async (req, res) => {
         try {
             const db = getDB();
             const nova = { ...req.body, estat: "PENDENT", data_creacio: new Date() };
             const result = await db.collection('peticions').insertOne(nova);
             
-            // --- LOG FORMATEJAT PER VS CODE ---
             console.log("📩 Nova petició rebuda al servidor:", {
                 peticioId: result.insertedId,
                 centre: req.body.nom_centre,
@@ -110,7 +105,6 @@ const usePeticions = () => {
         }
     };
 
-    // 4. Actualitzar estat amb LOG formatejat
     const updateEstat = async (req, res) => {
         try {
             const db = getDB();
@@ -120,7 +114,6 @@ const usePeticions = () => {
                 { $set: { estat: req.body.estat, professorId: req.body.professorId } }
             );
             
-            // Log per saber quan s'accepta o rebutja
             console.log("✅ Estat de petició actualitzat:", {
                 peticioId: id,
                 nouEstat: req.body.estat,
@@ -132,12 +125,7 @@ const usePeticions = () => {
             res.status(500).json({ error: "Error" });
         }
     };
-    // ==========================================
-    // NOVA FUNCIÓ: FINALITZAR TALLER (CHECKLIST)
-    // ==========================================
-   // ... (tus funciones anteriores: getPeticions, getPeticionsAdmin, etc.)
 
-    // 5. FINALITZAR TALLER (Asegúrate que esta función esté DENTRO de usePeticions)
     const finalitzarPeticio = async (req, res) => {
         try {
             const db = getDB();
@@ -162,7 +150,6 @@ const usePeticions = () => {
         }
     };
 
-    // EL RETURN DEBE SER ÚNICO Y AL FINAL DE usePeticions
     return { 
         getPeticions, 
         getPeticionsAdmin, 
@@ -171,6 +158,6 @@ const usePeticions = () => {
         getPeticionsProfessor,
         finalitzarPeticio 
     };
-}; // Aquí cierra usePeticions
+};
 
 module.exports = { usePeticions };
