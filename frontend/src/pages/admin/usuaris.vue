@@ -1,10 +1,19 @@
   <template>
   <v-container fluid class="pa-10 bg-white h-100">
     <!-- ENCALEZADO -->
-    <div class="d-flex justify-space-between align-center mb-8">
-      <div>
-        <h1 class="text-h4 font-weight-bold mb-2 text-black">Gestió d'Usuaris</h1>
-        <p class="text-subtitle-1 text-grey-darken-1">Administració de comptes, rols i accessos.</p>
+    <div class="d-flex justify-space-between align-start mb-8">
+      <div class="d-flex align-center">
+        <v-btn 
+          icon="mdi-arrow-left" 
+          variant="text" 
+          color="black" 
+          class="mr-4" 
+          @click="router.push('/admin/indexadmin')"
+        />
+        <div>
+          <h1 class="text-h4 font-weight-bold mb-2 text-black">Gestió d'Usuaris</h1>
+          <p class="text-subtitle-1 text-grey-darken-1">Administració de comptes, rols i accessos.</p>
+        </div>
       </div>
       <v-btn color="black" prepend-icon="mdi-plus" size="large" @click="openDialog()">
         Crear Usuari
@@ -71,7 +80,7 @@
 
             <v-select
               v-model="editedItem.rol"
-              :items="['admin', 'centre', 'professor']"
+              :items="['Admin', 'Centre', 'Professor']"
               label="Rol"
               variant="outlined"
               density="comfortable"
@@ -134,6 +143,9 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const users = ref([]);
 const loading = ref(true);
