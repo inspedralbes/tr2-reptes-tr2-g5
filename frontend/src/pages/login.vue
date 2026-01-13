@@ -44,10 +44,6 @@
                 {{ error }}
               </v-alert>
 
-              <v-alert v-if="successMsg" type="success" variant="tonal" class="mb-4" density="compact">
-                {{ successMsg }}
-              </v-alert>
-
               <v-btn
                 type="submit"
                 block
@@ -58,9 +54,6 @@
               >
                 Entrar
               </v-btn>
-
-              <!-- Eliminated Registration Link -->
-              
             </v-form>
           </v-card-text>
         </v-card>
@@ -79,7 +72,7 @@ const router = useRouter();
 // Estados
 const loading = ref(false);
 const error = ref('');
-const successMsg = ref('');
+
 
 // Datos del formulario
 const email = ref('');
@@ -87,7 +80,7 @@ const password = ref('');
 
 const handleSubmit = async () => {
   error.value = '';
-  successMsg.value = '';
+
   loading.value = true;
 
   // Validación simple
@@ -121,20 +114,18 @@ const handleSubmit = async () => {
       // Login correcte
       localStorage.setItem('userRole', data.usuari.rol);
       localStorage.setItem('userId', data.usuari.id);
+      localStorage.setItem('userName', data.usuari.nom);
+      localStorage.setItem('userEmail', data.usuari.email);
       
-      successMsg.value = 'Login correcte. Accedint...';
-      
-      setTimeout(() => {
-          if (data.usuari.rol === 'admin') {
-              router.push('/admin/indexadmin'); 
-          } else if (data.usuari.rol === 'centre') {
-              router.push('/centre/indexcentre');
-          } else if (data.usuari.rol === 'professor') {
-              router.push('/professor/iniciprofessor');
-          } else {
-              router.push('/');
-          }
-      }, 1000);
+      if (data.usuari.rol === 'admin') {
+          router.push('/admin/indexadmin'); 
+      } else if (data.usuari.rol === 'centre') {
+          router.push('/centre/indexcentre');
+      } else if (data.usuari.rol === 'professor') {
+          router.push('/professor/iniciprofessor');
+      } else {
+          router.push('/');
+      }
 
   } catch (err) {
       console.error(err);

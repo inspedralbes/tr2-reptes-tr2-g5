@@ -1,4 +1,4 @@
-<template>
+  <template>
   <v-container fluid class="pa-10 bg-white h-100">
     <!-- ENCALEZADO -->
     <div class="d-flex justify-space-between align-center mb-8">
@@ -19,6 +19,7 @@
         :loading="loading"
         class="elevation-0"
         item-value="_id"
+        items-per-page-text="Usuaris per pàgina"
       >
         <!-- ROL CHIP -->
         <template v-slot:item.rol="{ item }">
@@ -36,7 +37,7 @@
         <template v-slot:item.actions="{ item }">
           <div class="d-flex">
             <v-btn icon="mdi-pencil" variant="text" size="small" color="blue" @click="openDialog(item)" />
-            <v-btn icon="mdi-delete" variant="text" size="small" color="red" @click="confirmDelete(item)" />
+            <v-btn v-if="canDelete(item)" icon="mdi-delete" variant="text" size="small" color="red" @click="confirmDelete(item)" />
           </div>
         </template>
       </v-data-table>
@@ -235,6 +236,30 @@ const save = async () => {
     }
 };
 
+const canDelete = (userToDelete) => {
+    // Agafem l'email del meu usuari que hem guardat al Login
+    const myEmail = localStorage.getItem('userEmail');
+
+    // SI SÓC EL "ADMIN SUPREM" (admin@admin.com)
+    if (myEmail === 'admin@admin.com') {
+        // Puc esborrar a tothom MENYS A MI MATEIX
+        if (userToDelete.email === 'admin@admin.com') {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    // SI NO SÓC EL ADMIN SUPREM (Sóc un admin normal)
+    // No puc esborrar cap admin
+    if (userToDelete.rol === 'admin') {
+        return false;
+    }
+
+    // Puc esborrar la resta (professors, centres...)
+    return true;
+};
+
 const confirmDelete = (item) => {
     Object.assign(editedItem, item);
     dialogDelete.value = true;
@@ -246,7 +271,15 @@ const closeDelete = () => {
 
 const deleteItemConfirm = async () => {
     try {
-        const res = await fetch(`/api/users/${editedItem._id}`, { method: 'DELETE' });
+        // Enviem el meu email per saber qui està intentant esborrar
+        const myEmail = localStorage.getItem('userEmail');
+        
+        const res = await fetch(`/api/users/${editedItem._id}`, { 
+            method: 'DELETE',
+            headers: {
+                'X-User-Email': myEmail
+            }
+        });
         if (res.ok) {
             showSnackbar("Usuari eliminat", "success");
             fetchUsers();

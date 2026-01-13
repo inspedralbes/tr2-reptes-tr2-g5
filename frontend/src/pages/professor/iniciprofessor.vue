@@ -6,7 +6,7 @@ const router = useRouter()
 const tallers = ref([])
 const loading = ref(true)
 const tab = ref(0) // Control de les pestanyes (0: Pendents, 1: Finalitzats)
-const NOM_PROFESSOR = "Joan Font" 
+const NOM_PROFESSOR = localStorage.getItem('userName') || "Usuari"; 
 
 // Separem els tallers segons el seu estat
 const tallersPendents = computed(() => tallers.value.filter(t => !t.finalitzat))
@@ -66,7 +66,7 @@ onMounted(carregarTallers)
 
     <v-tabs v-model="tab" color="blue-darken-4" align-tabs="start" class="mb-6 custom-tabs">
       <v-tab :value="0" class="text-body-2 font-weight-bold">
-        <v-icon start size="18">mdi-progress-check</v-icon> ACTIUS ({{ tallersPendents.length }})
+        <v-icon start size="18">mdi-progress-check</v-icon> PENDENTS ({{ tallersPendents.length }})
       </v-tab>
       <v-tab :value="1" class="text-body-2 font-weight-bold">
         <v-icon start size="18">mdi-archive-check</v-icon> FINALITZATS ({{ tallersFinalitzats.length }})
