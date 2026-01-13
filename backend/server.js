@@ -24,8 +24,8 @@ async function startServer() {
         app.use('/api/auth', authRoutes); // <--- AÑADIDO (Esto soluciona el error 404)
         app.use('/api/users', usersRoutes); // <--- AÑADIDO USERS
 
-        const PORT = 3001; // FORÇAT a 3001 ja que el .env està forçant 3000
-        app.listen(PORT, () => {
+        const PORT = 3000; 
+        app.listen(PORT, '0.0.0.0', () => {
             console.log(`🚀 Servidor ENGINY a http://localhost:${PORT}`);
         });
     } catch (error) {

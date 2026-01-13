@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    env_file:    
+      - .env        
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npx nodemon server.js
+
+  frontend:
+    build: 
+      context: ./frontend
+      target: build  # <--- Añade esto para que se detenga en la etapa de Node
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host --port 3001

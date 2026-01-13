@@ -1,0 +1,16 @@
+services:
+  backend:
+    build: ./backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - MONGODB_URI=mongodb+srv://fiona222:giaramita@cluster0.gpu1c2r.mongodb.net/enginy?retryWrites=true&w=majority
+
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+    ports:
+      - "80:80"
