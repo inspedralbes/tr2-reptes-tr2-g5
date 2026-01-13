@@ -15,14 +15,15 @@
       </thead>
       <tbody>
         <tr v-for="peticio in peticions" :key="peticio._id">
-          <td>{{ peticio.nom_centre }}</td>
-<td>{{ peticio.taller_titol || 'No especificat' }}</td>          <td>{{ peticio.seleccio_tallers?.num_alumnes }}</td>
-          <td>
-            <span :class="peticio.estat?.estat_boolean ? 'completat' : 'pendent'">
-              {{ peticio.estat?.estat_boolean ? 'Assignat' : 'Pendent' }}
-            </span>
-          </td>
-        </tr>
+  <td>{{ peticio.nom_centre }}</td>
+  <td>{{ peticio.taller_titol || 'No especificat' }}</td>
+  <td>{{ peticio.seleccio_tallers?.num_alumnes }}</td>
+  <td>
+    <span :class="peticio.estat === 'ASSIGNAT' ? 'completat' : 'pendent'">
+      {{ peticio.estat === 'ASSIGNAT' ? 'Assignat' : 'Pendent' }}
+    </span>
+  </td>
+</tr>
       </tbody>
     </table>
   </div>
@@ -36,7 +37,8 @@ const peticions = ref([]);
 // Funció per anar a buscar les dades al backend
 const carregarPeticions = async () => {
   try {
-    const res = await fetch('http://localhost:3000/api/peticions');
+    // Fem servir la ruta relativa per a què el proxy de Vite funcioni
+    const res = await fetch('/api/peticions'); 
     if (res.ok) {
       peticions.value = await res.json();
     }

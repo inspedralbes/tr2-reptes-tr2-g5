@@ -32,4 +32,15 @@ router.patch('/:id/finalitzar', async (req, res) => {
     await finalitzarPeticio(req, res);
 });
 
+// Afegeix aquesta ruta al principi, abans de la de /admin
+router.get('/', async (req, res) => {
+    const { getPeticions } = usePeticions(); 
+    await getPeticions(req, res);
+});
+
+// Afegeix això per enllaçar amb la funció getPeticions del controlador
+router.get('/', async (req, res) => {
+    const { getPeticions } = usePeticions(); 
+    await getPeticions(req, res);
+});
 module.exports = router;
