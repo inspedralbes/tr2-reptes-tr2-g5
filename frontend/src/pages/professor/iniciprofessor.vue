@@ -5,10 +5,11 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const tallers = ref([])
 const loading = ref(true)
-const tab = ref(0) // Control de les pestanyes (0: Pendents, 1: Finalitzats)
+const tab = ref(0) 
+
+// 1. Agafem el nom de l'usuari del localStorage (el que hem guardat al Login)
 const NOM_PROFESSOR = localStorage.getItem('userName') || "Usuari"; 
 
-// Separem els tallers segons el seu estat
 const tallersPendents = computed(() => tallers.value.filter(t => !t.finalitzat))
 const tallersFinalitzats = computed(() => tallers.value.filter(t => t.finalitzat))
 
@@ -19,12 +20,22 @@ const headers = [
   { title: 'ACCIONS', key: 'actions', align: 'end', sortable: false, class: 'header-style' },
 ]
 
+// 2. FUNCIÓ CORREGIDA: Sense localhost, per evitar errors de CORS
 const carregarTallers = async () => {
   try {
-    const res = await fetch(`http://localhost:3000/api/peticions/professor/${encodeURIComponent(NOM_PROFESSOR)}`)
-    if (res.ok) tallers.value = await res.json()
-  } catch (e) { console.error("Error:", e) } 
-  finally { loading.value = false }
+    // Fem servir la ruta relativa que el teu servidor Apache o el proxy de Vite redirigirà al backend
+    const res = await fetch(`/api/peticions/professor/${encodeURIComponent(NOM_PROFESSOR)}`)
+    
+    if (res.ok) {
+      tallers.value = await res.json()
+    } else {
+      console.error("Error en la resposta del servidor")
+    }
+  } catch (e) { 
+    console.error("Error de connexió:", e) 
+  } finally { 
+    loading.value = false 
+  }
 }
 
 const anarADetalls = (id) => router.push(`/professor/detallsprofessor?id=${id}`)

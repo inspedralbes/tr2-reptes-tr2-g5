@@ -2,33 +2,36 @@ const { getDB } = require('../config/db');
 const { ObjectId } = require('mongodb');
 
 const usePeticions = () => {
-    const getPeticionsProfessor = async (req, res) => {
-        try {
-            const db = getDB();
-            const { nomProfessor } = req.params; 
+    // A peticioController.js
+const getPeticionsProfessor = async (req, res) => {
+    try {
+        const db = getDB();
+        const { nomProfessor } = req.params; 
 
-            const peticions = await db.collection('peticions').find({ 
-                professorId: nomProfessor,
-                estat: 'ASSIGNAT' 
-            }).toArray();
+        // BUSQUEDA AVANÇADA: Busquem dins de l'array 'referents' el camp 'nom'
+        // Això compleix el requisit de "Consultes sobre camps imbricats" (dot notation) 
+        const peticions = await db.collection('peticions').find({ 
+            "referents.nom": nomProfessor,
+            estat: 'ASSIGNAT' 
+        }).toArray();
 
-            const promeses = peticions.map(async (p) => {
-                const taller = await db.collection('tallers').findOne({ 
-                    _id: new ObjectId(p.seleccio_tallers.taller_id) 
-                });
-                return {
-                    ...p,
-                    taller_titol: taller ? taller.titol : 'Taller no trobat'
-                };
+        // Utilitzem promeses per sincronitzar la cerca dels títols dels tallers [cite: 124]
+        const promeses = peticions.map(async (p) => {
+            const taller = await db.collection('tallers').findOne({ 
+                _id: new ObjectId(p.seleccio_tallers.taller_id) 
             });
+            return {
+                ...p,
+                taller_titol: taller ? taller.titol : 'Taller no trobat'
+            };
+        });
 
-            const resultat = await Promise.all(promeses);
-            res.status(200).json(resultat);
-        } catch (error) {
-            console.error("Error en peticions professor:", error);
-            res.status(500).json({ error: "Error en carregar tallers del professor" });
-        }
-    };
+        const resultat = await Promise.all(promeses);
+        res.status(200).json(resultat);
+    } catch (error) {
+        res.status(500).json({ error: "Error en carregar tallers del professor" });
+    }
+};
 
     const getPeticions = async (req, res) => {
         try {
