@@ -37,16 +37,23 @@ const peticions = ref([]);
 // Funció per anar a buscar les dades al backend
 const carregarPeticions = async () => {
   try {
-    // Fem servir la ruta relativa per a què el proxy de Vite funcioni
-    const res = await fetch('/api/peticions'); 
-    if (res.ok) {
-      peticions.value = await res.json();
+    // LLEGIM LA CLAU CORRECTA (userName) que has guardat al login
+    const nomDelCentre = localStorage.getItem('userName'); 
+    
+    if (nomDelCentre) {
+      // Cridem a la ruta del backend amb el nom real , encode per que l'espai del snoms no sigui un problema.
+      const res = await fetch(`/api/peticions/centre/${encodeURIComponent(nomDelCentre)}`);
+      
+      if (res.ok) {
+        peticions.value = await res.json();
+      }
+    } else {
+      console.warn("No s'ha trobat el nom del centre al localStorage");
     }
   } catch (error) {
-    console.error("Error carregant les peticions:", error);
+    console.error("Error carregant les peticions del centre:", error);
   }
 };
-
 // Executar la funció quan el component s'ha muntat
 onMounted(() => {
   carregarPeticions();

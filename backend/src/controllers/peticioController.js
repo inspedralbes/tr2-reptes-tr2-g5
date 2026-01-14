@@ -2,46 +2,28 @@ const { getDB } = require('../config/db');
 const { ObjectId } = require('mongodb');
 
 const usePeticions = () => {
-    // A peticioController.js
-const getPeticionsProfessor = async (req, res) => {
-    try {
-        const db = getDB();
-        const { nomProfessor } = req.params; 
-
-        // BUSQUEDA AVANÇADA: Busquem dins de l'array 'referents' el camp 'nom'
-        // Això compleix el requisit de "Consultes sobre camps imbricats" (dot notation) 
-        const peticions = await db.collection('peticions').find({ 
-            "referents.nom": nomProfessor,
-            estat: 'ASSIGNAT' 
-        }).toArray();
-
-        // Utilitzem promeses per sincronitzar la cerca dels títols dels tallers [cite: 124]
-        const promeses = peticions.map(async (p) => {
-            const taller = await db.collection('tallers').findOne({ 
-                _id: new ObjectId(p.seleccio_tallers.taller_id) 
-            });
-            return {
-                ...p,
-                taller_titol: taller ? taller.titol : 'Taller no trobat'
-            };
-        });
-
-        const resultat = await Promise.all(promeses);
-        res.status(200).json(resultat);
-    } catch (error) {
-        res.status(500).json({ error: "Error en carregar tallers del professor" });
-    }
-};
-
-    const getPeticions = async (req, res) => {
+    
+    // 1. NOVA FUNCIÓ PER A CENTRES (Dins de usePeticions)
+    const getPeticionsPerCentre = async (req, res) => {
         try {
             const db = getDB();
-            const peticions = await db.collection('peticions').find().toArray();
-            
+            const { centreNom } = req.params;
+
+            // Busquem peticions que coincideixin amb el nom del centre (ignorant majúscules)
+            const peticions = await db.collection('peticions')
+                .find({ nom_centre: { $regex: `^${centreNom}$`, $options: 'i' } })
+                .toArray();
+
+            // Enllaçar amb els títols dels tallers
             const promeses = peticions.map(async (p) => {
-                const taller = await db.collection('tallers').findOne({ 
-                    _id: new ObjectId(p.seleccio_tallers.taller_id) 
-                });
+                let tallerId;
+                try {
+                    tallerId = new ObjectId(p.seleccio_tallers.taller_id);
+                } catch (e) {
+                    return { ...p, taller_titol: 'ID de taller no vàlid' };
+                }
+
+                const taller = await db.collection('tallers').findOne({ _id: tallerId });
                 return {
                     ...p,
                     taller_titol: taller ? taller.titol : 'Taller no trobat'
@@ -51,71 +33,72 @@ const getPeticionsProfessor = async (req, res) => {
             const resultat = await Promise.all(promeses);
             res.status(200).json(resultat);
         } catch (error) {
-            console.error("Error backend:", error);
-            res.status(500).json({ error: "Error en carregar peticions" });
+            console.error("Error a getPeticionsPerCentre:", error);
+            res.status(500).json({ error: "Error al carregar les peticions del centre" });
         }
     };
 
-    // CORREGIT: Afegit req per evitar error 500
-    const getPeticionsAdmin = async (req, res) => {
+    const getPeticionsProfessor = async (req, res) => {
         try {
             const db = getDB();
-            const peticions = await db.collection('peticions').find().toArray();
-            
+            const { nomProfessor } = req.params; 
+            const peticions = await db.collection('peticions').find({ 
+                "referents.nom": nomProfessor,
+                estat: 'ASSIGNAT' 
+            }).toArray();
+
             const promeses = peticions.map(async (p) => {
                 const taller = await db.collection('tallers').findOne({ 
                     _id: new ObjectId(p.seleccio_tallers.taller_id) 
                 });
-                return {
-                    ...p,
-                    centreId: { nom: p.nom_centre || 'Centre' },
-                    tallerId: { titol: taller ? taller.titol : 'Pendent' },
-                    detalls: {
-                        coordinador: p.nom_coordinador,
-                        alumnes: p.seleccio_tallers?.num_alumnes,
-                        referent: p.referent_contacte?.nom,
-                        email: p.referent_contacte?.correu,
-                        comentari: p.comentari || 'Sense comentaris'
-                    }
-                };
+                return { ...p, taller_titol: taller ? taller.titol : 'Taller no trobat' };
             });
 
             const resultat = await Promise.all(promeses);
             res.status(200).json(resultat);
         } catch (error) {
-            console.error("Error en getPeticionsAdmin:", error);
+            res.status(500).json({ error: "Error en carregar tallers del professor" });
+        }
+    };
+
+    const getPeticions = async (req, res) => {
+        try {
+            const db = getDB();
+            const peticions = await db.collection('peticions').find().toArray();
+            res.status(200).json(peticions);
+        } catch (error) {
+            res.status(500).json({ error: "Error" });
+        }
+    };
+
+    const getPeticionsAdmin = async (req, res) => {
+        try {
+            const db = getDB();
+            const peticions = await db.collection('peticions').aggregate([
+                {
+                    $lookup: {
+                        from: 'tallers',
+                        localField: 'seleccio_tallers.taller_id',
+                        foreignField: '_id',
+                        as: 'tallerId'
+                    }
+                },
+                { $unwind: { path: '$tallerId', preserveNullAndEmptyArrays: true } }
+            ]).toArray();
+            res.status(200).json(peticions);
+        } catch (error) {
             res.status(500).json({ error: "Error admin" });
         }
     };
 
-    // --- FUNCIÓ MODIFICADA AMB VALIDACIÓ D'ALUMNES ---
     const createPeticio = async (req, res) => {
         try {
             const db = getDB();
-            const { taller_id, num_alumnes } = req.body.seleccio_tallers;
-
-            // 1. Busquem el taller per comprovar el seu límit
-            const taller = await db.collection('tallers').findOne({ 
-                _id: new ObjectId(taller_id) 
-            });
-
-            // 2. Validació de seguretat al servidor
-            if (taller && num_alumnes > taller.max_alumnes) {
-                console.log(`⚠️ Intent de petició bloquejat: ${num_alumnes} alumnes superen el límit de ${taller.max_alumnes}`);
-                return res.status(400).json({ 
-                    error: `El nombre d'alumnes (${num_alumnes}) supera el màxim permès (${taller.max_alumnes}).` 
-                });
-            }
-
-            // 3. Si tot és correcte, guardem
-            const nova = { ...req.body, estat: "PENDENT", data_creacio: new Date() };
-            const result = await db.collection('peticions').insertOne(nova);
-            
-            console.log("📩 Nova petició guardada amb èxit:", result.insertedId);
+            const novaPeticio = { ...req.body, data_creacio: new Date(), estat: 'PENDENT' };
+            const result = await db.collection('peticions').insertOne(novaPeticio);
             res.status(201).json({ id: result.insertedId });
         } catch (error) {
-            console.error("Error al crear petició:", error);
-            res.status(500).json({ error: "Error al crear la petició" });
+            res.status(500).json({ error: "Error al crear" });
         }
     };
 
@@ -127,7 +110,6 @@ const getPeticionsProfessor = async (req, res) => {
                 { _id: new ObjectId(id) },
                 { $set: { estat: req.body.estat, professorId: req.body.professorId } }
             );
-            
             res.status(200).json({ missatge: "Fet" });
         } catch (error) {
             res.status(500).json({ error: "Error" });
@@ -139,31 +121,25 @@ const getPeticionsProfessor = async (req, res) => {
             const db = getDB();
             const { id } = req.params;
             const { checklist } = req.body;
-
             await db.collection('peticions').updateOne(
                 { _id: new ObjectId(id) },
-                { 
-                    $set: { 
-                        finalitzat: true, 
-                        checklist_detalls: checklist,
-                        data_finalitzacio: new Date()
-                    } 
-                }
+                { $set: { finalitzat: true, checklist_detalls: checklist, data_finalitzacio: new Date() } }
             );
-
             res.status(200).json({ missatge: "Taller finalitzat amb èxit" });
         } catch (error) {
-            res.status(500).json({ error: "Error al finalitzar el taller" });
+            res.status(500).json({ error: "Error al finalitzar" });
         }
     };
 
+    // EXPORTEM TOTES LES FUNCIONS INCLOENT LA NOVA
     return { 
         getPeticions, 
         getPeticionsAdmin, 
+        getPeticionsPerCentre,
         createPeticio, 
-        updateEstat, 
+        updateEstat,
         getPeticionsProfessor,
-        finalitzarPeticio 
+        finalitzarPeticio
     };
 };
 
