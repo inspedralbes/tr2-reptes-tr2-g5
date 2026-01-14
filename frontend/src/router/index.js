@@ -1,21 +1,28 @@
-/**
- * router/index.js
- */
 import { createRouter, createWebHistory } from 'vue-router'
-import { routes } from 'vue-router/auto-routes' // Mantenemos tus rutas automáticas
-import { useAuthStore } from '@/stores/auth'    // Importamos el store
+import { routes } from 'vue-router/auto-routes' 
+import { useAuthStore } from '@/stores/auth'
+
+// CAMBIA ESTA LÍNEA: Asegúrate de que el nombre coincida con el nuevo nombre del archivo
+import ConfirmarPage from '@/pages/confirmar-participacion.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes,
+  routes: [
+    ...routes,
+    {
+      path: '/confirmar-participacion',
+      name: 'ConfirmarParticipacion',
+      component: ConfirmarPage
+    }
+  ],
 })
-
 // --- AQUÍ AÑADIMOS LA PROTECCIÓN (GUARDIA GLOBAL) ---
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  // 1. Definir páginas públicas (que no requieren login)
-  const publicPages = ['/login', '/register', '/']; 
+  // 1. Definir páginas públicas (Añadimos la ruta del correo)
+  const publicPages = ['/login', '/register', '/', '/confirmar-participacion']; 
+  
   // Si la ruta actual NO está en la lista de públicas, requiere auth
   const authRequired = !publicPages.includes(to.path);
 

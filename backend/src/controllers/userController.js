@@ -1,6 +1,16 @@
 const { getDB } = require('../config/db');
 const { ObjectId } = require('mongodb');
+const crypto = require('crypto'); // MOGUT AQUÍ DALT (MOLT IMPORTANT)
+const nodemailer = require('nodemailer'); // 1. AFEGIR AIXÒ
 
+// CONFIGURACIÓN DE CORREO (Asegúrate de poner tu clave de 16 letras)
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'martamartahf@gmail.com', // PONER EMAIL REAL
+        pass: 'zvol wsbs kljw zvqs ' // // SE TIENE Q VERIFICAR LA CUENTA DE GMAIL Y GENERAR CONTRASEÑA
+    }
+});
 // LLISTAR USUARIS
 const getUsers = async (req, res) => {
     try {
@@ -149,12 +159,130 @@ const getUserById = async (req, res) => {
     }
 };
 
-// EXPORTACIÓN ÚNICA (Correcta)
+
+// --- PASO 1: EL ADMIN ENVÍA LA INVITACIÓN ---
+// Esta función se activa cuando tú desde el panel de Admin le das a "Invitar"
+const inviteCentre = async (req, res) => {
+    try {
+        const db = getDB();
+        const { email, nom } = req.body;
+
+        if (!email || !nom) return res.status(400).json({ error: "Faltan datos del centro" });
+
+        const token = crypto.randomBytes(20).toString('hex');
+        
+        const nouCentrePendent = {
+            nom,
+            email,
+            rol: 'centre',
+            estat: 'invitat', // El centro está en espera
+            token_invitacio: token,
+            data_invitacio: new Date()
+        };
+
+        await db.collection('usuaris').insertOne(nouCentrePendent);
+
+        // En userController.js -> inviteCentre
+// Este enlace debe coincidir con la URL de tu frontend
+const linkAceptar = `http://localhost:3000/confirmar-participacion?token=${token}`; 
+
+await transporter.sendMail({
+    from: '"Proyecto ENGINY" <martamartahf@gmail.com>', // Cambia el from para que coincida con tu auth
+    to: email, 
+    subject: `Invitación Proyecto ENGINY - Centro ${nom}`,
+    html: `
+        <div style="font-family: sans-serif; max-width: 600px; border: 1px solid #eee; padding: 20px;">
+            <h2>Hola ${nom},</h2>
+            <p>El equipo de <strong>ENGINY</strong> le invita a participar en los talleres de este año.</p>
+            <p>¿Desean participar con sus alumnos?</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${linkAceptar}" 
+                   style="background-color: #28a745; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                   SÍ, QUEREMOS PARTICIPAR
+                </a>
+            </div>
+            <p style="color: #666; font-size: 12px;">Al hacer clic, se le redirigirá a la página de confirmación.</p>
+        </div>`
+});
+
+        res.status(201).json({ missatge: "Invitación enviada al centro", token });
+    } catch (error) {
+        console.error("ERROR INVITACIÓN:", error);
+        res.status(500).json({ error: "Error al enviar la invitación" });
+    }
+};
+// --- PASO 2: EL CENTRO CONFIRMA EN LA WEB Y RECIBE EL SEGUNDO EMAIL ---
+const confirmParticipation = async (req, res) => {
+    try {
+        const db = getDB();
+        const { token } = req.body;
+
+        if (!token) return res.status(400).json({ error: "Token obligatorio" });
+
+        // 1. Generem la contrasenya aleatòria (8 caràcters)
+        const passwordAuto = crypto.randomBytes(4).toString('hex'); 
+
+        // 2. Busquem el centre pel token i l'activem a la base de dades
+        const result = await db.collection('usuaris').findOneAndUpdate(
+            { token_invitacio: token, estat: 'invitat' },
+            { 
+                $set: { 
+                    password: passwordAuto, 
+                    estat: 'actiu', 
+                    token_invitacio: null, // El token ja no es podra tornar a fer servir
+                    data_confirmacio: new Date()
+                } 
+            },
+            { returnDocument: 'after' }
+        );
+
+        const usuari = result.value || result;
+        if (!usuari) return res.status(400).json({ error: "Token no válido o ya usado" });
+
+        // 3. SEGON CORREU: Enviem les credencials generades
+        await transporter.sendMail({
+            from: '"Proyecto ENGINY" <martamartahf@gmail.com>',
+            to: usuari.email,
+            subject: '¡Cuenta Activada! - Credenciales de acceso ENGINY',
+            html: `
+                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; max-width: 500px;">
+                    <h2 style="color: #2c3e50;">¡Bienvenidos al Proyecto ENGINY!</h2>
+                    <p>La vuestra participación ha sido confirmada correctamente.</p>
+                    <p>Podéis acceder a vuestro panel de gestión con los siguientes datos:</p>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid #ddd;">
+                        <p style="margin: 5px 0;"><strong>Usuario:</strong> ${usuari.email}</p>
+                        <p style="margin: 5px 0;"><strong>Contraseña:</strong> <span style="font-family: monospace; font-size: 1.2em; color: #d63384; font-weight: bold;">${passwordAuto}</span></p>
+                    </div>
+                    <div style="text-align: center; margin-top: 25px;">
+                        <a href="http://localhost:3000/login" 
+                           style="background-color: #1a73e8; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                           Ir a Iniciar Sesión
+                        </a>
+                    </div>
+                    <p style="font-size: 12px; color: #666; margin-top: 20px;">Por seguridad, os recomendamos cambiar la contraseña una vez hayáis entrado.</p>
+                </div>`
+        });
+
+        // 4. RESPOSTA AL FRONTEND: Enviem les dades perquè el centre les vegi a la pantalla de confirmar.vue
+        res.status(200).json({ 
+            missatge: "Participació confirmada",
+            email: usuari.email,
+            password: passwordAuto 
+        });
+
+    } catch (error) {
+        console.error("ERROR EN ACTIVACIÓN:", error);
+        res.status(500).json({ error: "Error al activar el centro" });
+    }
+};
+    
 module.exports = {
     getUsers,
     createUser,
     updateUser,
     deleteUser,
     getProfessors,
-    getUserById
+    getUserById,
+    inviteCentre,
+    confirmParticipation
 };

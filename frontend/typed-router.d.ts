@@ -29,6 +29,7 @@ declare module 'vue-router/auto-routes' {
     '/centre/estatpeticions': RouteRecordInfo<'/centre/estatpeticions', '/centre/estatpeticions', Record<never, never>, Record<never, never>>,
     '/centre/formulariCentre': RouteRecordInfo<'/centre/formulariCentre', '/centre/formulariCentre', Record<never, never>, Record<never, never>>,
     '/centre/indexcentre': RouteRecordInfo<'/centre/indexcentre', '/centre/indexcentre', Record<never, never>, Record<never, never>>,
+    '/confirmar-participacion': RouteRecordInfo<'/confirmar-participacion', '/confirmar-participacion', Record<never, never>, Record<never, never>>,
     '/login': RouteRecordInfo<'/login', '/login', Record<never, never>, Record<never, never>>,
     '/professor/detallsprofessor': RouteRecordInfo<'/professor/detallsprofessor', '/professor/detallsprofessor', Record<never, never>, Record<never, never>>,
     '/professor/iniciprofessor': RouteRecordInfo<'/professor/iniciprofessor', '/professor/iniciprofessor', Record<never, never>, Record<never, never>>,
@@ -87,6 +88,10 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/centre/indexcentre.vue': {
       routes: '/centre/indexcentre'
+      views: never
+    }
+    'src/pages/confirmar-participacion.vue': {
+      routes: '/confirmar-participacion'
       views: never
     }
     'src/pages/login.vue': {
