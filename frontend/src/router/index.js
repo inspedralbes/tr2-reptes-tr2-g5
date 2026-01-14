@@ -1,19 +1,49 @@
 /**
- * router/index.ts
- *
- * Automatic routes for `./src/pages/*.vue`
+ * router/index.js
  */
-
-// Composables
 import { createRouter, createWebHistory } from 'vue-router'
-import { routes } from 'vue-router/auto-routes'
+import { routes } from 'vue-router/auto-routes' // Mantenemos tus rutas automáticas
+import { useAuthStore } from '@/stores/auth'    // Importamos el store
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 })
 
-// Workaround for https://github.com/vitejs/vite/issues/11804
+// --- AQUÍ AÑADIMOS LA PROTECCIÓN (GUARDIA GLOBAL) ---
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore()
+
+  // 1. Definir páginas públicas (que no requieren login)
+  const publicPages = ['/login', '/register', '/']; 
+  // Si la ruta actual NO está en la lista de públicas, requiere auth
+  const authRequired = !publicPages.includes(to.path);
+
+  // 2. Si intenta entrar a zona privada sin estar logueado -> Login
+  if (authRequired && !authStore.isAuthenticated) {
+    return next('/login');
+  }
+
+  // 3. Si ya está logueado e intenta ir al Login -> Redirigir a su panel
+  if (to.path === '/login' && authStore.isAuthenticated) {
+    const role = authStore.user?.rol;
+    if (role === 'admin') return next('/admin/indexadmin');
+    if (role === 'centre') return next('/centre/indexcentre');
+    if (role === 'professor') return next('/professor/iniciprofessor');
+    // Si no tiene rol claro, dejar pasar o ir a home
+  }
+
+  // 4. (Opcional) Protección extra por roles basada en la URL
+  // Si intenta entrar en /admin y no es admin
+  if (to.path.startsWith('/admin') && authStore.user?.rol !== 'admin') {
+     // return next('/'); // Descomenta para expulsar a usuarios sin permisos
+  }
+
+  next();
+});
+// ----------------------------------------------------
+
+// Tu código existente para el workaround de Vite
 router.onError((err, to) => {
   if (err?.message?.includes?.('Failed to fetch dynamically imported module')) {
     if (localStorage.getItem('vuetify:dynamic-reload')) {

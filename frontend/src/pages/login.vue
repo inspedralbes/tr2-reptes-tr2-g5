@@ -39,8 +39,14 @@
                 bg-color="grey-lighten-5"
               ></v-text-field>
 
-              <v-alert v-if="error" type="error" variant="tonal" class="mb-6" density="compact">
-                {{ error }}
+              <v-alert 
+                v-if="authStore.error" 
+                type="error" 
+                variant="tonal" 
+                class="mb-6" 
+                density="compact"
+              >
+                {{ authStore.error }}
               </v-alert>
 
               <v-btn
@@ -49,7 +55,7 @@
                 color="blue-darken-4"
                 size="x-large"
                 class="text-none font-weight-bold elevation-4 mt-4"
-                :loading="loading"
+                :loading="authStore.loading"
                 rounded="lg"
               >
                 Iniciar Sessió
@@ -65,56 +71,37 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 
-const router = useRouter(); 
-const loading = ref(false);
-const error = ref('');
+const router = useRouter();
+const authStore = useAuthStore();
+
 const email = ref('');
 const password = ref('');
 
 const handleSubmit = async () => {
-  error.value = '';
-  loading.value = true;
-
-  if (!email.value || !password.value) {
-      error.value = "Si us plau, omple tots els camps.";
-      loading.value = false;
-      return;
+  // Intentar login
+  const usuario = await authStore.login(email.value, password.value);
+  
+  // Si el login fue exitoso (usuario no es null)
+  if (usuario) {
+    // Redirigir según el rol
+    if (usuario.rol === 'admin') {
+      router.push('/admin/indexadmin');
+    } else if (usuario.rol === 'centre') {
+      router.push('/centre/indexcentre');
+    } else if (usuario.rol === 'professor') {
+      router.push('/professor/iniciprofessor');
+    } else {
+      router.push('/'); // Fallback
+    }
   }
-
-  try {
-      // Recorda que fem servir rutes relatives pel PROXY de Vite
-      const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.value, password: password.value })
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Error en la petició');
-
-      localStorage.setItem('userRole', data.usuari.rol);
-      localStorage.setItem('userName', data.usuari.nom);
-      
-      // Redirecció segons rol
-      const routes = {
-        admin: '/admin/indexadmin',
-        centre: '/centre/indexcentre',
-        professor: '/professor/iniciprofessor'
-      };
-      router.push(routes[data.usuari.rol] || '/');
-
-  } catch (err) {
-      error.value = err.message || "Error de connexió";
-  } finally {
-      loading.value = false;
-  }
+  // Si falla, el v-alert mostrará authStore.error automáticamente
 };
 </script>
 
 <style scoped>
 .login-background {
-  /* Pots canviar aquesta URL per una imatge de la teva carpeta assets */
   background-image: url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070');
   background-size: cover;
   background-position: center;
@@ -127,16 +114,16 @@ const handleSubmit = async () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(13, 71, 161, 0.4); /* Blau fosc semi-transparent */
-  backdrop-filter: blur(4px); /* Efecte de desenfocament de fons */
+  background: rgba(13, 71, 161, 0.4);
+  backdrop-filter: blur(4px);
 }
 
 .z-index-form {
   position: relative;
   z-index: 2;
 }
+
 :deep(.v-card) {
-  /* CANVI: Fons blanc pur per a la targeta */
   background-color: white !important;
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
