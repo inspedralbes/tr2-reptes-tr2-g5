@@ -19,4 +19,4 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    command: npm run dev -- --host --port 3000
+    command: sh -c "npm install pinia && npm run dev -- --host --port 3000"
