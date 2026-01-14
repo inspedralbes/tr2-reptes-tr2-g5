@@ -1,31 +1,30 @@
 const { getDB } = require('../config/db');
 const { ObjectId } = require('mongodb');
 
+// A src/controllers/assignacioController.js
 exports.crearAssignacio = async (req, res) => {
     try {
         const db = getDB();
-        const { peticioId, professorId } = req.body;
+        const { peticioId, tallerId } = req.body; // Ja no demanem professorId
 
-        // Actualitzem la petició a la col·lecció 'peticions'
         const result = await db.collection('peticions').updateOne(
             { _id: new ObjectId(peticioId) },
             { 
                 $set: { 
-                    estat: 'ASSIGNAT', // Majúscules exactes per al chip
-                    professorId: professorId,
+                    estat: 'ASSIGNAT',
+                    "seleccio_tallers.taller_id": tallerId, // Confirmem/Actualitzem el taller
                     data_assignacio: new Date()
+                    // professorId s'ha eliminat d'aquí
                 } 
             }
         );
 
         if (result.matchedCount === 0) {
-            return res.status(404).json({ error: "No s'ha trobat la petició per actualitzar" });
+            return res.status(404).json({ error: "No s'ha trobat la petició" });
         }
 
-        console.log(`✅ Petició ${peticioId} actualizada a ASSIGNAT`);
-        res.status(201).json({ missatge: "Assignació guardada correctament" });
+        res.status(201).json({ missatge: "Taller assignat correctament" });
     } catch (error) {
-        console.error("❌ Error en crearAssignacio:", error);
-        res.status(500).json({ error: "Error intern del servidor" });
+        res.status(500).json({ error: "Error intern" });
     }
 };

@@ -11,6 +11,7 @@ const state = reactive({
   search: '',
   dialog: false,
   selected: null,
+  selectedTaller: null,
   prof: null,
   accepted: false,
   tab: 0
@@ -23,23 +24,25 @@ const colors = {
   REVISANT: 'blue-lighten-3'
 }
 
-// CORRECCIÓN: Lista reactiva para cargar profesores reales del backend
-const llistaProfessors = ref([])
+const llistaTallers = ref([])
 
-const carregarProfessors = async () => {
+const carregarTallers = async () => {
   try {
-    const res = await fetch('/api/users')
+    const res = await fetch('/api/tallers')
     if (res.ok) {
-      const usuaris = await res.json()
-      // Filtramos solo los que son profesores y guardamos sus nombres
-      llistaProfessors.value = usuaris
-        .filter(u => u.rol === 'professor')
-        .map(u => u.nom)
+      llistaTallers.value = await res.json()
     }
   } catch (error) {
-    console.error("Error carregant professors:", error)
+    console.error("Error carregant tallers:", error)
   }
 }
+
+onMounted(() => {
+  carregar()
+  carregarTallers() // <--- ASEGURA'T QUE ES CRIDA AQUÍ
+})
+
+
 
 const carregar = async () => {
   try {
@@ -52,11 +55,6 @@ const carregar = async () => {
     console.error("Error carregant:", error)
   }
 }
-
-onMounted(() => {
-  carregar()
-  carregarProfessors()
-})
 
 // Lógica de filtrado mejorada
 const filtered = computed(() => {
@@ -79,7 +77,7 @@ const filtered = computed(() => {
 
 const obrir = (p) => {
   state.selected = p
-  state.prof = null
+  state.selectedTaller = null
   state.accepted = false
   state.tab = 0
   state.dialog = true
@@ -87,14 +85,16 @@ const obrir = (p) => {
 
 const accio = async (tipus) => {
   if (tipus === 'REBUTJAR' && !confirm("Estàs segur?")) return
-  if (tipus === 'ASSIGNAR' && !state.prof) return alert("Selecciona un professor.")
+  if (tipus === 'ASSIGNAR' && !state.selectedTaller) return alert("Selecciona un taller.")
 
-  // SEMPRE fem servir la ruta de peticions per actualitzar l'estat i el professor
   const url = `/api/peticions/${state.selected._id}/estat`
   
   const body = tipus === 'REBUTJAR' 
     ? { estat: 'REBUTJADA' } 
-    : { estat: 'ASSIGNAT', professorId: state.prof } // Enviem el nom del professor aquí
+    : { 
+        estat: 'ASSIGNAT', 
+        tallerId: state.selectedTaller // Només enviem el taller
+      }
 
   try {
     const res = await fetch(url, {
@@ -106,7 +106,7 @@ const accio = async (tipus) => {
     if (res.ok) {
       state.dialog = false
       state.accepted = false
-      state.prof = null
+      state.selectedTaller = null
       await carregar() // Això refrescarà la taula de l'admin
     }
   } catch (error) {
@@ -195,68 +195,81 @@ const accio = async (tipus) => {
     </v-card>
 
     <v-dialog v-model="state.dialog" max-width="700" persistent>
-      <v-card class="rounded-lg bg-dark-dialog text-white overflow-hidden">
-        <v-tabs v-model="state.tab" bg-color="black" color="blue-lighten-1" align-tabs="start">
-          <v-tab :value="0">DETALLS</v-tab>
-          <v-tab :value="1">COMENTARIS <v-badge v-if="state.selected?.comentaris" color="blue-lighten-1" dot class="ml-2"></v-badge></v-tab>
-        </v-tabs>
+  <v-card class="rounded-lg bg-dark-dialog text-white overflow-hidden">
+    <v-tabs v-model="state.tab" bg-color="black" color="blue-lighten-1" align-tabs="start">
+      <v-tab :value="0">DETALLS</v-tab>
+      <v-tab :value="1">COMENTARIS <v-badge v-if="state.selected?.comentaris" color="blue-lighten-1" dot class="ml-2"></v-badge></v-tab>
+    </v-tabs>
 
-        <v-window v-model="state.tab">
-          <v-window-item :value="0">
-            <v-card-text class="pa-6">
-              <v-row>
-                <v-col cols="12" md="6">
-                  <div class="info-item mb-4"><span class="text-grey-lighten-1 text-overline">CENTRE</span><p class="text-blue-lighten-3 font-weight-bold">{{ state.selected?.nom_centre }}</p></div>
-                  <div class="info-item mb-4"><span class="text-grey-lighten-1 text-overline">COORDINADOR/A</span><p>{{ state.selected?.nom_coordinador || 'No indicat' }}</p></div>
-                  <div class="info-item"><span class="text-grey-lighten-1 text-overline">Nº ALUMNES</span><p>{{ state.selected?.seleccio_tallers?.num_alumnes }} alumnes</p></div>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <div class="info-item mb-4"><span class="text-grey-lighten-1 text-overline">TALLER SOL·LICITAT</span><p class="white--text font-weight-bold">{{ state.selected?.tallerId?.titol || 'Pendent' }}</p>
-                    <v-chip v-if="state.selected?.tallerId?.modalitat" size="x-small" color="blue-lighten-1" variant="flat" class="mt-1">{{ state.selected.tallerId.modalitat }}</v-chip>
-                  </div>
-                  <div class="info-item mb-4"><span class="text-grey-lighten-1 text-overline">PROFESSOR/A REFERENT</span><p>{{ state.selected?.referent_contacte?.nom }}</p></div>
-                  <div class="info-item"><span class="text-grey-lighten-1 text-overline">CORREU DE CONTACTE</span><p class="text-blue-lighten-4">{{ state.selected?.referent_contacte?.correu }}</p></div>
-                </v-col>
-              </v-row>
-            </v-card-text>
-          </v-window-item>
-
-          <v-window-item :value="1">
-            <v-card-text class="pa-6">
-              <div class="comments-container">
-                <div class="d-flex align-center mb-4"><v-icon color="blue-lighten-1" class="mr-2">mdi-message-text-outline</v-icon><span class="text-h6 font-weight-bold text-blue-lighten-1">Observacions del Centre</span></div>
-                <div v-if="state.selected?.comentaris" class="comment-bubble-large"><p class="text-body-1 comment-text">{{ state.selected?.comentaris }}</p></div>
-                <v-alert v-else type="info" variant="tonal" color="blue-lighten-1" class="mt-2">El centre no ha afegit comentaris per a aquesta petició.</v-alert>
+    <v-window v-model="state.tab">
+      <v-window-item :value="0">
+        <v-card-text class="pa-6">
+          <v-row>
+            <v-col cols="12" md="6">
+              <div class="info-item mb-4"><span class="text-grey-lighten-1 text-overline">CENTRE</span><p class="text-blue-lighten-3 font-weight-bold">{{ state.selected?.nom_centre }}</p></div>
+              <div class="info-item mb-4"><span class="text-grey-lighten-1 text-overline">COORDINADOR/A</span><p>{{ state.selected?.nom_coordinador || 'No indicat' }}</p></div>
+              <div class="info-item"><span class="text-grey-lighten-1 text-overline">Nº ALUMNES</span><p>{{ state.selected?.seleccio_tallers?.num_alumnes }} alumnes</p></div>
+            </v-col>
+            <v-col cols="12" md="6">
+              <div class="info-item mb-4"><span class="text-grey-lighten-1 text-overline">TALLER SOL·LICITAT</span><p class="white--text font-weight-bold">{{ state.selected?.tallerId?.titol || 'Pendent' }}</p>
+                <v-chip v-if="state.selected?.tallerId?.modalitat" size="x-small" color="blue-lighten-1" variant="flat" class="mt-1">{{ state.selected.tallerId.modalitat }}</v-chip>
               </div>
-            </v-card-text>
-          </v-window-item>
-        </v-window>
-
-        <v-divider class="border-opacity-25" color="white"/>
-
-        <v-card-text class="pa-6 bg-black-darken-1">
-          <div v-if="state.selected?.estat !== 'REBUTJADA' && state.selected?.estat !== 'ASSIGNAT'">
-            <div v-if="!state.accepted" class="d-flex justify-center gap-4">
-              <v-btn color="red-darken-3" class="flex-grow-1 mr-2" variant="flat" prepend-icon="mdi-close-circle" @click="accio('REBUTJAR')">REBUTJAR</v-btn>
-              <v-btn color="green-darken-3" class="flex-grow-1 ml-2" variant="flat" prepend-icon="mdi-check-circle" @click="state.accepted = true">ACCEPTAR I ASSIGNAR</v-btn>
-            </div>
-            <v-expand-transition>
-              <div v-if="state.accepted">
-                <v-select v-model="state.prof" :items="llistaProfessors" label="Assignar Professor Responsable" variant="outlined" color="blue-lighten-1" theme="dark" density="comfortable" class="mt-2"/>
-              </div>
-            </v-expand-transition>
-          </div>
-          <v-alert v-else-if="state.selected?.estat === 'ASSIGNAT'" type="success" variant="tonal" density="compact" prepend-icon="mdi-check-bold">Aquesta petició ja està assignada i tancada.</v-alert>
-          <v-alert v-else type="error" variant="tonal" density="compact">Petició Rebutjada</v-alert>
+              <div class="info-item mb-4"><span class="text-grey-lighten-1 text-overline">PROFESSOR/A REFERENT</span><p>{{ state.selected?.referent_contacte?.nom }}</p></div>
+              <div class="info-item"><span class="text-grey-lighten-1 text-overline">CORREU DE CONTACTE</span><p class="text-blue-lighten-4">{{ state.selected?.referent_contacte?.correu }}</p></div>
+            </v-col>
+          </v-row>
         </v-card-text>
+      </v-window-item>
 
-        <v-card-actions class="pa-4 bg-dark-dialog">
-          <v-btn variant="text" color="grey-lighten-1" @click="state.dialog = false">Tancar</v-btn>
-          <v-spacer/>
-          <v-btn v-if="state.accepted" :disabled="!state.prof" color="blue-lighten-1" class="text-white px-8 font-weight-bold" @click="accio('ASSIGNAR')" variant="flat">CONFIRMAR</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <v-window-item :value="1">
+        <v-card-text class="pa-6">
+          <div class="comments-container">
+            <div class="d-flex align-center mb-4"><v-icon color="blue-lighten-1" class="mr-2">mdi-message-text-outline</v-icon><span class="text-h6 font-weight-bold text-blue-lighten-1">Observacions del Centre</span></div>
+            <div v-if="state.selected?.comentaris" class="comment-bubble-large"><p class="text-body-1 comment-text">{{ state.selected?.comentaris }}</p></div>
+            <v-alert v-else type="info" variant="tonal" color="blue-lighten-1" class="mt-2">El centre no ha afegit comentaris per a aquesta petició.</v-alert>
+          </div>
+        </v-card-text>
+      </v-window-item>
+    </v-window>
+
+    <v-divider class="border-opacity-25" color="white"/>
+
+    <v-card-text class="pa-6 bg-black-darken-1">
+      <div v-if="state.selected?.estat !== 'REBUTJADA' && state.selected?.estat !== 'ASSIGNAT'">
+        <div v-if="!state.accepted" class="d-flex justify-center gap-4">
+          <v-btn color="red-darken-3" class="flex-grow-1 mr-2" variant="flat" prepend-icon="mdi-close-circle" @click="accio('REBUTJAR')">REBUTJAR</v-btn>
+          <v-btn color="green-darken-3" class="flex-grow-1 ml-2" variant="flat" prepend-icon="mdi-check-circle" @click="state.accepted = true">ACCEPTAR I ASSIGNAR</v-btn>
+        </div>
+        
+        <v-expand-transition>
+          <div v-if="state.accepted" class="mt-4">
+            <v-select
+              v-model="state.selectedTaller"
+              :items="llistaTallers"
+              item-title="titol"
+              item-value="_id"
+              label="Selecciona el taller definitiu"
+              variant="outlined"
+              prepend-inner-icon="mdi-rhombus-split"
+              color="blue-lighten-1"
+              theme="dark"
+              :hint="`El centre va demanar: ${state.selected?.tallerId?.titol || 'Pendent'}`"
+              persistent-hint
+            />
+          </div>
+        </v-expand-transition>
+      </div>
+      <v-alert v-else-if="state.selected?.estat === 'ASSIGNAT'" type="success" variant="tonal" density="compact" prepend-icon="mdi-check-bold">Aquesta petició ja està assignada i tancada.</v-alert>
+      <v-alert v-else type="error" variant="tonal" density="compact">Petició Rebutjada</v-alert>
+    </v-card-text>
+
+    <v-card-actions class="pa-4 bg-dark-dialog">
+      <v-btn variant="text" color="grey-lighten-1" @click="state.dialog = false">Tancar</v-btn>
+      <v-spacer/>
+      <v-btn v-if="state.accepted" :disabled="!state.selectedTaller" color="blue-lighten-1" class="text-white px-8 font-weight-bold" @click="accio('ASSIGNAR')" variant="flat">CONFIRMAR</v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
   </v-container>
 </template>
 
