@@ -3,6 +3,7 @@ const { ObjectId } = require('mongodb');
 const crypto = require('crypto'); // MOGUT AQUÍ DALT (MOLT IMPORTANT)
 const nodemailer = require('nodemailer'); // 1. AFEGIR AIXÒ
 
+
 // CONFIGURACIÓN DE CORREO (Asegúrate de poner tu clave de 16 letras)
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -160,8 +161,8 @@ const getUserById = async (req, res) => {
 };
 
 
-// --- PASO 1: EL ADMIN ENVÍA LA INVITACIÓN ---
 // Esta función se activa cuando tú desde el panel de Admin le das a "Invitar"
+
 const inviteCentre = async (req, res) => {
     try {
         const db = getDB();
@@ -288,7 +289,70 @@ const confirmParticipation = async (req, res) => {
         res.status(500).json({ error: "Error intern al activar el centre" });
     }
 };
-    
+    // NUEVA FUNCIÓN PARA INVITACIONES MÚLTIPLES
+const inviteMultiple = async (req, res) => {
+    try {
+        const db = getDB();
+        const { centres } = req.body; // Recibimos el array de objetos [{nom, email}, ...]
+
+        if (!centres || !Array.isArray(centres)) {
+            return res.status(400).json({ error: "El format de les dades no és correcte" });
+        }
+
+        // Usamos Promise.all para procesar todos los centros rápidamente
+        const resultados = await Promise.all(centres.map(async (centro) => {
+            const { nom, email } = centro;
+            
+            if (!nom || !email) return null;
+
+            // Generamos token único para este centro
+            const token = crypto.randomBytes(20).toString('hex');
+            
+            const nouCentrePendent = {
+                nom,
+                email,
+                rol: 'centre',
+                estat: 'invitat',
+                token_invitacio: token,
+                data_invitacio: new Date()
+            };
+
+            // Guardamos en la base de datos
+            await db.collection('usuaris').insertOne(nouCentrePendent);
+
+            // Configuramos el enlace de invitación
+            const linkAceptar = `http://localhost:3000/confirmar-participacion?token=${token}`;
+
+            // Enviamos el correo
+            await transporter.sendMail({
+                from: '"Projecte ENGINY" <martamartahf@gmail.com>',
+                to: email,
+                subject: `Invitació Projecte ENGINY - Centre ${nom}`,
+                html: `
+                    <div style="font-family: sans-serif; max-width: 600px; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
+                        <h2 style="color: #333;">Hola ${nom},</h2>
+                        <p>L'equip de <strong>ENGINY</strong> us convida a participar en els tallers d'aquest curs.</p>
+                        <div style="text-align: center; margin: 35px 0;">
+                            <a href="${linkAceptar}" 
+                               style="background-color: #3465a4; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                               SÍ, VOLEM PARTICIPAR
+                            </a>
+                        </div>
+                    </div>`
+            });
+
+            return email;
+        }));
+
+        // Filtramos resultados nulos y respondemos
+        const enviados = resultados.filter(r => r !== null);
+        res.status(201).json({ missatge: `${enviados.length} invitacions enviades`, count: enviados.length });
+
+    } catch (error) {
+        console.error("ERROR INVITACIÓ MÚLTIPLE:", error);
+        res.status(500).json({ error: "Error al processar les invitacions" });
+    }
+};
 module.exports = {
     getUsers,
     createUser,
@@ -297,5 +361,6 @@ module.exports = {
     getProfessors,
     getUserById,
     inviteCentre,
-    confirmParticipation
+    confirmParticipation,
+    inviteMultiple // <--- AÑADE ESTO
 };

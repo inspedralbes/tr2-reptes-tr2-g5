@@ -8,25 +8,81 @@ const router = useRouter()
 // Estados para el diálogo de invitación
 const dialogInvitacio = ref(false)
 const invitacioLoading = ref(false)
-const dadesInvitacio = ref({ nom: '', email: '' })
+const dadesInvitacio = ref([
+  { nom: '', email: '' }
+])
+
 const invitacioError = ref('')
+
+// --- NUEVAS VARIABLES PARA IMPORTACIÓN MASIVA ---
+const dialogMasiva = ref(false)
+const masivaLoading = ref(false)
+const fitxerCSV = ref(null)
+
+const obrirMasiva = () => {
+  fitxerCSV.value = null
+  dialogMasiva.value = true
+}
+
+const processarImportacio = async () => {
+  if (!fitxerCSV.value) return
+  
+  masivaLoading.value = true
+  
+  // Usamos FormData para enviar el archivo al servidor
+  const formData = new FormData()
+  formData.append('file', fitxerCSV.value[0]) // Vuetify file input devuelve un array
+
+  try {
+    const response = await fetch(`${API_URL}/users/import-csv`, {
+      method: 'POST',
+      body: formData // No ponemos headers de Content-Type, el navegador lo hará solo al ser FormData
+    })
+
+    if (response.ok) {
+      const result = await response.json()
+      mostrarMensaje(`S'han enviat ${result.count} invitacions correctament`, 'success')
+      dialogMasiva.value = false
+    } else {
+      mostrarMensaje('Error en el format del fitxer o servidors', 'error')
+    }
+  } catch (e) {
+    mostrarMensaje('Error de connexió', 'error')
+  } finally {
+    masivaLoading.value = false
+  }
+}
 
 // Estados para notificaciones elegantes (Snackbar)
 const snackbar = ref({ show: false, text: '', color: '' })
 
 const obrirDialog = () => {
   invitacioError.value = ''
-  dadesInvitacio.value = { nom: '', email: '' }
+  // Reset a una sola fila vacía
+  dadesInvitacio.value = [{ nom: '', email: '' }]
   dialogInvitacio.value = true
 }
+const afegirFilaCentre = () => {
+  dadesInvitacio.value.push({ nom: '', email: '' })
+}
+
+const eliminarFilaCentre = (index) => {
+  if (dadesInvitacio.value.length > 1) {
+    dadesInvitacio.value.splice(index, 1)
+  }
+}
+
 
 const mostrarNotificacio = (text, color = 'black') => {
   snackbar.value = { show: true, text, color }
 }
 
 const enviarInvitacio = async () => {
-  if (!dadesInvitacio.value.nom || !dadesInvitacio.value.email) {
-    invitacioError.value = "Tots els camps són obligatoris."
+  // Validamos que todos los nombres y emails de todas las filas estén llenos
+  const valid = dadesInvitacio.value.every(c => c.nom.trim() && c.email.trim())
+  
+  if (!valid) {
+    invitacioError.value = "Tots els camps de totes les files han d'estar emplenats."
     return
   }
 
@@ -34,23 +90,30 @@ const enviarInvitacio = async () => {
   invitacioError.value = ''
   
   try {
-    const response = await fetch(`${API_URL}/users/invite`, {
+    // Fíjate que ahora la URL es /invite-multiple
+    const response = await fetch(`${API_URL}/users/invite-multiple`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(dadesInvitacio.value)
+      body: JSON.stringify({
+        centres: dadesInvitacio.value // Enviamos el array de objetos como espera el backend
+      })
     })
 
-    if (response.ok) {
-      mostrarNotificacio(`Invitació enviada amb èxit a ${dadesInvitacio.value.nom}`, 'success')
-      dialogInvitacio.value = false
+   if (response.ok) {
+      mostrarNotificacio(`Invitacions enviades amb èxit`, 'success');
+      dialogInvitacio.value = false;
+      
+      // Reseteamos a la estructura inicial: un array con un objeto vacío
+      dadesInvitacio.value = [{ nom: '', email: '' }]; 
+      
     } else {
-      const errorData = await response.json()
-      invitacioError.value = errorData.error || "Error al enviar la invitació"
+      const errorData = await response.json();
+      invitacioError.value = errorData.error || "Error al enviar les invitacions";
     }
   } catch (e) {
-    invitacioError.value = "Error de connexió amb el servidor"
+    invitacioError.value = "Error de connexió amb el servidor";
   } finally {
-    invitacioLoading.value = false
+    invitacioLoading.value = false;
   }
 }
 
@@ -88,11 +151,10 @@ const mostrarMensaje = (texto, color = 'success') => {
 const cambiarFase = async (valorFase) => {
   cargandoFase.value = true;
   try {
-    const res = await fetch('http://localhost:3001/api/config/update-fase', {
+    // USA ESTA LÍNEA (con API_URL) para que pase por el proxy de Vite
+    const res = await fetch(`${API_URL}/config/update-fase`, { 
       method: 'PUT',
-      headers: { 
-        'Content-Type': 'application/json' // <--- OBLIGATORIO
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nuevaFase: valorFase }) 
     });
 
@@ -134,7 +196,6 @@ onMounted(async () => {
         id: p._id, t: p.centreId?.nom || 'Centre', d: `Vol fer: ${p.tallerId?.titol}` 
       }))
       
-      notifs.value = pendents
       vistes.value = notifs.value.length <= ultimCompteVist.value
     }
     if (resTal.ok) resum.value = (await resTal.json()).slice(0, 5)
@@ -167,61 +228,121 @@ onMounted(async () => {
           <v-progress-circular v-if="cargandoFase" indeterminate size="20" width="2" color="black" />
         </div>
       </div>
-<v-btn 
-  prepend-icon="mdi-email-plus-outline" 
-  color="black" 
-  variant="flat" 
-  class="mr-4 mt-2" 
-  @click="obrirDialog"
->
-  Convidar Centre
-</v-btn>
-      <v-menu width="320" location="bottom end" :close-on-content-click="false">
-        <template v-slot:activator="{ props }">
-          <v-btn icon v-bind="props" class="mt-2" variant="text" @click="marcarComVistes">
-            <v-badge 
-              :model-value="notifs.length > ultimCompteVist" 
-              :content="notifs.length - ultimCompteVist"
-              color="red" 
-              overlap
-              offset-x="3" 
-              offset-y="3"
-              class="pulse-alert"
-            >
-              <v-icon size="30" color="black">mdi-bell-outline</v-icon>
-            </v-badge>
+<div class="d-flex align-center">
+        <div class="d-flex mt-2">
+          <v-btn 
+            prepend-icon="mdi-upload" 
+            variant="outlined" 
+            color="grey-darken-3" 
+            class="mr-2 rounded-lg"
+            @click="obrirMasiva"
+          >
+            Importació Massiva
           </v-btn>
-        </template>
+          
+          <v-btn 
+            prepend-icon="mdi-email-plus-outline" 
+            color="black" 
+            variant="flat" 
+            class="mr-4 rounded-lg" 
+            @click="obrirDialog"
+          >
+            Convidar Centre
+          </v-btn>
+        </div>
 
-        <v-card class="border-consorci shadow-xl menu-notificacions">
-          <v-card-title class="text-subtitle-2 font-weight-bold pa-4 bg-white text-black d-flex justify-space-between align-center">
-            NOTIFICACIONS
-            <v-btn variant="text" size="x-small" color="red" icon="mdi-trash-can-outline" @click="esborrarNotificacions" />
-          </v-card-title>
-          <v-divider/>
-          
-          <v-list class="pa-0 bg-white" max-height="400">
-            <v-list-item v-for="n in notifs" :key="n.id" class="pa-4 item-notificacio" @click="nav('peticionsadmin')">
-              <template v-slot:prepend>
-                <v-icon color="black" class="mr-3">mdi-school-outline</v-icon>
-              </template>
-              <div>
-                <div class="text-body-2 font-weight-bold text-black">{{ n.t }}</div>
-                <div class="text-caption text-grey-darken-3">{{ n.d }}</div>
-              </div>
-            </v-list-item>
+        <v-menu width="320" location="bottom end" :close-on-content-click="false">
+          <template v-slot:activator="{ props }">
+            <v-btn icon v-bind="props" class="mt-2" variant="text" @click="marcarComVistes">
+              <v-badge 
+                :model-value="notifs.length > ultimCompteVist" 
+                :content="notifs.length - ultimCompteVist"
+                color="red" 
+                overlap
+                offset-x="3" 
+                offset-y="3"
+                class="pulse-alert"
+              >
+                <v-icon size="30" color="black">mdi-bell-outline</v-icon>
+              </v-badge>
+            </v-btn>
+          </template>
+
+          <v-card class="border-consorci shadow-xl menu-notificacions">
+            <v-card-title class="text-subtitle-2 font-weight-bold pa-4 bg-white text-black d-flex justify-space-between align-center">
+              NOTIFICACIONS
+              <v-btn variant="text" size="x-small" color="red" icon="mdi-trash-can-outline" @click="esborrarNotificacions" />
+            </v-card-title>
+            <v-divider/>
             
-            <v-list-item v-if="notifs.length === 0" class="pa-10 text-center">
-              <v-list-item-title class="text-grey">No hi ha notificacions</v-list-item-title>
-            </v-list-item>
-          </v-list>
-          
-          <v-btn block variant="flat" color="black" class="text-white rounded-0 py-4" @click="nav('peticionsadmin')">
-            VEURE TOTES LES PETICIONS
-          </v-btn>
-        </v-card>
-      </v-menu>
+            <v-list class="pa-0 bg-white" max-height="400">
+              <v-list-item v-for="n in notifs" :key="n.id" class="pa-4 item-notificacio" @click="nav('peticionsadmin')">
+                <template v-slot:prepend>
+                  <v-icon color="black" class="mr-3">mdi-school-outline</v-icon>
+                </template>
+                <div>
+                  <div class="text-body-2 font-weight-bold text-black">{{ n.t }}</div>
+                  <div class="text-caption text-grey-darken-3">{{ n.d }}</div>
+                </div>
+              </v-list-item>
+              
+              <v-list-item v-if="notifs.length === 0" class="pa-10 text-center">
+                <v-list-item-title class="text-grey">No hi ha notificacions</v-list-item-title>
+              </v-list-item>
+            </v-list>
+            
+            <v-btn block variant="flat" color="black" class="text-white rounded-0 py-4" @click="nav('peticionsadmin')">
+              VEURE TOTES LES PETICIONS
+            </v-btn>
+          </v-card>
+        </v-menu>
+      </div>
     </header>
+
+    <v-dialog v-model="dialogMasiva" max-width="500px">
+      <v-card class="pa-4 rounded-xl">
+        <v-card-title class="d-flex align-center">
+          <v-icon class="mr-3">mdi-file-delimited-outline</v-icon>
+          <span class="text-h6 font-weight-bold">Importar Centres (CSV)</span>
+        </v-card-title>
+        
+        <v-card-text>
+          <p class="text-body-2 text-grey-darken-1 mb-6">
+            Puja un fitxer <strong>.csv</strong> amb les columnes "nom" i "email". 
+            El sistema enviarà una invitació automàtica a cada centre de la llista.
+          </p>
+          
+          <v-file-input
+            v-model="fitxerCSV"
+            label="Selecciona el fitxer CSV"
+            accept=".csv"
+            variant="outlined"
+            prepend-icon="mdi-attachment"
+            show-size
+            color="black"
+          ></v-file-input>
+
+          <v-alert v-if="fitxerCSV" type="info" variant="tonal" density="compact" class="mt-2">
+            Es processarà el fitxer: <strong>{{ fitxerCSV[0]?.name }}</strong>
+          </v-alert>
+        </v-card-text>
+
+        <v-card-actions class="pa-4">
+          <v-spacer />
+          <v-btn variant="text" @click="dialogMasiva = false">Cancel·lar</v-btn>
+          <v-btn 
+            color="black" 
+            variant="flat" 
+            class="px-6 text-white" 
+            :disabled="!fitxerCSV"
+            :loading="masivaLoading"
+            @click="processarImportacio"
+          >
+            Començar Importació
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <v-row class="mb-10">
       <v-col v-for="c in [
@@ -299,33 +420,79 @@ onMounted(async () => {
 
   </v-container>
 
-  <v-dialog v-model="dialogInvitacio" max-width="600px">
-    <v-card>
-      <v-card-title>
-        <span class="text-h6">Convidar Centre</span>
-      </v-card-title>
-      <v-card-text>
-        <v-form>
+  <v-dialog v-model="dialogInvitacio" max-width="800px"> <v-card class="rounded-xl pa-4">
+    <v-card-title class="text-h5 font-weight-bold mb-4">
+      Convidar Centres
+    </v-card-title>
+    
+    <v-card-text>
+      <v-form>
+        <p class="text-subtitle-2 mb-4 text-grey-darken-1">Afegeix el nom i el correu de cada centre que vulguis convidar:</p>
+        
+        <div v-for="(centre, index) in dadesInvitacio" :key="index" class="d-flex align-center ga-3 mb-4">
+          
           <v-text-field
-            v-model="dadesInvitacio.nom"
+            v-model="centre.nom"
             label="Nom del Centre"
-            :error-messages="invitacioError"
+            variant="outlined"
+            density="compact"
+            hide-details
+            prepend-inner-icon="mdi-school"
+            color="black"
           ></v-text-field>
-          <v-text-field
-            v-model="dadesInvitacio.email"
-            label="Correu Electrònic"
-            :error-messages="invitacioError"
-          ></v-text-field>
-        </v-form>
-      </v-card-text>
-      <v-card-actions>
-        <v-btn text @click="dialogInvitacio = false">Cancel·lar</v-btn>
-        <v-btn color="primary" @click="enviarInvitacio" :loading="invitacioLoading">Enviar Invitació</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-</template>
 
+          <v-text-field
+            v-model="centre.email"
+            label="Correu Electrònic"
+            variant="outlined"
+            density="compact"
+            hide-details
+            prepend-inner-icon="mdi-email-outline"
+            color="black"
+          ></v-text-field>
+          
+          <v-btn 
+            v-if="dadesInvitacio.length > 1"
+            icon="mdi-close-circle-outline" 
+            variant="text" 
+            color="red-lighten-1" 
+            size="small"
+            @click="eliminarFilaCentre(index)"
+          ></v-btn>
+        </div>
+
+        <v-btn 
+          variant="text" 
+          color="blue-darken-3" 
+          prepend-icon="mdi-plus-circle-outline" 
+          class="mt-2 text-none font-weight-bold" 
+          @click="afegirFilaCentre"
+        >
+          Afegir un altre centre
+        </v-btn>
+
+        <v-alert v-if="invitacioError" type="error" variant="tonal" density="compact" class="mt-4">
+          {{ invitacioError }}
+        </v-alert>
+      </v-form>
+    </v-card-text>
+
+    <v-card-actions class="pa-4">
+      <v-spacer></v-spacer>
+      <v-btn variant="text" @click="dialogInvitacio = false">CANCEL·LAR</v-btn>
+      <v-btn 
+        color="black" 
+        variant="flat" 
+        class="px-6 text-white rounded-lg"
+        :loading="invitacioLoading" 
+        @click="enviarInvitacio"
+      >
+        ENVIAR TOTES LES INVITACIONS
+      </v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
+</template>
 <style scoped>
 /* TUS ESTILOS ORIGINALES INTACTOS */
 @keyframes pulse-badge {

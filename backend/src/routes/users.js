@@ -14,5 +14,6 @@ router.post('/invite', userController.inviteCentre);
 
 // 2. Ruta para que el Centro confirme (La que usa el frontend con el token)
 router.post('/confirmar-participacion', userController.confirmParticipation);
-
+// En tu archivo de rutas:
+router.post('/invite-multiple', userController.inviteMultiple);
 module.exports = router;
