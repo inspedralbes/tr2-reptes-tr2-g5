@@ -37,29 +37,19 @@ const assignacions = ref([]);
 
 const carregarAssignacions = async () => {
   try {
-    // 1. Agafem el nom del centre loguejat
     const nomDelCentre = localStorage.getItem('userName');
-    
-    if (!nomDelCentre) {
-      console.error("No s'ha trobat el nom del centre");
-      return;
-    }
-
-    // 2. Cridem a la teva ruta filtrada per centre
     const res = await fetch(`/api/peticions/centre/${encodeURIComponent(nomDelCentre)}`);
     
     if (res.ok) {
       const dades = await res.json();
       
-      // 3. FILTRE EXCLUSIU: Només les que tenen l'estat 'ASSIGNAT'
-      // Això separa les assignacions de la resta de peticions
+      // FILTRE: Només les que SÍ que estan assignades
       assignacions.value = dades.filter(p => p.estat === 'ASSIGNAT');
     }
   } catch (error) {
     console.error("Error carregant assignacions:", error);
   }
 };
-
 onMounted(() => {
   carregarAssignacions();
 });
