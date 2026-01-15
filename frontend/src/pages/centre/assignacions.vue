@@ -9,7 +9,7 @@
     <div v-else class="grid-assignacions">
       <div v-for="item in assignacions" :key="item._id" class="card">
         <div class="card-header">
-          <h3>{{ item.seleccio_tallers.taller_id }}</h3>
+          <h3>{{ item.taller_titol }}</h3>
           <span class="badge">Assignat</span>
         </div>
         
@@ -25,8 +25,6 @@
             </ul>
           </div>
         </div>
-        
-        <button class="btn-detalls">Veure Checklist Final</button>
       </div>
     </div>
   </div>
@@ -39,11 +37,23 @@ const assignacions = ref([]);
 
 const carregarAssignacions = async () => {
   try {
-    const res = await fetch('http://localhost:3000/api/peticions');
+    // 1. Agafem el nom del centre loguejat
+    const nomDelCentre = localStorage.getItem('userName');
+    
+    if (!nomDelCentre) {
+      console.error("No s'ha trobat el nom del centre");
+      return;
+    }
+
+    // 2. Cridem a la teva ruta filtrada per centre
+    const res = await fetch(`/api/peticions/centre/${encodeURIComponent(nomDelCentre)}`);
+    
     if (res.ok) {
-      const totes = await res.json();
-      // FILTRE: Només volem les que l'administrador ha marcat com a true
-      assignacions.value = totes.filter(p => p.estat?.estat_boolean === true);
+      const dades = await res.json();
+      
+      // 3. FILTRE EXCLUSIU: Només les que tenen l'estat 'ASSIGNAT'
+      // Això separa les assignacions de la resta de peticions
+      assignacions.value = dades.filter(p => p.estat === 'ASSIGNAT');
     }
   } catch (error) {
     console.error("Error carregant assignacions:", error);
