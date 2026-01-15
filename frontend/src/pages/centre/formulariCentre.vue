@@ -1,19 +1,29 @@
 <template>
   <div class="form-container">
-    <h2 class="form-title">Sol·licitud de Tallers ENGINY</h2>
+    <div class="d-flex align-center mb-6">
+      <v-btn 
+        icon="mdi-arrow-left" 
+        variant="text" 
+        color="black" 
+        class="mr-4" 
+        @click="router.push('/centre/indexcentre')" 
+      />
+      <h2 class="form-title mb-0" style="text-align: left;">Sol·licitud de Tallers ENGINY</h2>
+    </div>
+
     <form @submit.prevent="enviarFormulari">
       <div class="field-group">
-        <label>Nom del Centre:</label>
+        <label>Nom del Centre: *</label>
         <input v-model="form.nom_centre" placeholder="Ex: Escola Torrent" required />
       </div>
       
       <div class="field-group">
-        <label>Nom del Coordinador/a:</label>
+        <label>Nom del Coordinador/a: *</label>
         <input v-model="form.nom_coordinador" placeholder="Nom i cognoms" required />
       </div>
 
       <div class="field-group">
-        <label>Taller sol·licitat:</label>
+        <label>Taller sol·licitat: *</label>
         <select v-model="form.seleccio_tallers.taller_id" required>
           <option disabled value="">Selecciona un taller del catàleg</option>
           <option v-for="taller in tallersDisponibles" :key="taller._id" :value="taller._id">
@@ -27,11 +37,13 @@
       </div>
 
       <div class="field-group">
-        <label>Nombre d'alumnes:</label>
+        <label>Nombre d'alumnes: *</label>
         <input 
           type="number" 
           v-model.number="form.seleccio_tallers.num_alumnes" 
           placeholder="Quantitat aproximada" 
+          min="1"
+          required
           :style="excedeixLimit ? 'border-color: red; background-color: #fff8f8;' : ''"
         />
         <p v-if="excedeixLimit" style="color: red; font-size: 0.8rem; margin-top: 5px; font-weight: bold;">
@@ -40,17 +52,17 @@
       </div>
 
       <div class="field-group">
-        <label>Professor/a Referent:</label>
-        <input v-model="form.referent_contacte.nom" placeholder="Nom del referent" />
+        <label>Professor/a Referent: *</label>
+        <input v-model="form.referent_contacte.nom" placeholder="Nom del referent" required />
       </div>
       
       <div class="field-group">
-        <label>Correu de contacte:</label>
-        <input type="email" v-model="form.referent_contacte.correu" placeholder="exemple@centre.cat" />
+        <label>Correu de contacte: *</label>
+        <input type="email" v-model="form.referent_contacte.correu" placeholder="exemple@centre.cat" required />
       </div>
 
       <div class="field-group">
-        <label>Comentaris addicionals:</label>
+        <label>Comentaris addicionals (opcional):</label>
         <textarea v-model="form.comentaris" placeholder="Explica aquí qualsevol detall rellevant..." rows="4"></textarea>
       </div>
 
@@ -63,6 +75,9 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router'; // <--- AÑADIDO
+
+const router = useRouter();
 
 const tallersDisponibles = ref([]);
 const form = ref({
@@ -95,10 +110,16 @@ onMounted(async () => {
 });
 
 const enviarFormulari = async () => {
+  // Validación de seguridad adicional
+  const f = form.value;
+  if (!f.nom_centre || !f.nom_coordinador || !f.seleccio_tallers.taller_id || f.seleccio_tallers.num_alumnes <= 0 || !f.referent_contacte.nom || !f.referent_contacte.correu) {
+    alert("Si us plau, emplena tots els camps obligatoris.");
+    return;
+  }
+
   if (excedeixLimit.value) return;
 
   try {
-    // CORRECCIÓ: Ruta relativa per usar el PROXY
     const res = await fetch('/api/peticions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -107,7 +128,7 @@ const enviarFormulari = async () => {
 
     if (res.ok) {
       alert("Petició guardada correctament!");
-      location.reload();
+      router.push('/centre/indexcentre'); // Redirigimos en lugar de recargar
     }
   } catch (error) {
     alert("Error en connectar amb el servidor.");
@@ -178,5 +199,18 @@ input:focus, select:focus, textarea:focus {
 
 .submit-btn:hover {
   background-color: #45a049;
+}
+.d-flex { display: flex; }
+.align-center { align-items: center; }
+.mr-4 { margin-right: 16px; }
+.mb-6 { margin-bottom: 24px; }
+.mb-0 { margin-bottom: 0 !important; }
+
+/* Ajuste opcional para que el título no ocupe todo el ancho y deje espacio a la flecha */
+.form-title {
+  color: #1a1a1a;
+  /* Quitamos el text-align: center; para que fluya con la flecha */
+  font-weight: 700;
+  flex: 1; 
 }
 </style>
