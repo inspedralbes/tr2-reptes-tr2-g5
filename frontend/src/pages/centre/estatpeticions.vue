@@ -37,21 +37,21 @@ const peticions = ref([]);
 // Funció per anar a buscar les dades al backend
 const carregarPeticions = async () => {
   try {
-    // LLEGIM LA CLAU CORRECTA (userName) que has guardat al login
     const nomDelCentre = localStorage.getItem('userName'); 
     
     if (nomDelCentre) {
-      // Cridem a la ruta del backend amb el nom real , encode per que l'espai del snoms no sigui un problema.
       const res = await fetch(`/api/peticions/centre/${encodeURIComponent(nomDelCentre)}`);
       
       if (res.ok) {
-        peticions.value = await res.json();
+        const totes = await res.json();
+        
+        // FILTRE: Només guardem les que NO estan assignades
+        // Això fa que quan s'assignin, desapareguin d'aquesta llista
+        peticions.value = totes.filter(p => p.estat !== 'ASSIGNAT');
       }
-    } else {
-      console.warn("No s'ha trobat el nom del centre al localStorage");
     }
   } catch (error) {
-    console.error("Error carregant les peticions del centre:", error);
+    console.error("Error carregant les peticions:", error);
   }
 };
 // Executar la funció quan el component s'ha muntat

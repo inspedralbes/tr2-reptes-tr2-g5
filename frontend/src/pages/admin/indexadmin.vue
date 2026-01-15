@@ -2,8 +2,60 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-const router = useRouter(); 
+const API_URL = '/api'
+const router = useRouter()
+
+// Estados para el diálogo de invitación
+const dialogInvitacio = ref(false)
+const invitacioLoading = ref(false)
+const dadesInvitacio = ref({ nom: '', email: '' })
+const invitacioError = ref('')
+
+// Estados para notificaciones elegantes (Snackbar)
+const snackbar = ref({ show: false, text: '', color: '' })
+
+const obrirDialog = () => {
+  invitacioError.value = ''
+  dadesInvitacio.value = { nom: '', email: '' }
+  dialogInvitacio.value = true
+}
+
+const mostrarNotificacio = (text, color = 'black') => {
+  snackbar.value = { show: true, text, color }
+}
+
+const enviarInvitacio = async () => {
+  if (!dadesInvitacio.value.nom || !dadesInvitacio.value.email) {
+    invitacioError.value = "Tots els camps són obligatoris."
+    return
+  }
+
+  invitacioLoading.value = true
+  invitacioError.value = ''
+  
+  try {
+    const response = await fetch(`${API_URL}/users/invite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dadesInvitacio.value)
+    })
+
+    if (response.ok) {
+      mostrarNotificacio(`Invitació enviada amb èxit a ${dadesInvitacio.value.nom}`, 'success')
+      dialogInvitacio.value = false
+    } else {
+      const errorData = await response.json()
+      invitacioError.value = errorData.error || "Error al enviar la invitació"
+    }
+  } catch (e) {
+    invitacioError.value = "Error de connexió amb el servidor"
+  } finally {
+    invitacioLoading.value = false
+  }
+}
+
 const notifs = ref([]); 
+const resum = ref([])
 const resum = ref([]);
 
 // --- NUEVAS VARIABLES PARA FASES ---
@@ -19,8 +71,6 @@ const vistes = ref(false)
 const API_URL = 'http://localhost:3001/api'
 
 const nav = (r) => router.push(`/admin/${r}`)
-
-// MÉTRICA: Solo las peticiones que están en estado PENDIENTE
 const totalPendents = computed(() => notifs.value.length)
 
 // --- NUEVAS FUNCIONES PARA FASES ---
@@ -83,13 +133,10 @@ onMounted(async () => {
       fetch(`${API_URL}/peticions/admin`), 
       fetch(`${API_URL}/tallers`)
     ])
-    
     if (resPet.ok) {
       const data = await resPet.json()
-      const pendents = data.filter(p => p.estat === 'PENDENT').map(p => ({ 
-        id: p._id, 
-        t: p.centreId?.nom || 'Centre', 
-        d: `Vol fer: ${p.tallerId?.titol}` 
+      notifs.value = data.filter(p => p.estat === 'PENDENT').map(p => ({ 
+        id: p._id, t: p.centreId?.nom || 'Centre', d: `Vol fer: ${p.tallerId?.titol}` 
       }))
       
       notifs.value = pendents
@@ -125,7 +172,15 @@ onMounted(async () => {
           <v-progress-circular v-if="cargandoFase" indeterminate size="20" width="2" color="black" />
         </div>
       </div>
-
+<v-btn 
+  prepend-icon="mdi-email-plus-outline" 
+  color="black" 
+  variant="flat" 
+  class="mr-4 mt-2" 
+  @click="obrirDialog"
+>
+  Convidar Centre
+</v-btn>
       <v-menu width="320" location="bottom end" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
           <v-btn icon v-bind="props" class="mt-2" variant="text" @click="marcarComVistes">
@@ -248,6 +303,32 @@ onMounted(async () => {
     </v-snackbar>
 
   </v-container>
+
+  <v-dialog v-model="dialogInvitacio" max-width="600px">
+    <v-card>
+      <v-card-title>
+        <span class="text-h6">Convidar Centre</span>
+      </v-card-title>
+      <v-card-text>
+        <v-form>
+          <v-text-field
+            v-model="dadesInvitacio.nom"
+            label="Nom del Centre"
+            :error-messages="invitacioError"
+          ></v-text-field>
+          <v-text-field
+            v-model="dadesInvitacio.email"
+            label="Correu Electrònic"
+            :error-messages="invitacioError"
+          ></v-text-field>
+        </v-form>
+      </v-card-text>
+      <v-card-actions>
+        <v-btn text @click="dialogInvitacio = false">Cancel·lar</v-btn>
+        <v-btn color="primary" @click="enviarInvitacio" :loading="invitacioLoading">Enviar Invitació</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <style scoped>

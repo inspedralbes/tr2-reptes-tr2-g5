@@ -36,6 +36,24 @@ export default defineConfig({
       },
     }),
   ],
+  // --- AÑADIDO PARA QUITAR LOS WARNINGS DE SASS ---
+  // ... resto de tu config (plugins, etc)
+
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler',
+        // Esto desactiva específicamente los avisos de la función if() y otros que usa Vuetify
+        silenceDeprecations: ['if-function', 'import', 'global-builtin', 'mixed-decls', 'color-functions'],
+      },
+      sass: {
+        api: 'modern-compiler',
+        silenceDeprecations: ['if-function', 'import', 'global-builtin', 'mixed-decls', 'color-functions'],
+      },
+    },
+  },
+
+  // ... resto de tu config (server, resolve, etc)
   optimizeDeps: {
     exclude: [
       'vuetify',
@@ -71,4 +89,5 @@ export default defineConfig({
       }
     }
   },
+  
 })

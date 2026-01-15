@@ -1,27 +1,38 @@
-const { getDB } = require('../config/db');
-
-// 1. INICIAR SESSIÓ (LOGIN)
+const { getDB } = require('../config/db'); // <--- ESTA LÍNEA ES IMPRESCINDIBLE
+// 1. INICIAR SESSIÓ (LOGIN) con DEBUG
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
         const db = getDB();
 
+        console.log("--- INTENT DE LOGIN ---");
+        console.log(`Email rebut: [${email}]`);
+        console.log(`Password rebut: [${password}]`);
+
         // Buscar usuario por email
         const user = await db.collection('usuaris').findOne({ email: email });
 
-        // Verificación simple (Para producción usar bcrypt)
-        if (!user || user.password !== password) {
+        if (!user) {
+            console.log("❌ ERROR: L'email no existeix a la base de dades");
             return res.status(401).json({ error: "Credencials incorrectes" });
         }
 
-        // Devolver datos del usuario y su ROL
+        console.log(`Password a la DB: [${user.password}]`);
+
+        // Verificación con log de comparación
+        if (user.password !== password) {
+            console.log("❌ ERROR: Les contrasenyes no coincideixen exactament");
+            return res.status(401).json({ error: "Credencials incorrectes" });
+        }
+
+        console.log("✅ LOGIN CORRECTE");
         res.status(200).json({
             missatge: "Login correcte",
             usuari: {
                 id: user._id,
                 nom: user.nom,
                 email: user.email,
-                rol: user.rol // 'admin', 'centre', 'professor'
+                rol: user.rol
             }
         });
 
