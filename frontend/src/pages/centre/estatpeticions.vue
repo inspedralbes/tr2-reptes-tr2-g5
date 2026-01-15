@@ -1,8 +1,16 @@
 <template>
   <div class="list-container">
-    <h2>Estat de les meves sol·licituds</h2>
-
-    <p v-if="peticions.length === 0">No s'han trobat peticions.</p>
+  <div class="d-flex align-center mb-6">
+    <v-btn 
+      icon="mdi-arrow-left" 
+      variant="text" 
+      color="black" 
+      class="mr-4" 
+      @click="router.push('/centre/indexcentre')" 
+    />
+    <h2 class="text-h4 font-weight-bold mb-0">Estat de les meves sol·licituds</h2>
+  </div>
+  <p v-if="peticions.length === 0">No s'han trobat peticions.</p>
 
     <table v-else>
       <thead>
@@ -31,6 +39,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router'; // <--- AFEGIT
+const router = useRouter();               // <--- AFEGIT
 
 const peticions = ref([]);
 
@@ -101,4 +111,14 @@ th {
   border-radius: 4px;
   font-size: 0.9em;
 }
+
+/* CLASSES AFEGIDES PER L'ALINEACIÓ DEL BOTÓ */
+.d-flex { display: flex; }
+.align-center { align-items: center; }
+.mr-4 { margin-right: 16px; }
+.mb-6 { margin-bottom: 24px; }
+
+/* El teu títol ara usa text-h4 de Vuetify, si vols forçar el marge: */
+.mb-0 { margin-bottom: 0 !important; }
+
 </style>

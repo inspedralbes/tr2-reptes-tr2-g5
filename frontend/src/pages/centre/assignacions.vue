@@ -1,8 +1,17 @@
 <template>
   <div class="assignacions-container">
-    <h2>Tallers Confirmats i Assignacions</h2>
+  <div class="d-flex align-center mb-6">
+    <v-btn 
+      icon="mdi-arrow-left" 
+      variant="text" 
+      color="black" 
+      class="mr-4" 
+@click="router.push('/centre/indexcentre')"
+    />
+    <h2 class="text-h4 font-weight-bold mb-0">Tallers Confirmats i Assignacions</h2>
+  </div>
+  <div v-if="assignacions.length === 0" class="no-data">
     
-    <div v-if="assignacions.length === 0" class="no-data">
       Encara no teniu cap taller assignat oficialment.
     </div>
 
@@ -32,6 +41,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router'; // <--- AÑADIDO: Importar el router
+
+const router = useRouter(); // <--- AÑADIDO: Inicializar el router
 
 const assignacions = ref([]);
 
@@ -61,6 +73,11 @@ onMounted(() => {
   margin: 20px auto;
   font-family: sans-serif;
 }
+
+.d-flex { display: flex; }
+.align-center { align-items: center; }
+.mb-6 { margin-bottom: 24px; }
+.mr-4 { margin-right: 16px; }
 
 .grid-assignacions {
   display: grid;
