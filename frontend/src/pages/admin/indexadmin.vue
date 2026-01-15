@@ -55,20 +55,15 @@ const enviarInvitacio = async () => {
 }
 
 const notifs = ref([]); 
-const resum = ref([])
 const resum = ref([]);
 
 // --- NUEVAS VARIABLES PARA FASES ---
 const faseActual = ref(1);
 const cargandoFase = ref(false);
-const snackbar = ref({ show: false, text: '', color: '' });
 
 // Registramos cuántas notificaciones había la última vez que el admin hizo clic
 const ultimCompteVist = ref(parseInt(localStorage.getItem('ultimCompteVist') || '0'))
 const vistes = ref(false)
-
-// Usamos la URL relativa (ajusta a http://localhost:3001 si no usas proxy)
-const API_URL = 'http://localhost:3001/api'
 
 const nav = (r) => router.push(`/admin/${r}`)
 const totalPendents = computed(() => notifs.value.length)
