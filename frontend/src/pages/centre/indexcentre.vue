@@ -4,46 +4,45 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// Variables para guardar datos
+// Variables para datos y control de fase
 const resum = ref([]) 
+const faseActual = ref(0) // 1: Inscripció, 2: Validació, 3: Assignació
+const cargando = ref(true)
 
-// Funciones para ir a las diferentes paginas
+// Funciones de navegación con comprobación de seguridad
 function irANovaSolicitud() {
-  console.log("Yendo a formulario...")
-  router.push('/centre/formulariCentre')
+  if (faseActual.value === 1) router.push('/centre/formulariCentre')
 }
 
 function irAEstatPeticions() {
-  console.log("Yendo a estado peticiones...")
-  router.push('/centre/estatpeticions')
+  if (faseActual.value >= 1) router.push('/centre/estatpeticions')
 }
 
 function irAAssignacions() {
-  console.log("Yendo a assignaciones...")
-  router.push('/centre/assignacions')
+  if (faseActual.value === 3) router.push('/centre/assignacions')
 }
 
-// Cuando se carga la pagina traemos los datos del servidor
 onMounted(async () => {
-    console.log("Cargando la pagina de centro...")
     try {
-        // Hacemos el fetch
-        const respuesta = await fetch('http://localhost:3000/api/tallers')
-        
-        // Comprobamos si ha ido bien
+        // 1. Consultar la fase activa del sistema
+        const resConfig = await fetch('http://localhost:3001/api/config')
+        if (resConfig.ok) {
+            const config = await resConfig.json()
+            faseActual.value = config.faseActual
+        }
+
+        // 2. Traer el resumen de talleres (tu lógica original)
+        const respuesta = await fetch('http://localhost:3001/api/tallers')
         if (respuesta.ok) {
             const datos = await respuesta.json()
-            console.log("Datos recibidos:", datos)
-            
-            // Guardamos solo los 5 primeros
             resum.value = datos.slice(0, 5)
         }
     } catch (error) {
-        // Si falla mostramos error
-        console.error("Ha habido un error cargando:", error)
+        console.error("Error cargando la configuración o talleres:", error)
+    } finally {
+        cargando.value = false
     }
 })
-
 </script>
 
 <template>
@@ -51,45 +50,80 @@ onMounted(async () => {
     <header class="mb-10">
       <h1 class="text-h4 font-weight-bold">Panell de Gestió del Centre</h1>
       <p class="text-grey-darken-1">Benvingut al programa ENGINY.</p>
+      
+      <v-chip v-if="!cargando" color="#3465a4" variant="flat" class="mt-2">
+        Fase Actual: {{ faseActual === 1 ? 'Inscripcions Obertes' : faseActual === 2 ? 'Revisió de Sol·licituds' : 'Assignacions Publicades' }}
+      </v-chip>
     </header>
 
-    <v-row class="mb-8">
+    <v-row class="mb-8" v-if="!cargando">
       
-      <!-- Primera tarjeta: Nova Sol·licitud -->
       <v-col cols="12" md="4">
-        <v-card variant="outlined" class="pa-6 text-center h-100" @click="irANovaSolicitud()" hover>
-          <v-icon size="48" color="#3465a4" class="mb-4">mdi-hammer-wrench</v-icon>
+        <v-card 
+          variant="outlined" 
+          class="pa-6 text-center h-100" 
+          :disabled="faseActual !== 1"
+          :class="{ 'opacidad-desactivado': faseActual !== 1 }"
+          @click="irANovaSolicitud()" 
+          hover
+        >
+          <v-icon size="48" :color="faseActual === 1 ? '#3465a4' : 'grey'" class="mb-4">mdi-hammer-wrench</v-icon>
           <h3 class="text-h6 font-weight-bold mb-2">Nova Sol·licitud</h3>
-          <p class="text-body-2 text-grey-darken-1">Inscriure el centre a un taller.</p>
+          <p class="text-body-2" :class="faseActual === 1 ? 'text-grey-darken-1' : 'text-error'">
+            {{ faseActual === 1 ? 'Inscriure el centre a un taller.' : 'El termini d\'inscripció ha finalitzat.' }}
+          </p>
         </v-card>
       </v-col>
 
-      <!-- Segunda tarjeta: Estat Peticions -->
       <v-col cols="12" md="4">
-        <v-card variant="outlined" class="pa-6 text-center h-100" @click="irAEstatPeticions()" hover>
+        <v-card 
+          variant="outlined" 
+          class="pa-6 text-center h-100" 
+          :disabled="faseActual < 1"
+          @click="irAEstatPeticions()" 
+          hover
+        >
           <v-icon size="48" color="#3465a4" class="mb-4">mdi-clipboard-list-outline</v-icon>
           <h3 class="text-h6 font-weight-bold mb-2">Estat Peticions</h3>
           <p class="text-body-2 text-grey-darken-1">Veure l'estat de les teves sol·licituds.</p>
         </v-card>
       </v-col>
 
-      <!-- Tercera tarjeta: Assignacions -->
       <v-col cols="12" md="4">
-        <v-card variant="outlined" class="pa-6 text-center h-100" @click="irAAssignacions()" hover>
-          <v-icon size="48" color="#3465a4" class="mb-4">mdi-chart-bar</v-icon>
+        <v-card 
+          variant="outlined" 
+          class="pa-6 text-center h-100" 
+          :disabled="faseActual !== 3"
+          :class="{ 'opacidad-desactivado': faseActual !== 3 }"
+          @click="irAAssignacions()" 
+          hover
+        >
+          <v-icon size="48" :color="faseActual === 3 ? '#3465a4' : 'grey'" class="mb-4">mdi-chart-bar</v-icon>
           <h3 class="text-h6 font-weight-bold mb-2">Assignacions</h3>
-          <p class="text-body-2 text-grey-darken-1">Consultar tallers i horaris confirmats.</p>
+          <p class="text-body-2" :class="faseActual === 3 ? 'text-grey-darken-1' : 'text-grey-lighten-1'">
+            {{ faseActual === 3 ? 'Consultar tallers i horaris confirmats.' : 'Disponible en finalitzar les assignacions.' }}
+          </p>
         </v-card>
       </v-col>
 
+    </v-row>
+
+    <v-row v-else justify="center" class="pa-10">
+      <v-progress-circular indeterminate color="primary"></v-progress-circular>
     </v-row>
     
   </v-container>
 </template>
 
 <style scoped>
-/* Estilo para los bordes */
 .v-list-item { 
     border-bottom: 1px solid #f0f0f0; 
+}
+
+/* Clase para dar aspecto de "bloqueado" pero visible */
+.opacidad-desactivado {
+    opacity: 0.6;
+    background-color: #f9f9f9;
+    cursor: not-allowed !important;
 }
 </style>

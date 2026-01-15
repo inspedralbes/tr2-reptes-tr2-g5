@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/inspedralbes/tr2-reptes-tr2-g5#readme",
   "dependencies": {
+    "cors": "^2.8.5",
     "docker": "^1.0.0",
     "dotenv": "^17.2.3",
     "mongodb": "^7.0.0",

@@ -4,28 +4,70 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter(); 
 const notifs = ref([]); 
-const resum = ref([])
+const resum = ref([]);
+
+// --- NUEVAS VARIABLES PARA FASES ---
+const faseActual = ref(1);
+const cargandoFase = ref(false);
+const snackbar = ref({ show: false, text: '', color: '' });
 
 // Registramos cuántas notificaciones había la última vez que el admin hizo clic
 const ultimCompteVist = ref(parseInt(localStorage.getItem('ultimCompteVist') || '0'))
 const vistes = ref(false)
 
-// Usamos la URL relativa para que el proxy de Vite funcione correctamente en Docker
-const API_URL = '/api'
+// Usamos la URL relativa (ajusta a http://localhost:3001 si no usas proxy)
+const API_URL = 'http://localhost:3001/api'
 
 const nav = (r) => router.push(`/admin/${r}`)
 
 // MÉTRICA: Solo las peticiones que están en estado PENDIENTE
 const totalPendents = computed(() => notifs.value.length)
 
-// Función para marcar como vistas (Persistente)
+// --- NUEVAS FUNCIONES PARA FASES ---
+const cargarConfiguracion = async () => {
+  try {
+    const res = await fetch(`${API_URL}/config`);
+    if (res.ok) {
+      const data = await res.json();
+      faseActual.value = data.faseActual;
+    }
+  } catch (e) { console.error("Error al cargar fase", e); }
+};
+
+const mostrarMensaje = (texto, color = 'success') => {
+  snackbar.value.text = texto;
+  snackbar.value.color = color;
+  snackbar.value.show = true;
+};
+
+const cambiarFase = async (valorFase) => {
+  cargandoFase.value = true;
+  try {
+    const res = await fetch('http://localhost:3001/api/config/update-fase', {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json' // <--- OBLIGATORIO
+      },
+      body: JSON.stringify({ nuevaFase: valorFase }) 
+    });
+
+    if (!res.ok) throw new Error('Error en la respuesta');
+    
+    mostrarMensaje('Fase actualitzada correctament', 'success');
+  } catch (e) {
+    console.error("Error al actualizar fase:", e);
+    mostrarMensaje('No s’ha pogut connectar amb el servidor', 'error');
+  } finally {
+    cargandoFase.value = false;
+  }
+};
+// --- TUS FUNCIONES ORIGINALES ---
 const marcarComVistes = () => {
   vistes.value = true
   ultimCompteVist.value = notifs.value.length
   localStorage.setItem('ultimCompteVist', ultimCompteVist.value.toString())
 }
 
-// Función para limpiar visualmente la lista
 const esborrarNotificacions = () => {
   notifs.value = []
   ultimCompteVist.value = 0
@@ -33,6 +75,9 @@ const esborrarNotificacions = () => {
 }
 
 onMounted(async () => {
+  // Cargamos la fase y los datos en paralelo
+  await cargarConfiguracion();
+  
   try {
     const [resPet, resTal] = await Promise.all([
       fetch(`${API_URL}/peticions/admin`), 
@@ -48,8 +93,6 @@ onMounted(async () => {
       }))
       
       notifs.value = pendents
-
-      // Si el número de peticiones no ha crecido desde la última vez, no mostrar alerta
       vistes.value = notifs.value.length <= ultimCompteVist.value
     }
     if (resTal.ok) resum.value = (await resTal.json()).slice(0, 5)
@@ -63,6 +106,24 @@ onMounted(async () => {
       <div>
         <h1 class="text-h4 font-weight-bold mb-2" style="color: black;">Panell de Control Administració</h1>
         <p class="text-subtitle-1 text-grey-darken-1">Gestió integral de tallers, sol·licituds i seguiment de mètriques.</p>
+        
+        <div class="d-flex align-center mt-6 ga-4 bg-grey-lighten-4 pa-3 rounded-lg border">
+          <v-icon color="black">mdi-sync</v-icon>
+          <span class="text-caption font-weight-bold text-uppercase">Fase del Sistema:</span>
+          <v-btn-toggle
+            v-model="faseActual"
+            mandatory
+            color="black"
+            variant="flat"
+            density="compact"
+            @update:model-value="cambiarFase"
+          >
+            <v-btn :value="1" size="small" class="px-4">1. INSCRIPCIÓ</v-btn>
+            <v-btn :value="2" size="small" class="px-4">2. VALIDACIÓ</v-btn>
+            <v-btn :value="3" size="small" class="px-4">3. ASSIGNACIÓ</v-btn>
+          </v-btn-toggle>
+          <v-progress-circular v-if="cargandoFase" indeterminate size="20" width="2" color="black" />
+        </div>
       </div>
 
       <v-menu width="320" location="bottom end" :close-on-content-click="false">
@@ -178,10 +239,19 @@ onMounted(async () => {
       </div>
       <div v-if="!resum.length" class="pa-10 text-center text-grey">No hi ha activitat recent.</div>
     </v-card>
+
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
+      {{ snackbar.text }}
+      <template v-slot:actions>
+        <v-btn variant="text" @click="snackbar.show = false">Tancar</v-btn>
+      </template>
+    </v-snackbar>
+
   </v-container>
 </template>
 
 <style scoped>
+/* TUS ESTILOS ORIGINALES INTACTOS */
 @keyframes pulse-badge {
   0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); }
   70% { transform: scale(1.2); box-shadow: 0 0 0 10px rgba(244, 67, 54, 0); }
