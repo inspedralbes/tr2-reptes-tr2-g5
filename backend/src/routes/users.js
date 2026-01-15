@@ -13,6 +13,6 @@ router.delete('/:id', userController.deleteUser);
 router.post('/invite', userController.inviteCentre); 
 
 // 2. Ruta para que el Centro confirme (La que usa el frontend con el token)
-router.post('/confirmar-activacio', userController.confirmParticipation);
+router.post('/confirmar-participacion', userController.confirmParticipation);
 
 module.exports = router;

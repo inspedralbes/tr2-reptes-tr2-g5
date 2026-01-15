@@ -187,21 +187,29 @@ const inviteCentre = async (req, res) => {
 const linkAceptar = `http://localhost:3000/confirmar-participacion?token=${token}`; 
 
 await transporter.sendMail({
-    from: '"Proyecto ENGINY" <martamartahf@gmail.com>', // Cambia el from para que coincida con tu auth
+    from: '"Projecte ENGINY" <martamartahf@gmail.com>',
     to: email, 
-    subject: `Invitación Proyecto ENGINY - Centro ${nom}`,
+    subject: `Invitació Projecte ENGINY - Centre ${nom}`,
     html: `
-        <div style="font-family: sans-serif; max-width: 600px; border: 1px solid #eee; padding: 20px;">
-            <h2>Hola ${nom},</h2>
-            <p>El equipo de <strong>ENGINY</strong> le invita a participar en los talleres de este año.</p>
-            <p>¿Desean participar con sus alumnos?</p>
-            <div style="text-align: center; margin: 30px 0;">
+        <div style="font-family: sans-serif; max-width: 600px; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
+            <h2 style="color: #333;">Hola ${nom},</h2>
+            <p>L'equip de <strong>ENGINY</strong> us convida a participar en els tallers d'aquest curs.</p>
+            <p>Voleu participar-hi amb els vostres alumnes?</p>
+            
+            <div style="text-align: center; margin: 35px 0;">
                 <a href="${linkAceptar}" 
-                   style="background-color: #28a745; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                   SÍ, QUEREMOS PARTICIPAR
+                   style="background-color: #3465a4; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                   SÍ, VOLEM PARTICIPAR
                 </a>
             </div>
-            <p style="color: #666; font-size: 12px;">Al hacer clic, se le redirigirá a la página de confirmación.</p>
+            
+            <p style="color: #666; font-size: 13px; line-height: 1.5;">
+                En fer clic al botó, serreu redirigits a la pàgina de confirmació on podreu activar el vostre compte.
+            </p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="color: #999; font-size: 11px; text-align: center;">
+                Aquest és un correu automàtic enviat pel sistema de gestió d'ENGINY.
+            </p>
         </div>`
 });
 
@@ -211,7 +219,6 @@ await transporter.sendMail({
         res.status(500).json({ error: "Error al enviar la invitación" });
     }
 };
-// --- PASO 2: EL CENTRO CONFIRMA EN LA WEB Y RECIBE EL SEGUNDO EMAIL ---
 const confirmParticipation = async (req, res) => {
     try {
         const db = getDB();
@@ -219,60 +226,66 @@ const confirmParticipation = async (req, res) => {
 
         if (!token) return res.status(400).json({ error: "Token obligatorio" });
 
-        // 1. Generem la contrasenya aleatòria (8 caràcters)
+        // 1. Buscamos el usuario que tiene ese token
+        const usuariPendent = await db.collection('usuaris').findOne({ token_invitacio: token });
+
+        if (!usuariPendent) {
+            return res.status(404).json({ error: "No s'ha trobat la invitació o ja ha caducat" });
+        }
+
+        // 2. Generamos la contraseña
         const passwordAuto = crypto.randomBytes(4).toString('hex'); 
 
-        // 2. Busquem el centre pel token i l'activem a la base de dades
-        const result = await db.collection('usuaris').findOneAndUpdate(
-            { token_invitacio: token, estat: 'invitat' },
+        // 3. ACTUALIZACIÓN CRÍTICA
+        // Usamos updateOne para asegurar que se guardan los cambios
+        await db.collection('usuaris').updateOne(
+            { _id: usuariPendent._id },
             { 
                 $set: { 
-                    password: passwordAuto, 
-                    estat: 'actiu', 
-                    token_invitacio: null, // El token ja no es podra tornar a fer servir
+                    password: passwordAuto, // Esta es la que se guarda
+                    estat: 'actiu',
+                    rol: 'centre',         // Forzamos que el rol sea centre
+                    token_invitacio: null,  // Borramos el token para que no se use dos veces
                     data_confirmacio: new Date()
                 } 
-            },
-            { returnDocument: 'after' }
+            }
         );
 
-        const usuari = result.value || result;
-        if (!usuari) return res.status(400).json({ error: "Token no válido o ya usado" });
+       await transporter.sendMail({
+    from: '"Projecte ENGINY" <martamartahf@gmail.com>',
+    to: usuariPendent.email,
+    subject: 'Compte Activat! - Credencials ENGINY',
+    html: `
+        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+            <h2 style="color: #333;">Hola ${usuariPendent.nom},</h2>
+            <p>El vostre compte de <strong>Centre</strong> ha estat activat correctament.</p>
+            <p>Aquestes són les vostres credencials d'accés:</p>
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <p style="margin: 5px 0;"><strong>Usuari:</strong> ${usuariPendent.email}</p>
+                <p style="margin: 5px 0;"><strong>Contrasenya:</strong> <span style="color: #e91e63; font-weight: bold;">${passwordAuto}</span></p>
+            </div>
+            <p>Podeu accedir a la plataforma fent clic al següent enllaç:</p>
+            <br>
+            <a href="http://localhost:3000/login" 
+               style="background-color: #000; color: #fff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+               Iniciar sessió ara
+            </a>
+            <p style="margin-top: 30px; font-size: 0.9em; color: #666;">
+                Si teniu qualsevol dubte, contacteu amb l'administrador del projecte.
+            </p>
+        </div>`
+});
 
-        // 3. SEGON CORREU: Enviem les credencials generades
-        await transporter.sendMail({
-            from: '"Proyecto ENGINY" <martamartahf@gmail.com>',
-            to: usuari.email,
-            subject: '¡Cuenta Activada! - Credenciales de acceso ENGINY',
-            html: `
-                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; max-width: 500px;">
-                    <h2 style="color: #2c3e50;">¡Bienvenidos al Proyecto ENGINY!</h2>
-                    <p>La vuestra participación ha sido confirmada correctamente.</p>
-                    <p>Podéis acceder a vuestro panel de gestión con los siguientes datos:</p>
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid #ddd;">
-                        <p style="margin: 5px 0;"><strong>Usuario:</strong> ${usuari.email}</p>
-                        <p style="margin: 5px 0;"><strong>Contraseña:</strong> <span style="font-family: monospace; font-size: 1.2em; color: #d63384; font-weight: bold;">${passwordAuto}</span></p>
-                    </div>
-                    <div style="text-align: center; margin-top: 25px;">
-                        <a href="http://localhost:3000/login" 
-                           style="background-color: #1a73e8; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
-                           Ir a Iniciar Sesión
-                        </a>
-                    </div>
-                    <p style="font-size: 12px; color: #666; margin-top: 20px;">Por seguridad, os recomendamos cambiar la contraseña una vez hayáis entrado.</p>
-                </div>`
-        });
-
-        // 4. RESPOSTA AL FRONTEND: Enviem les dades perquè el centre les vegi a la pantalla de confirmar.vue
+        // 5. Respuesta al Frontend
         res.status(200).json({ 
             missatge: "Participació confirmada",
-            email: usuari.email,
+            email: usuariPendent.email,
             password: passwordAuto 
         });
 
     } catch (error) {
         console.error("ERROR EN ACTIVACIÓN:", error);
-        res.status(500).json({ error: "Error al activar el centro" });
+        res.status(500).json({ error: "Error intern al activar el centre" });
     }
 };
     

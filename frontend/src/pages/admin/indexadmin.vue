@@ -2,30 +2,69 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-const router = useRouter(); 
+const API_URL = '/api'
+const router = useRouter()
+
+// Estados para el diálogo de invitación
+const dialogInvitacio = ref(false)
+const invitacioLoading = ref(false)
+const dadesInvitacio = ref({ nom: '', email: '' })
+const invitacioError = ref('')
+
+// Estados para notificaciones elegantes (Snackbar)
+const snackbar = ref({ show: false, text: '', color: '' })
+
+const obrirDialog = () => {
+  invitacioError.value = ''
+  dadesInvitacio.value = { nom: '', email: '' }
+  dialogInvitacio.value = true
+}
+
+const mostrarNotificacio = (text, color = 'black') => {
+  snackbar.value = { show: true, text, color }
+}
+
+const enviarInvitacio = async () => {
+  if (!dadesInvitacio.value.nom || !dadesInvitacio.value.email) {
+    invitacioError.value = "Tots els camps són obligatoris."
+    return
+  }
+
+  invitacioLoading.value = true
+  invitacioError.value = ''
+  
+  try {
+    const response = await fetch(`${API_URL}/users/invite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dadesInvitacio.value)
+    })
+
+    if (response.ok) {
+      mostrarNotificacio(`Invitació enviada amb èxit a ${dadesInvitacio.value.nom}`, 'success')
+      dialogInvitacio.value = false
+    } else {
+      const errorData = await response.json()
+      invitacioError.value = errorData.error || "Error al enviar la invitació"
+    }
+  } catch (e) {
+    invitacioError.value = "Error de connexió amb el servidor"
+  } finally {
+    invitacioLoading.value = false
+  }
+}
+
 const notifs = ref([]); 
 const resum = ref([])
-
-// Registramos cuántas notificaciones había la última vez que el admin hizo clic
 const ultimCompteVist = ref(parseInt(localStorage.getItem('ultimCompteVist') || '0'))
 const vistes = ref(false)
-
-// Usamos la URL relativa para que el proxy de Vite funcione correctamente en Docker
-const API_URL = '/api'
-
 const nav = (r) => router.push(`/admin/${r}`)
-
-// MÉTRICA: Solo las peticiones que están en estado PENDIENTE
 const totalPendents = computed(() => notifs.value.length)
-
-// Función para marcar como vistas (Persistente)
 const marcarComVistes = () => {
   vistes.value = true
   ultimCompteVist.value = notifs.value.length
   localStorage.setItem('ultimCompteVist', ultimCompteVist.value.toString())
 }
-
-// Función para limpiar visualmente la lista
 const esborrarNotificacions = () => {
   notifs.value = []
   ultimCompteVist.value = 0
@@ -38,18 +77,11 @@ onMounted(async () => {
       fetch(`${API_URL}/peticions/admin`), 
       fetch(`${API_URL}/tallers`)
     ])
-    
     if (resPet.ok) {
       const data = await resPet.json()
-      const pendents = data.filter(p => p.estat === 'PENDENT').map(p => ({ 
-        id: p._id, 
-        t: p.centreId?.nom || 'Centre', 
-        d: `Vol fer: ${p.tallerId?.titol}` 
+      notifs.value = data.filter(p => p.estat === 'PENDENT').map(p => ({ 
+        id: p._id, t: p.centreId?.nom || 'Centre', d: `Vol fer: ${p.tallerId?.titol}` 
       }))
-      
-      notifs.value = pendents
-
-      // Si el número de peticiones no ha crecido desde la última vez, no mostrar alerta
       vistes.value = notifs.value.length <= ultimCompteVist.value
     }
     if (resTal.ok) resum.value = (await resTal.json()).slice(0, 5)
@@ -64,7 +96,15 @@ onMounted(async () => {
         <h1 class="text-h4 font-weight-bold mb-2" style="color: black;">Panell de Control Administració</h1>
         <p class="text-subtitle-1 text-grey-darken-1">Gestió integral de tallers, sol·licituds i seguiment de mètriques.</p>
       </div>
-
+<v-btn 
+  prepend-icon="mdi-email-plus-outline" 
+  color="black" 
+  variant="flat" 
+  class="mr-4 mt-2" 
+  @click="obrirDialog"
+>
+  Convidar Centre
+</v-btn>
       <v-menu width="320" location="bottom end" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
           <v-btn icon v-bind="props" class="mt-2" variant="text" @click="marcarComVistes">
@@ -179,6 +219,32 @@ onMounted(async () => {
       <div v-if="!resum.length" class="pa-10 text-center text-grey">No hi ha activitat recent.</div>
     </v-card>
   </v-container>
+
+  <v-dialog v-model="dialogInvitacio" max-width="600px">
+    <v-card>
+      <v-card-title>
+        <span class="text-h6">Convidar Centre</span>
+      </v-card-title>
+      <v-card-text>
+        <v-form>
+          <v-text-field
+            v-model="dadesInvitacio.nom"
+            label="Nom del Centre"
+            :error-messages="invitacioError"
+          ></v-text-field>
+          <v-text-field
+            v-model="dadesInvitacio.email"
+            label="Correu Electrònic"
+            :error-messages="invitacioError"
+          ></v-text-field>
+        </v-form>
+      </v-card-text>
+      <v-card-actions>
+        <v-btn text @click="dialogInvitacio = false">Cancel·lar</v-btn>
+        <v-btn color="primary" @click="enviarInvitacio" :loading="invitacioLoading">Enviar Invitació</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <style scoped>
