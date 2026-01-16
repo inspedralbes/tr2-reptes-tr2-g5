@@ -1,6 +1,5 @@
-  <template>
+<template>
   <v-container fluid class="pa-10 bg-white h-100">
-    <!-- ENCALEZADO -->
     <div class="d-flex justify-space-between align-start mb-8">
       <div class="d-flex align-center">
         <v-btn 
@@ -20,17 +19,51 @@
       </v-btn>
     </div>
 
-    <!-- TABLA DE USUARIOS -->
+    <v-row class="mb-4">
+      <v-col cols="12" md="4">
+        <v-text-field
+          v-model="search"
+          prepend-inner-icon="mdi-magnify"
+          label="Cercar per nom o email..."
+          variant="outlined"
+          density="comfortable"
+          hide-details
+          clearable
+        ></v-text-field>
+      </v-col>
+
+      <v-col cols="12" md="3">
+        <v-select
+          v-model="roleFilter"
+          :items="['Tots', 'Admin', 'Centre', 'Professor']"
+          label="Filtrar per Rol"
+          variant="outlined"
+          density="comfortable"
+          hide-details
+        ></v-select>
+      </v-col>
+    </v-row>
+
     <v-card variant="outlined" class="border-consorci mb-6">
       <v-data-table
         :headers="headers"
-        :items="users"
+        :items="filteredUsers"  
+        :search="search"
         :loading="loading"
         class="elevation-0"
         item-value="_id"
         items-per-page-text="Usuaris per pàgina"
       >
-        <!-- ROL CHIP -->
+        <template v-slot:item.nom="{ item }">
+          <div class="d-flex align-center py-2">
+            <v-avatar size="32" color="grey-lighten-3" class="mr-3">
+              <v-img v-if="item.foto" :src="item.foto" cover></v-img>
+              <v-icon v-else size="20">mdi-account</v-icon>
+            </v-avatar>
+            <span class="font-weight-medium">{{ item.nom }}</span>
+          </div>
+        </template>
+
         <template v-slot:item.rol="{ item }">
           <v-chip
             :color="getRoleColor(item.rol)"
@@ -42,7 +75,6 @@
           </v-chip>
         </template>
 
-        <!-- ACCIONES -->
         <template v-slot:item.actions="{ item }">
           <div class="d-flex">
             <v-btn icon="mdi-pencil" variant="text" size="small" color="blue" @click="openDialog(item)" />
@@ -52,7 +84,6 @@
       </v-data-table>
     </v-card>
 
-    <!-- DIALOGO CREAR / EDITAR -->
     <v-dialog v-model="dialog" max-width="500px">
       <v-card>
         <v-card-title class="pa-4 bg-black text-white">
@@ -118,7 +149,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- DIALOGO CONFIRMAR ELIMINAR -->
     <v-dialog v-model="dialogDelete" max-width="400px">
       <v-card>
         <v-card-title class="text-h6 pa-4">Confirmar eliminació</v-card-title>
@@ -131,7 +161,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- FEEDBACK -->
     <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="3000">
       {{ snackbarText }}
       <template v-slot:actions>
@@ -142,17 +171,27 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 const router = useRouter()
 
 const users = ref([]);
 const loading = ref(true);
+const search = ref(''); 
 const dialog = ref(false);
 const dialogDelete = ref(false);
 const editedIndex = ref(-1);
 const valid = ref(false);
+const roleFilter = ref('Tots'); 
+
+const filteredUsers = computed(() => {
+  if (roleFilter.value === 'Tots') return users.value;
+  
+  return users.value.filter(u => 
+    u.rol && u.rol.toLowerCase() === roleFilter.value.toLowerCase()
+  );
+});
 
 const headers = [
   { title: 'Nom', key: 'nom', align: 'start' },
@@ -177,7 +216,7 @@ const snackbarColor = ref('success');
 const fetchUsers = async () => {
     loading.value = true;
     try {
-        const res = await fetch('/api/users'); // Proxy handling connection to 3001
+        const res = await fetch('/api/users'); 
         if (res.ok) {
             users.value = await res.json();
         } else {
@@ -190,11 +229,13 @@ const fetchUsers = async () => {
     }
 };
 
-onMounted(fetchUsers);
+onMounted(() => {
+    fetchUsers();
+});
 
 const getRoleColor = (rol) => {
-    if (rol === 'admin') return 'purple-lighten-4 text-purple-darken-4';
-    if (rol === 'centre') return 'blue-lighten-4 text-blue-darken-4';
+    if (rol?.toLowerCase() === 'admin') return 'purple-lighten-4 text-purple-darken-4';
+    if (rol?.toLowerCase() === 'centre') return 'blue-lighten-4 text-blue-darken-4';
     return 'grey-lighten-3';
 };
 
@@ -202,7 +243,7 @@ const openDialog = (item) => {
     if (item) {
         editedIndex.value = users.value.indexOf(item);
         Object.assign(editedItem, item);
-        editedItem.password = ''; // Don't show password
+        editedItem.password = ''; 
     } else {
         editedIndex.value = -1;
         Object.assign(editedItem, defaultItem);
@@ -221,7 +262,6 @@ const close = () => {
 const save = async () => {
     if(!editedItem.nom || !editedItem.email) return; 
 
-    // Determine URL and Method
     const url = editedIndex.value === -1 
         ? '/api/users' 
         : `/api/users/${editedItem._id}`;
@@ -249,12 +289,9 @@ const save = async () => {
 };
 
 const canDelete = (userToDelete) => {
-    // Agafem l'email del meu usuari que hem guardat al Login
     const myEmail = localStorage.getItem('userEmail');
 
-    // SI SÓC EL "ADMIN SUPREM" (admin@admin.com)
     if (myEmail === 'admin@admin.com') {
-        // Puc esborrar a tothom MENYS A MI MATEIX
         if (userToDelete.email === 'admin@admin.com') {
             return false;
         } else {
@@ -262,13 +299,10 @@ const canDelete = (userToDelete) => {
         }
     }
 
-    // SI NO SÓC EL ADMIN SUPREM (Sóc un admin normal)
-    // No puc esborrar cap admin
-    if (userToDelete.rol === 'admin') {
+    if (userToDelete.rol?.toLowerCase() === 'admin') {
         return false;
     }
 
-    // Puc esborrar la resta (professors, centres...)
     return true;
 };
 
@@ -283,7 +317,6 @@ const closeDelete = () => {
 
 const deleteItemConfirm = async () => {
     try {
-        // Enviem el meu email per saber qui està intentant esborrar
         const myEmail = localStorage.getItem('userEmail');
         
         const res = await fetch(`/api/users/${editedItem._id}`, { 
