@@ -33,7 +33,7 @@ onMounted(async () => {
     if (resPet.ok) {
       const data = await resPet.json()
       notifs.value = data.filter(p => p.estat === 'PENDENT').map(p => ({ 
-        id: p._id, t: p.centreId?.nom || 'Centre', d: `Vol fer: ${p.tallerId?.titol}` 
+        id: p._id, t: p.nom_centre || 'Centre', d: `Vol fer: ${p.tallerId?.titol || p.taller_titol || 'Pendent'}`
       }))
       vistes.value = notifs.value.length <= ultimCompteVist.value
     }
