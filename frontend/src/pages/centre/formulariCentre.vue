@@ -14,7 +14,14 @@
     <form @submit.prevent="enviarFormulari">
       <div class="field-group">
         <label>Nom del Centre: *</label>
-        <input v-model="form.nom_centre" placeholder="Ex: Escola Torrent" required />
+        <input 
+          v-model="form.nom_centre" 
+          readonly 
+          class="input-readonly"
+          placeholder="Carregant nom del centre..." 
+          required 
+        />
+        <small style="color: #666;">Aquest nom s'assigna automàticament al teu compte.</small>
       </div>
       
       <div class="field-group">
@@ -26,14 +33,24 @@
         <label>Taller sol·licitat: *</label>
         <select v-model="form.seleccio_tallers.taller_id" required>
           <option disabled value="">Selecciona un taller del catàleg</option>
-          <option v-for="taller in tallersDisponibles" :key="taller._id" :value="taller._id">
-            {{ taller.titol }} (Màxim: {{ taller.places }} places)
+          <option 
+            v-for="taller in tallersDisponibles" 
+            :key="taller._id" 
+            :value="taller._id"
+            :disabled="getPlacesRestants(taller) <= 0"
+          >
+            {{ taller.titol }} 
+            <template v-if="getPlacesRestants(taller) <= 0"> —— [PLE] </template>
+            <template v-else> (Lliures: {{ getPlacesRestants(taller) }} / {{ taller.places }}) </template>
           </option>
         </select>
+        <p v-if="tallerSeleccionat && getPlacesRestants(tallerSeleccionat) <= 0" style="color: #d32f2f; font-size: 0.85rem; margin-top: 5px; font-weight: bold;">
+          ⚠️ Aquest taller ja no té places disponibles.
+        </p>
       </div>
 
-      <div v-if="tallerSeleccionat" style="background: #e3f2fd; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9rem; border-left: 4px solid #2196f3;">
-        Límit de capacitat: <strong>{{ tallerSeleccionat.places }}</strong> alumnes.
+      <div v-if="tallerSeleccionat && getPlacesRestants(tallerSeleccionat) > 0" style="background: #e3f2fd; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9rem; border-left: 4px solid #2196f3;">
+        Places disponibles actualment: <strong>{{ getPlacesRestants(tallerSeleccionat) }}</strong>.
       </div>
 
       <div class="field-group">
@@ -41,13 +58,14 @@
         <input 
           type="number" 
           v-model.number="form.seleccio_tallers.num_alumnes" 
-          placeholder="Quantitat aproximada" 
+          placeholder="Quants alumnes vindran?" 
           min="1"
           required
+          :disabled="!form.seleccio_tallers.taller_id"
           :style="excedeixLimit ? 'border-color: red; background-color: #fff8f8;' : ''"
         />
         <p v-if="excedeixLimit" style="color: red; font-size: 0.8rem; margin-top: 5px; font-weight: bold;">
-          ⚠️ El nombre d'alumnes no pot superar les {{ tallerSeleccionat.places }} places.
+          ⚠️ No hi ha prou places (Només en queden {{ getPlacesRestants(tallerSeleccionat) }}).
         </p>
       </div>
 
@@ -66,8 +84,13 @@
         <textarea v-model="form.comentaris" placeholder="Explica aquí qualsevol detall rellevant..." rows="4"></textarea>
       </div>
 
-      <button type="submit" class="submit-btn" :disabled="excedeixLimit" :style="excedeixLimit ? 'background-color: #ccc; cursor: not-allowed;' : ''">
-        {{ excedeixLimit ? 'Revisa el nombre d\'alumnes' : 'Enviar Sol·licitud' }}
+      <button 
+        type="submit" 
+        class="submit-btn" 
+        :disabled="excedeixLimit || !form.seleccio_tallers.taller_id || getPlacesRestants(tallerSeleccionat) <= 0" 
+        :style="(excedeixLimit || !form.seleccio_tallers.taller_id) ? 'background-color: #ccc; cursor: not-allowed;' : ''"
+      >
+        {{ excedeixLimit ? 'Redueix el nombre d\'alumnes' : 'Enviar Sol·licitud' }}
       </button>
     </form>
   </div>
@@ -75,11 +98,13 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router'; // <--- AÑADIDO
+import { useRouter } from 'vue-router'; 
 
 const router = useRouter();
 
 const tallersDisponibles = ref([]);
+const peticionsActives = ref([]); 
+
 const form = ref({
   nom_centre: '',
   nom_coordinador: '',
@@ -88,36 +113,57 @@ const form = ref({
   comentaris: ''
 });
 
-// Cerquem el taller seleccionat per obtenir les seves places
+// Cerquem el taller seleccionat
 const tallerSeleccionat = computed(() => {
   return tallersDisponibles.value.find(t => t._id === form.value.seleccio_tallers.taller_id);
 });
 
-// Validació de límit de places
+// Calcula places lliures restant les peticions PENDENTS i ASSIGNADES
+const getPlacesRestants = (taller) => {
+  if (!taller) return 0;
+  const alumnesReservats = peticionsActives.value
+    .filter(p => p.seleccio_tallers?.taller_id === taller._id && (p.estat === 'PENDENT' || p.estat === 'ASSIGNAT'))
+    .reduce((sum, p) => sum + (p.seleccio_tallers?.num_alumnes || 0), 0);
+  return taller.places - alumnesReservats;
+};
+
 const excedeixLimit = computed(() => {
   if (!tallerSeleccionat.value) return false;
-  return form.value.seleccio_tallers.num_alumnes > tallerSeleccionat.value.places;
+  return form.value.seleccio_tallers.num_alumnes > getPlacesRestants(tallerSeleccionat.value);
 });
 
 onMounted(async () => {
+  // AFEGIT: Assignar automàticament el nom del centre des de la sessió
+  const nomUsuariLoguejat = localStorage.getItem('userName');
+  if (nomUsuariLoguejat) {
+    form.value.nom_centre = nomUsuariLoguejat;
+  }
+
   try {
-    // CORRECCIÓ: Ruta relativa per usar el PROXY de vite.config.js
-    const res = await fetch('/api/tallers');
-    tallersDisponibles.value = await res.json();
+    const resTallers = await fetch('/api/tallers');
+    tallersDisponibles.value = await resTallers.json();
+
+    const resPeticions = await fetch('/api/peticions');
+    peticionsActives.value = await resPeticions.json();
   } catch (error) {
-    console.error("Error carregant tallers:", error);
+    console.error("Error carregant dades:", error);
   }
 });
 
 const enviarFormulari = async () => {
-  // Validación de seguridad adicional
   const f = form.value;
+  
   if (!f.nom_centre || !f.nom_coordinador || !f.seleccio_tallers.taller_id || f.seleccio_tallers.num_alumnes <= 0 || !f.referent_contacte.nom || !f.referent_contacte.correu) {
     alert("Si us plau, emplena tots els camps obligatoris.");
     return;
   }
 
-  if (excedeixLimit.value) return;
+  if (excedeixLimit.value) {
+    alert(`Ho sentim, només queden ${getPlacesRestants(tallerSeleccionat.value)} places disponibles.`);
+    return;
+  }
+
+  if (!confirm(`Confirmes la sol·licitud per a ${f.seleccio_tallers.num_alumnes} alumnes al taller: "${tallerSeleccionat.value.titol}"?`)) return;
 
   try {
     const res = await fetch('/api/peticions', {
@@ -127,16 +173,27 @@ const enviarFormulari = async () => {
     });
 
     if (res.ok) {
-      alert("Petició guardada correctament!");
-      router.push('/centre/indexcentre'); // Redirigimos en lugar de recargar
+      alert("Petició enviada correctament!");
+      router.push('/centre/indexcentre');
+    } else {
+      const data = await res.json();
+      alert(data.error || "Error al guardar la petició.");
     }
   } catch (error) {
-    alert("Error en connectar amb el servidor.");
+    alert("Error de connexió amb el servidor.");
   }
 };
 </script>
 
 <style scoped>
+/* AFEGIT: Estil per al camp que no es pot editar */
+.input-readonly {
+  background-color: #e9ecef !important;
+  cursor: not-allowed;
+  color: #495057 !important;
+  border-color: #ced4da !important;
+}
+
 .form-container {
   max-width: 550px;
   margin: 30px auto;
@@ -206,10 +263,8 @@ input:focus, select:focus, textarea:focus {
 .mb-6 { margin-bottom: 24px; }
 .mb-0 { margin-bottom: 0 !important; }
 
-/* Ajuste opcional para que el título no ocupe todo el ancho y deje espacio a la flecha */
 .form-title {
   color: #1a1a1a;
-  /* Quitamos el text-align: center; para que fluya con la flecha */
   font-weight: 700;
   flex: 1; 
 }

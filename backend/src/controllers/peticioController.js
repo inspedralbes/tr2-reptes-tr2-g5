@@ -16,58 +16,64 @@ const usePeticions = () => {
 
     // 2. OBTENIR PETICIONS (Admin - Amb JOIN de tallers)
     const getPeticionsAdmin = async (req, res) => {
-    try {
-        const db = getDB();
-        const peticions = await db.collection('peticions').aggregate([
-            {
-                $lookup: {
-                    from: 'tallers',
-                    localField: 'seleccio_tallers.taller_id', // El camp on guardes l'ID
-                    foreignField: '_id',
-                    as: 'tallerInfo' // Ho guardem temporalment aquí
-                }
-            },
-            { $unwind: { path: '$tallerInfo', preserveNullAndEmptyArrays: true } },
-            {
-                $addFields: {
-                    // Creem el camp taller_titol perquè el frontend el trobi
-                    taller_titol: '$tallerInfo.titol' 
-                }
-            }
-        ]).toArray();
-        res.status(200).json(peticions);
-    } catch (error) {
-        res.status(500).json({ error: "Error admin" });
-    }
-};
-
-    // 3. OBTENIR PETICIONS PER CENTRE
-    const getPeticionsPerCentre = async (req, res) => {
         try {
             const db = getDB();
-            const { centreNom } = req.params;
-            const peticions = await db.collection('peticions')
-                .find({ nom_centre: { $regex: `^${centreNom}$`, $options: 'i' } })
-                .toArray();
-
-            const promeses = peticions.map(async (p) => {
-                let tallerId;
-                try {
-                    tallerId = new ObjectId(p.seleccio_tallers.taller_id);
-                } catch (e) {
-                    return { ...p, taller_titol: 'ID de taller no vàlid' };
-                }
-                const taller = await db.collection('tallers').findOne({ _id: tallerId });
-                return { ...p, taller_titol: taller ? taller.titol : 'Taller no trobat' };
-            });
-
-            const resultat = await Promise.all(promeses);
-            res.status(200).json(resultat);
+            const peticions = await db.collection('peticions').aggregate([
+                {
+                    $lookup: {
+                        from: 'tallers',
+                        localField: 'seleccio_tallers.taller_id',
+                        foreignField: '_id',
+                        as: 'tallerId'
+                    }
+                },
+                { $unwind: { path: '$tallerId', preserveNullAndEmptyArrays: true } }
+            ]).toArray();
+            res.status(200).json(peticions);
         } catch (error) {
-            console.error("Error a getPeticionsPerCentre:", error);
-            res.status(500).json({ error: "Error al carregar les peticions del centre" });
+            res.status(500).json({ error: "Error admin" });
         }
     };
+
+    // 3. OBTENIR PETICIONS PER CENTRE (Versió optimitzada)
+const getPeticionsPerCentre = async (req, res) => {
+    try {
+        const db = getDB();
+        let { centreNom } = req.params;
+        
+        // 1. Decodifiquem i netegem espais en blanc extrems
+        const nomNetejat = decodeURIComponent(centreNom).trim();
+
+        // 2. Busquem a la base de dades
+        const peticions = await db.collection('peticions')
+            .find({ nom_centre: { $regex: `^${nomNetejat}$`, $options: 'i' } })
+            .toArray();
+
+        if (peticions.length === 0) {
+            return res.status(200).json([]); // Tornem array buit si no n'hi ha cap
+        }
+
+        // 3. Afegim el títol del taller a cada petició
+        const resultat = await Promise.all(peticions.map(async (p) => {
+            try {
+                const taller = await db.collection('tallers').findOne({ 
+                    _id: new ObjectId(p.seleccio_tallers.taller_id) 
+                });
+                return { 
+                    ...p, 
+                    taller_titol: taller ? taller.titol : 'Taller no trobat' 
+                };
+            } catch (e) {
+                return { ...p, taller_titol: 'Error en ID de taller' };
+            }
+        }));
+
+        res.status(200).json(resultat);
+    } catch (error) {
+        console.error("Error a getPeticionsPerCentre:", error);
+        res.status(500).json({ error: "Error al carregar les peticions del centre" });
+    }
+};
 
     // 4. OBTENIR PETICIONS PER PROFESSOR
     const getPeticionsProfessor = async (req, res) => {
@@ -94,33 +100,85 @@ const usePeticions = () => {
     };
 
     // 5. CREAR PETICIÓ
-    const createPeticio = async (req, res) => {
-        try {
-            const db = getDB();
-            const novaPeticio = { ...req.body, data_creacio: new Date(), estat: 'PENDENT' };
-            const result = await db.collection('peticions').insertOne(novaPeticio);
-            res.status(201).json({ id: result.insertedId });
-        } catch (error) {
-            res.status(500).json({ error: "Error al crear" });
+   // 5. CREAR PETICIÓ (Amb gestió de places compartides)
+const createPeticio = async (req, res) => {
+    try {
+        const db = getDB();
+        const { seleccio_tallers } = req.body; 
+        
+        // A. Busquem el taller a la base de dades per saber quantes places totals té
+        const tallerInfo = await db.collection('tallers').findOne({ 
+            _id: new ObjectId(seleccio_tallers.taller_id) 
+        });
+
+        if (!tallerInfo) {
+            return res.status(404).json({ error: "Taller no trobat." });
         }
-    };
+
+        // B. Sumem els alumnes de les peticions que ja estan PENDENTS o ASSIGNADES
+        const peticionsExistents = await db.collection('peticions').find({
+            "seleccio_tallers.taller_id": seleccio_tallers.taller_id,
+            estat: { $in: ['PENDENT', 'ASSIGNAT'] }
+        }).toArray();
+
+        const alumnesOcupats = peticionsExistents.reduce((total, p) => {
+            return total + (p.seleccio_tallers.num_alumnes || 0);
+        }, 0);
+
+        // C. Calculem si hi ha espai suficient
+        const placesLliures = tallerInfo.places - alumnesOcupats;
+
+        if (seleccio_tallers.num_alumnes > placesLliures) {
+            return res.status(400).json({ 
+                error: `Ho sentim, només queden ${placesLliures} places lliures en aquest taller.` 
+            });
+        }
+
+        // D. Si hi ha lloc, creem la petició
+        const novaPeticio = { 
+            ...req.body, 
+            data_creacio: new Date(), 
+            estat: 'PENDENT' 
+        };
+        const result = await db.collection('peticions').insertOne(novaPeticio);
+        
+        res.status(201).json({ id: result.insertedId });
+    } catch (error) {
+        console.error("Error createPeticio:", error);
+        res.status(500).json({ error: "Error al crear la petició" });
+    }
+};
 
     // 6. ACTUALITZAR ESTAT
     const updateEstat = async (req, res) => {
-        try {
-            const db = getDB();
-            const { id } = req.params;
-            await db.collection('peticions').updateOne(
-                { _id: new ObjectId(id) },
-                { $set: { estat: req.body.estat, professorId: req.body.professorId } }
-            );
-            res.status(200).json({ missatge: "Fet" });
-        } catch (error) {
-            res.status(500).json({ error: "Error" });
-        }
-    };
+    try {
+        const db = getDB();
+        const { id } = req.params;
+        const { estat, professorId, tallerIdDefinitiu } = req.body;
 
-    // 7. FINALITZAR PETICIÓ
+        // Preparem l'objecte d'actualització
+        let updateData = { estat: estat };
+
+        // Si l'admin aprova (ASSIGNAT), guardem el professor i confirmem el taller
+        if (estat === 'ASSIGNAT') {
+            updateData.professorId = professorId;
+            if (tallerIdDefinitiu) {
+                updateData["seleccio_tallers.taller_id"] = tallerIdDefinitiu;
+            }
+        }
+
+        await db.collection('peticions').updateOne(
+            { _id: new ObjectId(id) },
+            { $set: updateData }
+        );
+
+        res.status(200).json({ missatge: "Estat actualitzat correctament" });
+    } catch (error) {
+        res.status(500).json({ error: "Error en l'actualització" });
+    }
+};
+
+// 7. FINALITZAR PETICIÓ
     const finalitzarPeticio = async (req, res) => {
         try {
             const db = getDB();

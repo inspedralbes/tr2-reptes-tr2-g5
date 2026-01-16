@@ -1,16 +1,17 @@
 <template>
   <div class="list-container">
-  <div class="d-flex align-center mb-6">
-    <v-btn 
-      icon="mdi-arrow-left" 
-      variant="text" 
-      color="black" 
-      class="mr-4" 
-      @click="router.push('/centre/indexcentre')" 
-    />
-    <h2 class="text-h4 font-weight-bold mb-0">Estat de les meves sol·licituds</h2>
-  </div>
-  <p v-if="peticions.length === 0">No s'han trobat peticions.</p>
+    <div class="d-flex align-center mb-6">
+      <v-btn 
+        icon="mdi-arrow-left" 
+        variant="text" 
+        color="black" 
+        class="mr-4" 
+        @click="router.push('/centre/indexcentre')" 
+      />
+      <h2 class="text-h4 font-weight-bold mb-0">Estat de les meves sol·licituds</h2>
+    </div>
+    
+    <p v-if="peticions.length === 0">No s'han trobat sol·licituds pendents o rebutjades.</p>
 
     <table v-else>
       <thead>
@@ -23,15 +24,15 @@
       </thead>
       <tbody>
         <tr v-for="peticio in peticions" :key="peticio._id">
-  <td>{{ peticio.nom_centre }}</td>
-  <td>{{ peticio.taller_titol || 'No especificat' }}</td>
-  <td>{{ peticio.seleccio_tallers?.num_alumnes }}</td>
-  <td>
-    <span :class="peticio.estat === 'ASSIGNAT' ? 'completat' : 'pendent'">
-      {{ peticio.estat === 'ASSIGNAT' ? 'Assignat' : 'Pendent' }}
-    </span>
-  </td>
-</tr>
+          <td>{{ peticio.nom_centre }}</td>
+          <td>{{ peticio.taller_titol || 'No especificat' }}</td>
+          <td>{{ peticio.seleccio_tallers?.num_alumnes }}</td>
+          <td>
+            <span :class="getEstatClass(peticio.estat)">
+              {{ formatEstatText(peticio.estat) }}
+            </span>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>
@@ -39,8 +40,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router'; // <--- AFEGIT
-const router = useRouter();               // <--- AFEGIT
+import { useRouter } from 'vue-router'; 
+
+const router = useRouter();               
 
 const peticions = ref([]);
 
@@ -48,6 +50,8 @@ const peticions = ref([]);
 const carregarPeticions = async () => {
   try {
     const nomDelCentre = localStorage.getItem('userName'); 
+    // AQUESTS LOGS APAREIXERAN A LA CONSOLA DEL NAVEGADOR (F12)
+    console.log("1. Nom del centre a cercar:", nomDelCentre);
     
     if (nomDelCentre) {
       const res = await fetch(`/api/peticions/centre/${encodeURIComponent(nomDelCentre)}`);
@@ -55,8 +59,8 @@ const carregarPeticions = async () => {
       if (res.ok) {
         const totes = await res.json();
         
-        // FILTRE: Només guardem les que NO estan assignades
-        // Això fa que quan s'assignin, desapareguin d'aquesta llista
+        // FILTRE: Només guardem les que NO estan assignades.
+        // Això inclou automàticament PENDENT i REBUTJAT.
         peticions.value = totes.filter(p => p.estat !== 'ASSIGNAT');
       }
     }
@@ -64,6 +68,19 @@ const carregarPeticions = async () => {
     console.error("Error carregant les peticions:", error);
   }
 };
+
+// Funcions auxiliars per gestionar els estats sense esborrar res
+const getEstatClass = (estat) => {
+  if (estat === 'REBUTJAT') return 'rebutjat';
+  return 'pendent'; // Per a PENDENT o qualsevol altre que no sigui ASSIGNAT
+};
+
+const formatEstatText = (estat) => {
+  if (estat === 'REBUTJAT') return 'Rebutjat';
+  if (estat === 'PENDENT') return 'Pendent';
+  return estat;
+};
+
 // Executar la funció quan el component s'ha muntat
 onMounted(() => {
   carregarPeticions();
@@ -95,15 +112,28 @@ th {
   font-weight: bold;
 }
 
-/* Estils per a l'estat */
+/* Estils per a l'estat Pendent (Groc/Marró) */
 .pendent {
   color: #856404;
   background-color: #fff3cd;
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 0.9em;
+  font-weight: bold;
 }
 
+/* Estils per a l'estat Rebutjat (Vermell) - AFEGIT */
+.rebutjat {
+  color: #721c24;
+  background-color: #f8d7da;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-weight: bold;
+}
+
+/* Mantinc la classe completat per si la necessites en un futur, 
+encara que el filtre l'exclogui d'aquesta llista */
 .completat {
   color: #155724;
   background-color: #d4edda;
@@ -112,13 +142,10 @@ th {
   font-size: 0.9em;
 }
 
-/* CLASSES AFEGIDES PER L'ALINEACIÓ DEL BOTÓ */
+/* CLASSES PER L'ALINEACIÓ DEL BOTÓ */
 .d-flex { display: flex; }
 .align-center { align-items: center; }
 .mr-4 { margin-right: 16px; }
 .mb-6 { margin-bottom: 24px; }
-
-/* El teu títol ara usa text-h4 de Vuetify, si vols forçar el marge: */
 .mb-0 { margin-bottom: 0 !important; }
-
 </style>
