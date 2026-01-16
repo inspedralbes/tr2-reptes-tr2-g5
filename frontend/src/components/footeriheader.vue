@@ -16,7 +16,7 @@
         <template v-if="!isLoggedIn">
             <v-btn to="/login" variant="text" class="text-none font-weight-bold px-2 custom-blue">
                 <v-icon start size="small">mdi-login</v-icon>
-                Log in
+                Inicieu sessió
             </v-btn>
         </template>
 
@@ -35,7 +35,13 @@
         </template>
       </div>
 
-      <v-btn icon="mdi-account-circle" to="/account" variant="text" class="ml-2 custom-blue"></v-btn>
+      <v-btn icon @click="handleProfileClick" class="ml-2">
+        <v-avatar size="40" color="grey-lighten-3">
+          <v-img v-if="authStore.user?.foto" :src="authStore.user.foto" cover></v-img>
+          <v-icon v-else color="#3465a4">mdi-account-circle</v-icon>
+        </v-avatar>
+      </v-btn>
+      
       <v-app-bar-nav-icon class="d-md-none" />
     </v-app-bar>
 
@@ -55,9 +61,11 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const route = useRoute();
+const authStore = useAuthStore();
 
 const role = ref(null);
 
@@ -79,8 +87,26 @@ const isLoggedIn = computed(() => !!role.value);
 const logout = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userId');
+    localStorage.removeItem('userName'); // AÑADIDO
+    localStorage.removeItem('userEmail'); // AÑADIDO
+    localStorage.removeItem('userFoto');
+    authStore.logout();
+    
     role.value = null;
     router.push('/');
+};
+
+// AÑADIDO: Nueva función para manejar el clic en el icono de usuario
+const handleProfileClick = () => {
+    const userId = localStorage.getItem('userId');
+    
+    if (isLoggedIn.value && userId) {
+        // Si hay sesión e ID, va a su perfil
+        router.push('/account');
+    } else {
+        // Si no, lo manda a loguearse
+        router.push('/login');
+    }
 };
 
 const goToDashboard = () => {

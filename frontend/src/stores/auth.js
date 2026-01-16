@@ -15,7 +15,7 @@ export const useAuthStore = defineStore('auth', () => {
   const userRole = computed(() => user.value?.rol || '');
 
   // Función de login
-  const login = async (email, password) => {
+const login = async (email, password) => {
     error.value = '';
     loading.value = true;
 
@@ -38,13 +38,25 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error(data.error || 'Error en la petició');
       }
 
-      // Guardar toda la información del usuario en el store
-      user.value = data.usuari;
+      // 1. Intentar recuperar la foto persistente del localStorage (Truco local)
+      const persistentFoto = localStorage.getItem(`userFoto_${data.usuari.email}`);
+      
+      // 2. Prioridad de la foto: 
+      // Primero la del servidor, si no hay, la persistente, si no hay, vacía.
+      const finalFoto = data.usuari.foto || persistentFoto || '';
 
-      // También guardar en localStorage
+      // 3. Guardar en el store de Pinia (Aseguramos que el objeto tenga la foto)
+      user.value = {
+        ...data.usuari,
+        foto: finalFoto
+      };
+
+      // 4. Guardar en localStorage para que persista la sesión
+      localStorage.setItem('userId', data.usuari.id || data.usuari._id);
       localStorage.setItem('userRole', data.usuari.rol);
       localStorage.setItem('userName', data.usuari.nom);
       localStorage.setItem('userEmail', data.usuari.email);
+      localStorage.setItem('userFoto', finalFoto); // Guardamos la foto final (recuperada o nueva)
 
       return data.usuari;
 
@@ -60,22 +72,28 @@ export const useAuthStore = defineStore('auth', () => {
   const logout = () => {
     user.value = null;
     error.value = '';
+    localStorage.removeItem('userId'); // <--- AÑADIR ESTO
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('userFoto'); // AÑADIR ESTO
   };
 
   // Inicializar desde localStorage al cargar
   const initAuth = () => {
+    const storedId = localStorage.getItem('userId'); // <--- AÑADIR ESTO
     const storedRole = localStorage.getItem('userRole');
     const storedName = localStorage.getItem('userName');
     const storedEmail = localStorage.getItem('userEmail');
+    const storedFoto = localStorage.getItem('userFoto'); // <--- 1. AÑADIDO AQUÍ
     
     if (storedRole && storedName) {
       user.value = {
+        id: storedId, // <--- AÑADIR ESTO
         rol: storedRole,
         nom: storedName,
-        email: storedEmail
+        email: storedEmail,
+        foto: storedFoto // <--- 2. AÑADIDO AQUÍ
       };
     }
   };
