@@ -3,18 +3,47 @@ const { ObjectId } = require('mongodb');
 
 const usePeticions = () => {
     
-    // 1. NOVA FUNCIÓ PER A CENTRES (Dins de usePeticions)
+    // 1. OBTENIR PETICIONS (General)
+    const getPeticions = async (req, res) => {
+        try {
+            const db = getDB();
+            const peticions = await db.collection('peticions').find().toArray();
+            res.status(200).json(peticions);
+        } catch (error) {
+            res.status(500).json({ error: "Error" });
+        }
+    };
+
+    // 2. OBTENIR PETICIONS (Admin - Amb JOIN de tallers)
+    const getPeticionsAdmin = async (req, res) => {
+        try {
+            const db = getDB();
+            const peticions = await db.collection('peticions').aggregate([
+                {
+                    $lookup: {
+                        from: 'tallers',
+                        localField: 'seleccio_tallers.taller_id',
+                        foreignField: '_id',
+                        as: 'tallerId'
+                    }
+                },
+                { $unwind: { path: '$tallerId', preserveNullAndEmptyArrays: true } }
+            ]).toArray();
+            res.status(200).json(peticions);
+        } catch (error) {
+            res.status(500).json({ error: "Error admin" });
+        }
+    };
+
+    // 3. OBTENIR PETICIONS PER CENTRE
     const getPeticionsPerCentre = async (req, res) => {
         try {
             const db = getDB();
             const { centreNom } = req.params;
-
-            // Busquem peticions que coincideixin amb el nom del centre (ignorant majúscules)
             const peticions = await db.collection('peticions')
                 .find({ nom_centre: { $regex: `^${centreNom}$`, $options: 'i' } })
                 .toArray();
 
-            // Enllaçar amb els títols dels tallers
             const promeses = peticions.map(async (p) => {
                 let tallerId;
                 try {
@@ -22,12 +51,8 @@ const usePeticions = () => {
                 } catch (e) {
                     return { ...p, taller_titol: 'ID de taller no vàlid' };
                 }
-
                 const taller = await db.collection('tallers').findOne({ _id: tallerId });
-                return {
-                    ...p,
-                    taller_titol: taller ? taller.titol : 'Taller no trobat'
-                };
+                return { ...p, taller_titol: taller ? taller.titol : 'Taller no trobat' };
             });
 
             const resultat = await Promise.all(promeses);
@@ -38,6 +63,7 @@ const usePeticions = () => {
         }
     };
 
+    // 4. OBTENIR PETICIONS PER PROFESSOR
     const getPeticionsProfessor = async (req, res) => {
         try {
             const db = getDB();
@@ -61,36 +87,7 @@ const usePeticions = () => {
         }
     };
 
-    const getPeticions = async (req, res) => {
-        try {
-            const db = getDB();
-            const peticions = await db.collection('peticions').find().toArray();
-            res.status(200).json(peticions);
-        } catch (error) {
-            res.status(500).json({ error: "Error" });
-        }
-    };
-
-    const getPeticionsAdmin = async (req, res) => {
-        try {
-            const db = getDB();
-            const peticions = await db.collection('peticions').aggregate([
-                {
-                    $lookup: {
-                        from: 'tallers',
-                        localField: 'seleccio_tallers.taller_id',
-                        foreignField: '_id',
-                        as: 'tallerId'
-                    }
-                },
-                { $unwind: { path: '$tallerId', preserveNullAndEmptyArrays: true } }
-            ]).toArray();
-            res.status(200).json(peticions);
-        } catch (error) {
-            res.status(500).json({ error: "Error admin" });
-        }
-    };
-
+    // 5. CREAR PETICIÓ
     const createPeticio = async (req, res) => {
         try {
             const db = getDB();
@@ -102,6 +99,7 @@ const usePeticions = () => {
         }
     };
 
+    // 6. ACTUALITZAR ESTAT
     const updateEstat = async (req, res) => {
         try {
             const db = getDB();
@@ -116,6 +114,7 @@ const usePeticions = () => {
         }
     };
 
+    // 7. FINALITZAR PETICIÓ
     const finalitzarPeticio = async (req, res) => {
         try {
             const db = getDB();
@@ -131,7 +130,29 @@ const usePeticions = () => {
         }
     };
 
-    // EXPORTEM TOTES LES FUNCIONS INCLOENT LA NOVA
+    // 8. ESTADÍSTIQUES (NOVA FUNCIÓ PER AL REPTE 2)
+    const getEstadistiques = async (req, res) => {
+        try {
+            const db = getDB();
+            
+            // Agrupació per estat (Ex: PENDENT: 5, ASSIGNAT: 3)
+            const stats = await db.collection('peticions').aggregate([
+                {
+                    $group: {
+                        _id: "$estat",
+                        total: { $sum: 1 }
+                    }
+                }
+            ]).toArray();
+
+            res.status(200).json(stats);
+        } catch (error) {
+            console.error("Error a estadistiques:", error);
+            res.status(500).json({ error: "Error calculant estadístiques" });
+        }
+    };
+
+    // EXPORTEM TOTES LES FUNCIONS (Incloses les estadístiques)
     return { 
         getPeticions, 
         getPeticionsAdmin, 
@@ -139,7 +160,8 @@ const usePeticions = () => {
         createPeticio, 
         updateEstat,
         getPeticionsProfessor,
-        finalitzarPeticio
+        finalitzarPeticio,
+        getEstadistiques 
     };
 };
 

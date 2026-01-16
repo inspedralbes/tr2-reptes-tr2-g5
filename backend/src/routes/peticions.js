@@ -2,15 +2,19 @@ const express = require('express');
 const router = express.Router();
 const { usePeticions } = require('../controllers/peticioController');
 
-// RUTA PER A CENTRES (S'ha d'afegir aquesta)
-router.get('/centre/:centreNom', async (req, res) => {
-    const { getPeticionsPerCentre } = usePeticions();
-    await getPeticionsPerCentre(req, res);
+router.get('/estadistiques', async (req, res) => {
+    const { getEstadistiques } = usePeticions(); 
+    await getEstadistiques(req, res);
 });
 
 router.get('/admin', async (req, res) => {
     const { getPeticionsAdmin } = usePeticions(); 
     await getPeticionsAdmin(req, res);
+});
+
+router.get('/centre/:centreNom', async (req, res) => {
+    const { getPeticionsPerCentre } = usePeticions();
+    await getPeticionsPerCentre(req, res);
 });
 
 router.get('/professor/:nomProfessor', async (req, res) => {
