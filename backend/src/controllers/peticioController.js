@@ -16,24 +16,30 @@ const usePeticions = () => {
 
     // 2. OBTENIR PETICIONS (Admin - Amb JOIN de tallers)
     const getPeticionsAdmin = async (req, res) => {
-        try {
-            const db = getDB();
-            const peticions = await db.collection('peticions').aggregate([
-                {
-                    $lookup: {
-                        from: 'tallers',
-                        localField: 'seleccio_tallers.taller_id',
-                        foreignField: '_id',
-                        as: 'tallerId'
-                    }
-                },
-                { $unwind: { path: '$tallerId', preserveNullAndEmptyArrays: true } }
-            ]).toArray();
-            res.status(200).json(peticions);
-        } catch (error) {
-            res.status(500).json({ error: "Error admin" });
-        }
-    };
+    try {
+        const db = getDB();
+        const peticions = await db.collection('peticions').aggregate([
+            {
+                $lookup: {
+                    from: 'tallers',
+                    localField: 'seleccio_tallers.taller_id', // El camp on guardes l'ID
+                    foreignField: '_id',
+                    as: 'tallerInfo' // Ho guardem temporalment aquí
+                }
+            },
+            { $unwind: { path: '$tallerInfo', preserveNullAndEmptyArrays: true } },
+            {
+                $addFields: {
+                    // Creem el camp taller_titol perquè el frontend el trobi
+                    taller_titol: '$tallerInfo.titol' 
+                }
+            }
+        ]).toArray();
+        res.status(200).json(peticions);
+    } catch (error) {
+        res.status(500).json({ error: "Error admin" });
+    }
+};
 
     // 3. OBTENIR PETICIONS PER CENTRE
     const getPeticionsPerCentre = async (req, res) => {

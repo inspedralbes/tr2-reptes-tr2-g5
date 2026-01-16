@@ -12,7 +12,6 @@ const state = reactive({
   dialog: false,
   selected: null,
   selectedTaller: null,
-  prof: null,
   accepted: false,
   tab: 0
 })
@@ -148,7 +147,6 @@ const accio = async (tipus) => {
           <tr class="header-black">
             <th class="text-white text-left">CENTRE EDUCATIU</th>
             <th class="text-white text-center">TALLER</th>
-            <th class="text-white text-center">RESPONSABLE</th> 
             <th class="text-white text-center">COMENTARI</th>
             <th class="text-white text-center">ESTAT</th>
             <th class="text-white text-center">GESTIÓ</th>
@@ -158,14 +156,8 @@ const accio = async (tipus) => {
           <tr v-for="p in filtered" :key="p._id" :class="{'opacity-50': p.estat === 'ASSIGNAT'}">
             <td class="font-weight-bold text-white">{{ p.nom_centre || p.centreId?.nom }}</td>
             <td class="text-center text-white">
-              <div class="font-weight-bold">{{ p.tallerId?.titol || 'Pendent' }}</div>
+              <div class="font-weight-bold">{{ p.tallerId?.titol || p.taller_titol || 'Taller sol·licitat' }}</div>
               <v-chip v-if="p.tallerId?.modalitat" size="x-small" variant="outlined" color="blue-lighten-3" class="mt-1">{{ p.tallerId.modalitat }}</v-chip>
-            </td>
-            <td class="text-center">
-              <div v-if="p.estat === 'ASSIGNAT'" class="d-flex flex-column align-center">
-                <v-chip size="small" variant="tonal" color="blue-lighten-4" prepend-icon="mdi-account-check">{{ p.professorId }}</v-chip>
-              </div>
-              <v-icon v-else color="grey-darken-3" size="small">mdi-account-minus-outline</v-icon>
             </td>
             <td class="text-center">
               <v-tooltip v-if="p.comentaris" location="top" maxWidth="350" transition="scale-transition" content-class="custom-tooltip-content">
@@ -211,7 +203,7 @@ const accio = async (tipus) => {
               <div class="info-item"><span class="text-grey-lighten-1 text-overline">Nº ALUMNES</span><p>{{ state.selected?.seleccio_tallers?.num_alumnes }} alumnes</p></div>
             </v-col>
             <v-col cols="12" md="6">
-              <div class="info-item mb-4"><span class="text-grey-lighten-1 text-overline">TALLER SOL·LICITAT</span><p class="white--text font-weight-bold">{{ state.selected?.tallerId?.titol || 'Pendent' }}</p>
+              <div class="info-item mb-4"><span class="text-grey-lighten-1 text-overline">TALLER SOL·LICITAT</span><p class="white--text font-weight-bold">{{ state.selected?.tallerId?.titol || state.selected?.taller_titol || 'Pendent' }}</p>
                 <v-chip v-if="state.selected?.tallerId?.modalitat" size="x-small" color="blue-lighten-1" variant="flat" class="mt-1">{{ state.selected.tallerId.modalitat }}</v-chip>
               </div>
               <div class="info-item mb-4"><span class="text-grey-lighten-1 text-overline">PROFESSOR/A REFERENT</span><p>{{ state.selected?.referent_contacte?.nom }}</p></div>
@@ -253,7 +245,7 @@ const accio = async (tipus) => {
               prepend-inner-icon="mdi-rhombus-split"
               color="blue-lighten-1"
               theme="dark"
-              :hint="`El centre va demanar: ${state.selected?.tallerId?.titol || 'Pendent'}`"
+              :hint="`El centre va demanar: ${state.selected?.tallerId?.titol || state.selected?.taller_titol }`"
               persistent-hint
             />
           </div>
