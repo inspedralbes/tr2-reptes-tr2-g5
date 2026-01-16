@@ -15,25 +15,39 @@ const usePeticions = () => {
     };
 
     // 2. OBTENIR PETICIONS (Admin - Amb JOIN de tallers)
-    const getPeticionsAdmin = async (req, res) => {
-        try {
-            const db = getDB();
-            const peticions = await db.collection('peticions').aggregate([
-                {
-                    $lookup: {
-                        from: 'tallers',
-                        localField: 'seleccio_tallers.taller_id',
-                        foreignField: '_id',
-                        as: 'tallerId'
-                    }
-                },
-                { $unwind: { path: '$tallerId', preserveNullAndEmptyArrays: true } }
-            ]).toArray();
-            res.status(200).json(peticions);
-        } catch (error) {
-            res.status(500).json({ error: "Error admin" });
-        }
-    };
+   const getPeticionsAdmin = async (req, res) => {
+    try {
+        const db = getDB();
+        const peticions = await db.collection('peticions').aggregate([
+            {
+                // Pas 1: Convertim el String taller_id a ObjectId real
+                $addFields: {
+                    taller_id_obj: { $toObjectId: "$seleccio_tallers.taller_id" }
+                }
+            },
+            {
+                // Pas 2: Ara fem la unió usant l'objecte convertit
+                $lookup: {
+                    from: 'tallers',
+                    localField: 'taller_id_obj',
+                    foreignField: '_id',
+                    as: 'tallerInfo'
+                }
+            },
+            { $unwind: { path: '$tallerInfo', preserveNullAndEmptyArrays: true } },
+            {
+                // Pas 3: Passem el títol a la variable que espera el frontend
+                $addFields: {
+                    taller_titol: '$tallerInfo.titol'
+                }
+            }
+        ]).toArray();
+        res.status(200).json(peticions);
+    } catch (error) {
+        console.error("Error a getPeticionsAdmin:", error);
+        res.status(500).json({ error: "Error admin" });
+    }
+};
 
     // 3. OBTENIR PETICIONS PER CENTRE (Versió optimitzada)
 const getPeticionsPerCentre = async (req, res) => {
