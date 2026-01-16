@@ -6,8 +6,8 @@ const router = useRouter()
 const peticions = ref([])
 
 const state = reactive({
-  filterStatus: 'ACTIVES', // Filtro principal: ACTIVES o REBUTJADES
-  subFilter: 'TOTS', // Sub-filtro: TOTS, PENDENTS, ASSIGNATS
+  filterStatus: 'ACTIVES', 
+  subFilter: 'TOTS', 
   search: '',
   dialog: false,
   selected: null,
@@ -39,7 +39,7 @@ const carregarTallers = async () => {
 
 onMounted(() => {
   carregar()
-  carregarTallers() // <--- ASEGURA'T QUE ES CRIDA AQUÍ
+  carregarTallers() 
 })
 
 

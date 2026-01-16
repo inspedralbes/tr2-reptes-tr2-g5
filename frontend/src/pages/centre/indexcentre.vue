@@ -3,42 +3,31 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const API_URL = 'http://localhost:3001/api'
 
-// Variables para datos y control de fase
 const resum = ref([]) 
-const faseActual = ref(0) // 1: Inscripció, 2: Validació, 3: Assignació
+const faseActual = ref(0) 
 const cargando = ref(true)
 
-// Funciones de navegación con comprobación de seguridad
-function irANovaSolicitud() {
-  if (faseActual.value === 1) router.push('/centre/formulariCentre')
-}
-
-function irAEstatPeticions() {
-  if (faseActual.value >= 1) router.push('/centre/estatpeticions')
-}
-
-function irAAssignacions() {
-  if (faseActual.value === 3) router.push('/centre/assignacions')
-}
+// Funciones de navegación
+const irANovaSolicitud = () => router.push('/centre/formulariCentre')
+const irAEstatPeticions = () => router.push('/centre/estatpeticions')
+const irAAssignacions = () => router.push('/centre/assignacions')
 
 onMounted(async () => {
     try {
-        // 1. Consultar la fase activa del sistema
-        const resConfig = await fetch('http://localhost:3001/api/config')
+        const resConfig = await fetch(`${API_URL}/config`)
         if (resConfig.ok) {
             const config = await resConfig.json()
             faseActual.value = config.faseActual
         }
-
-        // 2. Traer el resumen de talleres (tu lógica original)
-        const respuesta = await fetch('http://localhost:3001/api/tallers')
+        const respuesta = await fetch(`${API_URL}/tallers`)
         if (respuesta.ok) {
             const datos = await respuesta.json()
             resum.value = datos.slice(0, 5)
         }
     } catch (error) {
-        console.error("Error cargando la configuración o talleres:", error)
+        console.error("Error carregant la configuració:", error)
     } finally {
         cargando.value = false
     }
@@ -52,7 +41,7 @@ onMounted(async () => {
       <p class="text-grey-darken-1">Benvingut al programa ENGINY.</p>
       
       <v-chip v-if="!cargando" color="#3465a4" variant="flat" class="mt-2">
-        Fase Actual: {{ faseActual === 1 ? 'Inscripcions Obertes' : faseActual === 2 ? 'Revisió de Sol·licituds' : 'Assignacions Publicades' }}
+        Estat actual: {{ faseActual === 1 ? 'Inscripcions Obertes' : faseActual === 2 ? 'Validació de Sol·licituds' : 'Assignacions Publicades' }}
       </v-chip>
     </header>
 
@@ -61,69 +50,80 @@ onMounted(async () => {
       <v-col cols="12" md="4">
         <v-card 
           variant="outlined" 
-          class="pa-6 text-center h-100" 
-          :disabled="faseActual !== 1"
-          :class="{ 'opacidad-desactivado': faseActual !== 1 }"
-          @click="irANovaSolicitud()" 
-          hover
+          class="pa-6 text-center h-100 card-estil-unic" 
+          :class="{ 'fase-bloquejada': faseActual !== 1 }"
+          @click="faseActual === 1 && irANovaSolicitud()" 
+          :hover="faseActual === 1"
         >
-          <v-icon size="48" :color="faseActual === 1 ? '#3465a4' : 'grey'" class="mb-4">mdi-hammer-wrench</v-icon>
+          <v-icon size="48" color="#3465a4" class="mb-4">mdi-hammer-wrench</v-icon>
           <h3 class="text-h6 font-weight-bold mb-2">Nova Sol·licitud</h3>
-          <p class="text-body-2" :class="faseActual === 1 ? 'text-grey-darken-1' : 'text-error'">
-            {{ faseActual === 1 ? 'Inscriure el centre a un taller.' : 'El termini d\'inscripció ha finalitzat.' }}
-          </p>
+          <p class="text-body-2 text-grey-darken-1">Inscriure el centre a un taller per a la nova edició.</p>
+          <v-btn v-if="faseActual === 1" color="#3465a4" class="mt-4 text-white" variant="flat">Accedir</v-btn>
+          <v-chip v-else size="small" variant="tonal" class="mt-4">No disponible</v-chip>
         </v-card>
       </v-col>
 
       <v-col cols="12" md="4">
         <v-card 
           variant="outlined" 
-          class="pa-6 text-center h-100" 
-          :disabled="faseActual < 1"
-          @click="irAEstatPeticions()" 
-          hover
+          class="pa-6 text-center h-100 card-estil-unic" 
+          :class="{ 'fase-bloquejada': faseActual === 0 || faseActual === 3 }"
+          @click="(faseActual === 1 || faseActual === 2) && irAEstatPeticions()" 
+          :hover="faseActual === 1 || faseActual === 2"
         >
           <v-icon size="48" color="#3465a4" class="mb-4">mdi-clipboard-list-outline</v-icon>
           <h3 class="text-h6 font-weight-bold mb-2">Estat Peticions</h3>
-          <p class="text-body-2 text-grey-darken-1">Veure l'estat de les teves sol·licituds.</p>
+          <p class="text-body-2 text-grey-darken-1">Consulta el procés de validació de les teves sol·licituds.</p>
+          <v-btn v-if="faseActual === 1 || faseActual === 2" color="#3465a4" class="mt-4 text-white" variant="flat">Veure llista</v-btn>
+          <v-chip v-else size="small" variant="tonal" class="mt-4">No disponible</v-chip>
         </v-card>
       </v-col>
 
       <v-col cols="12" md="4">
         <v-card 
           variant="outlined" 
-          class="pa-6 text-center h-100" 
-          :disabled="faseActual !== 3"
-          :class="{ 'opacidad-desactivado': faseActual !== 3 }"
-          @click="irAAssignacions()" 
-          hover
+          class="pa-6 text-center h-100 card-estil-unic" 
+          :class="{ 'fase-bloquejada': faseActual !== 3 }"
+          @click="faseActual === 3 && irAAssignacions()" 
+          :hover="faseActual === 3"
         >
-          <v-icon size="48" :color="faseActual === 3 ? '#3465a4' : 'grey'" class="mb-4">mdi-chart-bar</v-icon>
+          <v-icon size="48" color="#3465a4" class="mb-4">mdi-chart-bar</v-icon>
           <h3 class="text-h6 font-weight-bold mb-2">Assignacions</h3>
-          <p class="text-body-2" :class="faseActual === 3 ? 'text-grey-darken-1' : 'text-grey-lighten-1'">
-            {{ faseActual === 3 ? 'Consultar tallers i horaris confirmats.' : 'Disponible en finalitzar les assignacions.' }}
-          </p>
+          <p class="text-body-2 text-grey-darken-1">Consulta els tallers i horaris finalment adjudicats.</p>
+          <v-btn v-if="faseActual === 3" color="#3465a4" class="mt-4 text-white" variant="flat">Veure resultats</v-btn>
+          <v-chip v-else size="small" variant="tonal" class="mt-4">No disponible</v-chip>
         </v-card>
       </v-col>
 
     </v-row>
 
     <v-row v-else justify="center" class="pa-10">
-      <v-progress-circular indeterminate color="primary"></v-progress-circular>
+      <v-progress-circular indeterminate color="#3465a4"></v-progress-circular>
     </v-row>
     
   </v-container>
 </template>
 
 <style scoped>
-.v-list-item { 
-    border-bottom: 1px solid #f0f0f0; 
+.card-estil-unic {
+    border: 1px solid #3465a4 !important;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    cursor: pointer;
 }
 
-/* Clase para dar aspecto de "bloqueado" pero visible */
-.opacidad-desactivado {
-    opacity: 0.6;
-    background-color: #f9f9f9;
+.fase-bloquejada {
+    opacity: 0.4;
+    filter: grayscale(0.8); 
+    background-color: #f5f5f5; 
     cursor: not-allowed !important;
+    pointer-events: none; 
+    border: 1px dashed #999 !important; 
+}
+
+.card-estil-unic:hover:not(.fase-bloquejada) {
+    background-color: #f0f4fa;
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(52, 101, 164, 0.2) !important;
 }
 </style>
