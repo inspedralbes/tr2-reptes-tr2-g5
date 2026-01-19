@@ -118,42 +118,16 @@ const getPeticionsPerCentre = async (req, res) => {
 const createPeticio = async (req, res) => {
     try {
         const db = getDB();
-        const { seleccio_tallers } = req.body; 
         
-        // A. Busquem el taller a la base de dades per saber quantes places totals té
-        const tallerInfo = await db.collection('tallers').findOne({ 
-            _id: new ObjectId(seleccio_tallers.taller_id) 
-        });
+        // Eliminamos toda la lógica de validación de plazas (A, B y C)
+        // y pasamos directamente a la creación (D)
 
-        if (!tallerInfo) {
-            return res.status(404).json({ error: "Taller no trobat." });
-        }
-
-        // B. Sumem els alumnes de les peticions que ja estan PENDENTS o ASSIGNADES
-        const peticionsExistents = await db.collection('peticions').find({
-            "seleccio_tallers.taller_id": seleccio_tallers.taller_id,
-            estat: { $in: ['PENDENT', 'ASSIGNAT'] }
-        }).toArray();
-
-        const alumnesOcupats = peticionsExistents.reduce((total, p) => {
-            return total + (p.seleccio_tallers.num_alumnes || 0);
-        }, 0);
-
-        // C. Calculem si hi ha espai suficient
-        const placesLliures = tallerInfo.places - alumnesOcupats;
-
-        if (seleccio_tallers.num_alumnes > placesLliures) {
-            return res.status(400).json({ 
-                error: `Ho sentim, només queden ${placesLliures} places lliures en aquest taller.` 
-            });
-        }
-
-        // D. Si hi ha lloc, creem la petició
         const novaPeticio = { 
             ...req.body, 
             data_creacio: new Date(), 
             estat: 'PENDENT' 
         };
+        
         const result = await db.collection('peticions').insertOne(novaPeticio);
         
         res.status(201).json({ id: result.insertedId });
