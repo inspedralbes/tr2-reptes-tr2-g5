@@ -77,7 +77,7 @@
       </div>
       
       <div class="field-group">
-        <label>Correu de contacte: *</label>
+        <label>Correu de contacte professor/a referent: *</label>
         <input type="email" v-model="form.referent_contacte.correu" placeholder="exemple@centre.cat" required />
       </div>
 
