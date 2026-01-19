@@ -37,36 +37,38 @@
             v-for="taller in tallersDisponibles" 
             :key="taller._id" 
             :value="taller._id"
-            :disabled="getPlacesRestants(taller) <= 0"
           >
-            {{ taller.titol }} 
-            <template v-if="getPlacesRestants(taller) <= 0"> —— [PLE] </template>
-            <template v-else> (Lliures: {{ getPlacesRestants(taller) }} / {{ taller.places }}) </template>
-          </option>
+            {{ taller.titol }} — {{ taller.data }}
+            </option>
         </select>
-        <p v-if="tallerSeleccionat && getPlacesRestants(tallerSeleccionat) <= 0" style="color: #d32f2f; font-size: 0.85rem; margin-top: 5px; font-weight: bold;">
-          ⚠️ Aquest taller ja no té places disponibles.
-        </p>
       </div>
 
-      <div v-if="tallerSeleccionat && getPlacesRestants(tallerSeleccionat) > 0" style="background: #e3f2fd; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9rem; border-left: 4px solid #2196f3;">
-        Places disponibles actualment: <strong>{{ getPlacesRestants(tallerSeleccionat) }}</strong>.
+      <div v-if="tallerSeleccionat" style="background: #e3f2fd; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9rem; border-left: 4px solid #2196f3;">
+        Data del taller: <strong>{{ tallerSeleccionat.data }}</strong>
       </div>
 
       <div class="field-group">
         <label>Nombre d'alumnes: *</label>
-        <input 
-          type="number" 
-          v-model.number="form.seleccio_tallers.num_alumnes" 
-          placeholder="Quants alumnes vindran?" 
-          min="1"
+        <select 
+          v-model="form.seleccio_tallers.num_alumnes" 
           required
           :disabled="!form.seleccio_tallers.taller_id"
-          :style="excedeixLimit ? 'border-color: red; background-color: #fff8f8;' : ''"
-        />
-        <p v-if="excedeixLimit" style="color: red; font-size: 0.8rem; margin-top: 5px; font-weight: bold;">
-          ⚠️ No hi ha prou places (Només en queden {{ getPlacesRestants(tallerSeleccionat) }}).
-        </p>
+        >
+          <option disabled value="0">Selecciona el nombre d'alumnes</option>
+          <option value="5">Entre 0 i 5 alumnes</option>
+          <option value="10">Entre 5 i 10 alumnes</option>
+          <option value="15">Entre 10 i 15 alumnes</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label>Nivell d'interès en aquest taller: *</label>
+        <select v-model="form.nivell_interes" required>
+          <option disabled value="">Selecciona el nivell d'interès</option>
+          <option value="Baix">Baix</option>
+          <option value="Mig">Mig</option>
+          <option value="Alt">Alt</option>
+        </select>
       </div>
 
       <div class="field-group">
@@ -87,10 +89,10 @@
       <button 
         type="submit" 
         class="submit-btn" 
-        :disabled="excedeixLimit || !form.seleccio_tallers.taller_id || getPlacesRestants(tallerSeleccionat) <= 0" 
-        :style="(excedeixLimit || !form.seleccio_tallers.taller_id) ? 'background-color: #ccc; cursor: not-allowed;' : ''"
+        :disabled="!form.seleccio_tallers.taller_id || form.seleccio_tallers.num_alumnes === 0" 
+        :style="(!form.seleccio_tallers.taller_id || form.seleccio_tallers.num_alumnes === 0) ? 'background-color: #ccc; cursor: not-allowed;' : ''"
       >
-        {{ excedeixLimit ? 'Redueix el nombre d\'alumnes' : 'Enviar Sol·licitud' }}
+        Enviar Sol·licitud
       </button>
     </form>
   </div>
@@ -103,37 +105,21 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 
 const tallersDisponibles = ref([]);
-const peticionsActives = ref([]); 
 
 const form = ref({
   nom_centre: '',
   nom_coordinador: '',
   seleccio_tallers: { taller_id: '', num_alumnes: 0 },
+  nivell_interes: '',
   referent_contacte: { nom: '', correu: '' },
   comentaris: ''
 });
 
-// Cerquem el taller seleccionat
 const tallerSeleccionat = computed(() => {
   return tallersDisponibles.value.find(t => t._id === form.value.seleccio_tallers.taller_id);
 });
 
-// Calcula places lliures restant les peticions PENDENTS i ASSIGNADES
-const getPlacesRestants = (taller) => {
-  if (!taller) return 0;
-  const alumnesReservats = peticionsActives.value
-    .filter(p => p.seleccio_tallers?.taller_id === taller._id && (p.estat === 'PENDENT' || p.estat === 'ASSIGNAT'))
-    .reduce((sum, p) => sum + (p.seleccio_tallers?.num_alumnes || 0), 0);
-  return taller.places - alumnesReservats;
-};
-
-const excedeixLimit = computed(() => {
-  if (!tallerSeleccionat.value) return false;
-  return form.value.seleccio_tallers.num_alumnes > getPlacesRestants(tallerSeleccionat.value);
-});
-
 onMounted(async () => {
-  // AFEGIT: Assignar automàticament el nom del centre des de la sessió
   const nomUsuariLoguejat = localStorage.getItem('userName');
   if (nomUsuariLoguejat) {
     form.value.nom_centre = nomUsuariLoguejat;
@@ -142,9 +128,6 @@ onMounted(async () => {
   try {
     const resTallers = await fetch('/api/tallers');
     tallersDisponibles.value = await resTallers.json();
-
-    const resPeticions = await fetch('/api/peticions');
-    peticionsActives.value = await resPeticions.json();
   } catch (error) {
     console.error("Error carregant dades:", error);
   }
@@ -153,17 +136,12 @@ onMounted(async () => {
 const enviarFormulari = async () => {
   const f = form.value;
   
-  if (!f.nom_centre || !f.nom_coordinador || !f.seleccio_tallers.taller_id || f.seleccio_tallers.num_alumnes <= 0 || !f.referent_contacte.nom || !f.referent_contacte.correu) {
+  if (!f.nom_centre || !f.nom_coordinador || !f.seleccio_tallers.taller_id || f.seleccio_tallers.num_alumnes <= 0 || !f.nivell_interes || !f.referent_contacte.nom || !f.referent_contacte.correu) {
     alert("Si us plau, emplena tots els camps obligatoris.");
     return;
   }
 
-  if (excedeixLimit.value) {
-    alert(`Ho sentim, només queden ${getPlacesRestants(tallerSeleccionat.value)} places disponibles.`);
-    return;
-  }
-
-  if (!confirm(`Confirmes la sol·licitud per a ${f.seleccio_tallers.num_alumnes} alumnes al taller: "${tallerSeleccionat.value.titol}"?`)) return;
+  if (!confirm(`Confirmes la sol·licitud per al taller: "${tallerSeleccionat.value.titol}" el dia ${tallerSeleccionat.value.data} amb un interès ${f.nivell_interes}?`)) return;
 
   try {
     const res = await fetch('/api/peticions', {
@@ -186,14 +164,13 @@ const enviarFormulari = async () => {
 </script>
 
 <style scoped>
-/* AFEGIT: Estil per al camp que no es pot editar */
+/* Los mismos estilos que tenías */
 .input-readonly {
   background-color: #e9ecef !important;
   cursor: not-allowed;
   color: #495057 !important;
   border-color: #ced4da !important;
 }
-
 .form-container {
   max-width: 550px;
   margin: 30px auto;
@@ -203,25 +180,14 @@ const enviarFormulari = async () => {
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
-
 .form-title {
   color: #1a1a1a;
   text-align: center;
   margin-bottom: 25px;
   font-weight: 700;
 }
-
-.field-group {
-  margin-bottom: 20px;
-}
-
-label {
-  font-weight: 600;
-  display: block;
-  margin-bottom: 8px;
-  color: #333 !important;
-}
-
+.field-group { margin-bottom: 20px; }
+label { font-weight: 600; display: block; margin-bottom: 8px; color: #333 !important; }
 input, select, textarea {
   background-color: #f2f2f2;
   border: 2px solid #ddd;
@@ -232,15 +198,7 @@ input, select, textarea {
   box-sizing: border-box;
   font-size: 1rem;
   color: #000 !important;
-  transition: border-color 0.3s;
 }
-
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: #4CAF50;
-  background-color: #fff;
-}
-
 .submit-btn {
   background-color: #4CAF50;
   color: white;
@@ -251,21 +209,10 @@ input:focus, select:focus, textarea:focus {
   width: 100%;
   font-size: 1.1rem;
   font-weight: bold;
-  margin-top: 10px;
-}
-
-.submit-btn:hover {
-  background-color: #45a049;
 }
 .d-flex { display: flex; }
 .align-center { align-items: center; }
 .mr-4 { margin-right: 16px; }
 .mb-6 { margin-bottom: 24px; }
 .mb-0 { margin-bottom: 0 !important; }
-
-.form-title {
-  color: #1a1a1a;
-  font-weight: 700;
-  flex: 1; 
-}
 </style>
