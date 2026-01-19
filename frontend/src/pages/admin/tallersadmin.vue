@@ -5,7 +5,8 @@ import { useRouter } from 'vue-router'
 const router = useRouter(); const API_URL = '/api/tallers'; const MAX_DESC = 300
 const tallers = ref([])
 const state = reactive({ dialog: false, dialogEdit: false, filter: 'Totes', form: {}, editIdx: -1 })
-const initForm = () => ({ titol: '', descripcio: '', durada: '', places: '', modalitat: '' })
+// Se añade 'data' al formulario inicial
+const initForm = () => ({ titol: '', descripcio: '', durada: '', places: '', modalitat: '', data: '' })
 state.form = initForm()
 
 const apiCall = async (url, method = 'GET', body = null) => {
@@ -46,16 +47,25 @@ const esborrar = async (id, i) => { if (confirm('Eliminar?')) await apiCall(`${A
     
     <v-card variant="flat" class="border-consorci bg-white">
       <v-table class="bg-white">
-        <thead><tr class="header-black"><th class="text-white text-center">ID</th><th class="text-white text-left">TÍTOL / DESCRIPCIÓ</th><th class="text-white text-center">DURADA</th><th class="text-white text-center">PLACES</th><th class="text-white text-center">MODALITAT</th><th class="text-white text-center">ACCIONS</th></tr></thead>
+        <thead>
+          <tr class="header-black">
+            <th class="text-white text-center">ID</th>
+            <th class="text-white text-left">TÍTOL / DESCRIPCIÓ</th>
+            <th class="text-white text-center">DATA</th> <th class="text-white text-center">DURADA</th>
+            <th class="text-white text-center">PLACES</th>
+            <th class="text-white text-center">MODALITAT</th>
+            <th class="text-white text-center">ACCIONS</th>
+          </tr>
+        </thead>
         <tbody>
           <tr v-for="(t, i) in filtered" :key="t._id">
             <td class="text-center font-weight-bold text-grey">{{ i + 1 }}</td>
             <td class="text-left py-4"><div class="font-weight-bold text-black">{{ t.titol }}</div><div class="text-caption text-grey-darken-1">{{ t.descripcio }}</div></td>
-            <td class="text-center">{{ t.durada }}</td><td class="text-center">{{ t.places }}</td>
+            <td class="text-center">{{ t.data }}</td> <td class="text-center">{{ t.durada }}</td><td class="text-center">{{ t.places }}</td>
             <td class="text-center"><v-chip size="small" variant="outlined">{{ t.modalitat }}</v-chip></td>
             <td class="text-center"><v-btn variant="text" icon="mdi-pencil-outline" color="black" @click="obrir(t, i)"/><v-btn variant="text" icon="mdi-trash-can-outline" color="red" @click="esborrar(t._id, i)"/></td>
           </tr>
-          <tr v-if="!filtered.length"><td colspan="6" class="text-center pa-10 text-grey-darken-1">No existeix cap taller de tipus <strong>{{ state.filter }}</strong>.</td></tr>
+          <tr v-if="!filtered.length"><td colspan="7" class="text-center pa-10 text-grey-darken-1">No existeix cap taller de tipus <strong>{{ state.filter }}</strong>.</td></tr>
         </tbody>
       </v-table>
     </v-card>
@@ -66,7 +76,10 @@ const esborrar = async (id, i) => { if (confirm('Eliminar?')) await apiCall(`${A
         <v-card-text>
           <v-text-field v-model="state.form.titol" label="Títol" variant="outlined" color="white" class="custom-input mb-2"/>
           <v-textarea v-model="state.form.descripcio" label="Descripció" variant="outlined" color="white" class="custom-input mb-2" :counter="MAX_DESC" rows="5" no-resize/>
-          <v-row><v-col><v-text-field v-model="state.form.durada" label="Durada" variant="outlined" color="white" class="custom-input"/></v-col><v-col><v-text-field v-model="state.form.places" label="Places" type="number" variant="outlined" color="white" class="custom-input"/></v-col></v-row>
+          <v-row>
+            <v-col cols="12"><v-text-field v-model="state.form.data" label="Data del Taller" type="date" variant="outlined" color="white" class="custom-input"/></v-col> <v-col><v-text-field v-model="state.form.durada" label="Durada" variant="outlined" color="white" class="custom-input"/></v-col>
+            <v-col><v-text-field v-model="state.form.places" label="Places" type="number" variant="outlined" color="white" class="custom-input"/></v-col>
+          </v-row>
           <v-select v-model="state.form.modalitat" :items="['Modalitat A', 'Modalitat B', 'Modalitat C']" label="Modalitat" variant="outlined" color="white" class="custom-input" :menu-props="{ contentClass: 'custom-menu' }"/>
         </v-card-text>
         <v-card-actions><v-spacer/><v-btn variant="text" color="white" @click="state.dialog = false">Cancel·lar</v-btn><v-btn color="white" class="text-black px-6" variant="flat" @click="guardar">Crear</v-btn></v-card-actions>
@@ -79,7 +92,11 @@ const esborrar = async (id, i) => { if (confirm('Eliminar?')) await apiCall(`${A
         <v-container class="pa-10">
           <v-text-field v-model="state.form.titol" label="Títol" variant="outlined" color="black"/>
           <v-textarea v-model="state.form.descripcio" label="Descripció" variant="outlined" color="black" :counter="MAX_DESC" rows="5" no-resize/>
-          <v-row class="mt-2"><v-col><v-text-field v-model="state.form.durada" label="Durada" variant="outlined" color="black"/></v-col><v-col><v-text-field v-model="state.form.places" label="Places" type="number" variant="outlined" color="black"/></v-col><v-col><v-select v-model="state.form.modalitat" :items="['Modalitat A', 'Modalitat B', 'Modalitat C']" label="Modalitat" variant="outlined" color="black"/></v-col></v-row>
+          <v-row class="mt-2">
+            <v-col cols="12" md="3"><v-text-field v-model="state.form.data" label="Data" type="date" variant="outlined" color="black"/></v-col> <v-col cols="12" md="3"><v-text-field v-model="state.form.durada" label="Durada" variant="outlined" color="black"/></v-col>
+            <v-col cols="12" md="3"><v-text-field v-model="state.form.places" label="Places" type="number" variant="outlined" color="black"/></v-col>
+            <v-col cols="12" md="3"><v-select v-model="state.form.modalitat" :items="['Modalitat A', 'Modalitat B', 'Modalitat C']" label="Modalitat" variant="outlined" color="black"/></v-col>
+          </v-row>
         </v-container>
       </v-card>
     </v-dialog>
