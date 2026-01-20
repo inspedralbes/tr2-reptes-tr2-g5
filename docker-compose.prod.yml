@@ -1,19 +1,20 @@
 services:
-  nginx:
-    image: nginx:stable-alpine # Usamos la imagen directa en lugar de 'build'
+  proxy:
+    build:
+      context: .
+      dockerfile: nginx.Dockerfile
     ports:
-      - "${PORT_NGINX}:${PORT_NGINX}"
+      - "80:80"
+      - "443:443"
     volumes:
-      # Montamos tu archivo de configuración directamente
-      - ./frontend/proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      # Montamos los certificados SSL (muy importante para tu config)
+      # Important: la guia diu que els certificats han d'estar al host
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - frontend
       - backend
     networks:
       - prod-network
-    restart: unless-stopped
+    restart: always
 
   backend:
     build: ./backend
