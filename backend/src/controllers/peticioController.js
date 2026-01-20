@@ -166,6 +166,72 @@ const getPeticionsAdmin = async (req, res) => {
     }
 };
 
+// NOU: Assignar el representant triat per l'admin al document del Taller
+const assignarRepresentantOficial = async (req, res) => {
+    try {
+        const db = getDB();
+        const { id } = req.params; // ID del taller
+        const { representant_oficial } = req.body; // { nom, correu }
+
+        await db.collection('tallers').updateOne(
+            { _id: new ObjectId(id) },
+            { $set: { representant_oficial: representant_oficial } }
+        );
+        res.status(200).json({ missatge: "Representant assignat correctament al taller" });
+    } catch (error) {
+        res.status(500).json({ error: "Error al guardar el representant oficial" });
+    }
+};
+
+// OBTENIR VOLUNTARIS PER TALLER
+// OBTENIR VOLUNTARIS PER TALLER (Dins de usePeticions)
+const getVoluntarisPerTaller = async (req, res) => {
+    try {
+        const db = getDB();
+        const voluntaris = await db.collection('peticions').aggregate([
+            {
+                $group: {
+                    // Agrupem pel camp que arriba del formulari
+                    _id: "$seleccio_tallers.taller_id", 
+                    candidats: {
+                        $push: {
+                            nom: "$referent_contacte.nom",
+                            correu: "$referent_contacte.correu",
+                            centre: "$nom_centre",
+                            peticioId: "$_id"
+                        }
+                    }
+                }
+            },
+            {
+                // PAS CLAU: Convertim l'ID de text a ObjectId per poder trobar el taller
+                $addFields: {
+                    taller_obj_id: { $toObjectId: "$_id" }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'tallers',
+                    localField: 'taller_obj_id',
+                    foreignField: '_id',
+                    as: 'infoTaller'
+                }
+            },
+            { $unwind: "$infoTaller" },
+            {
+                $project: {
+                    taller_titol: "$infoTaller.titol",
+                    candidats: 1
+                }
+            }
+        ]).toArray();
+        res.status(200).json(voluntaris);
+    } catch (error) {
+        console.error("Error al llistar voluntaris:", error);
+        res.status(500).json({ error: "Error al llistar voluntaris" });
+    }
+};
+
     // 7. FINALITZAR TALLER
     const finalitzarPeticio = async (req, res) => {
         try {
@@ -203,7 +269,9 @@ const getPeticionsAdmin = async (req, res) => {
         createPeticio, 
         updateEstat,
         finalitzarPeticio,
-        getEstadistiques 
+        getEstadistiques,
+        getVoluntarisPerTaller
+        
     };
 };
 

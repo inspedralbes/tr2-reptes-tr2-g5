@@ -49,6 +49,8 @@ onMounted(async () => {
         <p class="text-subtitle-1 text-grey-darken-1">Gestió centralitzada de tallers, sol·licituds i usuaris.</p>
       </div>
 
+   
+
       <div class="d-flex align-center">
         <v-menu width="320" location="bottom end" :close-on-content-click="false">
           <template v-slot:activator="{ props }">

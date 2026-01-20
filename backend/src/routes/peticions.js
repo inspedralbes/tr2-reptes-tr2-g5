@@ -43,4 +43,8 @@ router.patch('/:id/finalitzar', async (req, res) => {
     await finalitzarPeticio(req, res);
 });
 
+router.get('/voluntaris-representants', async (req, res) => {
+    const { getVoluntarisPerTaller } = usePeticions();
+    await getVoluntarisPerTaller(req, res);
+});
 module.exports = router;

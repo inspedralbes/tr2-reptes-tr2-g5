@@ -22,6 +22,7 @@ declare module 'vue-router/auto-routes' {
     '/account': RouteRecordInfo<'/account', '/account', Record<never, never>, Record<never, never>>,
     '/admin/convidaradmin': RouteRecordInfo<'/admin/convidaradmin', '/admin/convidaradmin', Record<never, never>, Record<never, never>>,
     '/admin/fasesadmin': RouteRecordInfo<'/admin/fasesadmin', '/admin/fasesadmin', Record<never, never>, Record<never, never>>,
+    '/admin/gestiorepresentants': RouteRecordInfo<'/admin/gestiorepresentants', '/admin/gestiorepresentants', Record<never, never>, Record<never, never>>,
     '/admin/indexadmin': RouteRecordInfo<'/admin/indexadmin', '/admin/indexadmin', Record<never, never>, Record<never, never>>,
     '/admin/informesadmin': RouteRecordInfo<'/admin/informesadmin', '/admin/informesadmin', Record<never, never>, Record<never, never>>,
     '/admin/peticionsadmin': RouteRecordInfo<'/admin/peticionsadmin', '/admin/peticionsadmin', Record<never, never>, Record<never, never>>,
@@ -62,6 +63,10 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/admin/fasesadmin.vue': {
       routes: '/admin/fasesadmin'
+      views: never
+    }
+    'src/pages/admin/gestiorepresentants.vue': {
+      routes: '/admin/gestiorepresentants'
       views: never
     }
     'src/pages/admin/indexadmin.vue': {

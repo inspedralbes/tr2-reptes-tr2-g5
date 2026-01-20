@@ -26,4 +26,14 @@ router.delete('/:id', async (req, res) => {
     await deleteTaller(req, res);
 });
 
+router.get('/voluntaris-representants', async (req, res) => {
+    const { getVoluntarisPerTaller } = usePeticions();
+    await getVoluntarisPerTaller(req, res);
+});
+
+// Ruta per assignar representant: PUT /api/tallers/:id/representant
+router.put('/:id/representant', async (req, res) => {
+    const { assignarRepresentantOficial } = usePeticions(); // Importem del controlador de peticions
+    await assignarRepresentantOficial(req, res);
+});
 module.exports = router;
