@@ -218,12 +218,14 @@ const getVoluntarisPerTaller = async (req, res) => {
                 }
             },
             { $unwind: "$infoTaller" },
-            {
-                $project: {
-                    taller_titol: "$infoTaller.titol",
-                    candidats: 1
-                }
-            }
+            // Dins de getVoluntarisPerTaller a peticioController.js
+{
+    $project: {
+        taller_titol: "$infoTaller.titol",
+        representant_actual: "$infoTaller.representant_oficial", 
+        candidats: 1
+    }
+}
         ]).toArray();
         res.status(200).json(voluntaris);
     } catch (error) {

@@ -40,15 +40,16 @@
                     <div class="font-weight-bold">{{ v.nom }}</div>
                     <div class="text-caption">{{ v.centre }}</div>
                   </div>
-                  <v-btn 
-                    size="small" 
-                    color="black" 
-                    rounded="pill" 
-                    class="text-white px-4"
-                    @click="assignar(taller._id, v)"
-                  >
-                    TRIA
-                  </v-btn>
+              <v-btn 
+  size="small" 
+  :color="taller.representant_actual ? 'grey' : 'black'" 
+  rounded="pill" 
+  class="text-white px-4"
+  :disabled="!!taller.representant_actual"
+  @click="assignar(taller._id, v)"
+>
+  {{ taller.representant_actual ? 'ASSIGNAT' : 'TRIA' }}
+</v-btn>
                 </div>
               </v-list-item>
             </v-list>
@@ -90,23 +91,22 @@ const carregarVoluntaris = async () => {
 // 2. Assignar el representant (crida al PUT de tallers)
 const assignar = async (tallerId, v) => {
   try {
-    const res = await fetch(`/api/tallers/${tallerId}`, {
+    const res = await fetch(`/api/tallers/${tallerId}/representant`, { // Usant la ruta que hem creat
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        representant_oficial: { 
-          nom: v.nom, 
-          correu: v.correu,
-          centre: v.centre 
-        } 
+        representant_oficial: { nom: v.nom, correu: v.correu, centre: v.centre } 
       })
     })
     
     if (res.ok) {
       mostrarNotificacio(`Representant assignat: ${v.nom}`, "success")
-      // Opcional: Podries tornar a carregar o marcar com a triat
-    } else {
-      mostrarNotificacio("Error en l'assignació", "error")
+      
+      // ACTUALITZACIÓ INSTANTÀNIA: Troba el taller a la llista local i posa-li el representant
+      const taller = voluntarisPerTaller.value.find(t => t._id === tallerId)
+      if (taller) {
+        taller.representant_actual = { nom: v.nom, correu: v.correu }
+      }
     }
   } catch (error) {
     mostrarNotificacio("Error de connexió", "error")
