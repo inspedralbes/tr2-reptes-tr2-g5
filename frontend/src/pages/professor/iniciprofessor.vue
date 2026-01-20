@@ -7,8 +7,7 @@ const tallers = ref([])
 const loading = ref(true)
 const tab = ref(0) 
 
-// 1. Agafem el nom de l'usuari del localStorage (el que hem guardat al Login)
-const NOM_PROFESSOR = localStorage.getItem('userName') || "Usuari"; 
+const EMAIL_PROFESSOR = localStorage.getItem('userEmail'); 
 
 const tallersPendents = computed(() => tallers.value.filter(t => !t.finalitzat))
 const tallersFinalitzats = computed(() => tallers.value.filter(t => t.finalitzat))
@@ -21,10 +20,20 @@ const headers = [
 ]
 
 // 2. FUNCIÓ CORREGIDA: Sense localhost, per evitar errors de CORS
+// Agafem l'email en comptes del nom
+onMounted(() => {
+  console.log("Email del professor detectat:", EMAIL_PROFESSOR);
+  if (!EMAIL_PROFESSOR) {
+    console.error("No s'ha trobat l'email al localStorage. Revisa el login.");
+  }
+  carregarTallers();
+});
+
 const carregarTallers = async () => {
   try {
-    // Fem servir la ruta relativa que el teu servidor Apache o el proxy de Vite redirigirà al backend
-    const res = await fetch(`/api/peticions/professor/${encodeURIComponent(NOM_PROFESSOR)}`)
+    // Cridem a la API usant l'email
+    const res = await fetch(`/api/peticions/professor/${encodeURIComponent(EMAIL_PROFESSOR)}`)
+    // ... resta del codi
     
     if (res.ok) {
       tallers.value = await res.json()
@@ -47,7 +56,7 @@ onMounted(carregarTallers)
   <v-container class="professor-wrapper pa-10" fluid>
     <header class="mb-10">
       <h1 class="text-h4 font-weight-bold mb-2 text-blue-darken-4">El meu Panell</h1>
-      <p class="text-body-1 text-grey-darken-1">Benvingut, {{ NOM_PROFESSOR }}. Aquí tens la teva activitat.</p>
+      <p class="text-body-1 text-grey-darken-1">Benvingut. Aquí tens la teva activitat.</p>
     </header>
 
     <v-row class="mb-8">

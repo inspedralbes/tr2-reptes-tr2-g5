@@ -17,7 +17,8 @@ router.get('/centre/:centreNom', async (req, res) => {
     await getPeticionsPerCentre(req, res);
 });
 
-router.get('/professor/:nomProfessor', async (req, res) => {
+// Canvia la línia 20 aproximadament a:
+router.get('/professor/:emailProfessor', async (req, res) => {
     const { getPeticionsProfessor } = usePeticions();
     await getPeticionsProfessor(req, res);
 });

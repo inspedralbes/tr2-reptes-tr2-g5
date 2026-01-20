@@ -46,7 +46,7 @@ onMounted(carregarDades)
 const groupedData = computed(() => {
   const filteredList = peticions.value.filter(p => {
     const nomCentre = (p.centreId?.nom || p.nom_centre || '').toLowerCase()
-    const nomTaller = p.tallerId?.titol || p.taller_titol || ''
+    const nomTaller = p.taller_titol || p.tallerId?.titol || ''
     const coincideixInstitut = nomCentre.includes(state.searchInstitut.toLowerCase())
     const coincideixTaller = state.selectedTallerFilter === 'Tots els tallers' || nomTaller === state.selectedTallerFilter
     
@@ -62,7 +62,7 @@ const groupedData = computed(() => {
 
   const groups = {}
   filteredList.forEach(p => {
-    const tNom = p.tallerId?.titol || p.taller_titol || 'Sense Taller'
+    const tNom = p.taller_titol || p.tallerId?.titol || 'Sense Taller'
     if (!groups[tNom]) groups[tNom] = []
     groups[tNom].push(p)
   })
@@ -204,6 +204,13 @@ const accio = async (tipus) => {
             }} alumnes
           </div>
         </v-col>
+
+        <v-col cols="12">
+  <label class="text-overline text-grey">TALLER SOL·LICITAT</label>
+  <div class="text-body-1 font-weight-bold mb-4 text-indigo-darken-4">
+    {{ state.selected?.taller_titol || state.selected?.tallerId?.titol || 'No especificat' }}
+  </div>
+</v-col>
 
         <v-col cols="12" md="6">
           <label class="text-overline text-grey">COORDINADOR/A GENERAL</label>
