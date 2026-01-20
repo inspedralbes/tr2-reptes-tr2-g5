@@ -30,9 +30,9 @@ services:
     build: ./backend
     environment:
       - NODE_ENV=production
-      - PORT=8088
+      - PORT=3001
     expose:
-      - "8088"
+      - "3001"
     networks:
       - prod-network
     restart: always
