@@ -1,29 +1,39 @@
 services:
-  backend:
-    build: ./backend
-    restart: always
-    ports:
-      - "3000:3000"
-    environment:
-      - PORT=3000
-      - MONGODB_URI=mongodb+srv://fiona222:giaramita@cluster0.gpu1c2r.mongodb.net/enginy?retryWrites=true&w=majority
-
-  frontend:
-    build:
-      context: ./frontend
-      target: production
-    ports:
-      - "80:80"
-
   proxy:
-    image: nginx:stable
-    restart: always
+    build:
+      context: .
+      dockerfile: nginx.Dockerfile
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Important: la guia diu que els certificats han d'estar al host
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - frontend
       - backend
+    networks:
+      - prod-network
+    restart: always
+
+  backend:
+    build: ./backend
+    # La guia demana el port 8088 per a producció
+    environment:
+      - NODE_ENV=production
+      - PORT=8088
+    networks:
+      - prod-network
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    networks:
+      - prod-network
+    restart: always
+
+networks:
+  prod-network:
+    driver: bridge
