@@ -83,7 +83,7 @@ export default defineConfig({
     port: 3001,
     proxy: {
       '/api': {
-        target: 'http://backend:3001',
+        target: 'http://backend:8088',
         changeOrigin: true,
         secure: false,
       }
