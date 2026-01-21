@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const API_URL = 'http://localhost:3001/api'
+const API_URL = '/api'
 
 const resum = ref([]) 
 const faseActual = ref(0) 

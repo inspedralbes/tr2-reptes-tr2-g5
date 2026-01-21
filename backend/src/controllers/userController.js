@@ -173,7 +173,7 @@ const inviteCentre = async (req, res) => {
 
         await db.collection('usuaris').insertOne(nouCentrePendent);
 
-        const linkAceptar = `http://localhost:3000/confirmar-participacion?token=${token}`; 
+        const linkAceptar = `http://localhost:5173/confirmar-participacion?token=${token}`; 
 
         await transporter.sendMail({
             from: '"Projecte ENGINY" <martamartahf@gmail.com>',
@@ -258,7 +258,7 @@ const confirmParticipation = async (req, res) => {
                     </div>
                     <p>Podeu accedir a la plataforma fent clic al següent enllaç:</p>
                     <br>
-                    <a href="http://localhost:3000/login" 
+                    <a href="http://localhost:5173/login" 
                        style="background-color: #000; color: #fff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
                        Iniciar sessió ara
                     </a>
@@ -305,7 +305,7 @@ const inviteMultiple = async (req, res) => {
                 data_invitacio: new Date()
             });
 
-            const linkAceptar = `http://localhost:3000/confirmar-participacion?token=${token}`;
+            const linkAceptar = `http://localhost:5173/confirmar-participacion?token=${token}`;
 
             await transporter.sendMail({
                 from: '"Projecte ENGINY" <martamartahf@gmail.com>',
