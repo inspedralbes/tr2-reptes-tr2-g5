@@ -1,5 +1,7 @@
 const { getDB } = require('../config/db');
 const { ObjectId } = require('mongodb');
+const { transporter } = require('./userController'); // <--- IMPORTA EL TRANSPORTER AQUÍ
+
 
 const usePeticions = () => {
     
@@ -30,46 +32,60 @@ const usePeticions = () => {
         }
     };
 
-    // 3. CREAR PETICIÓ
+    // 3. CREAR PETICIÓ (La que s'executa quan el centre envia el formulari)
     const createPeticio = async (req, res) => {
-    try {
-        const db = getDB();
-        const { 
-            nom_centre, 
-            nom_coordinador, 
-            correu_coordinador,
-            seleccio_tallers, 
-            nivell_interes, 
-            referent_contacte, 
-            comentaris 
-        } = req.body;
+        try {
+            const db = getDB();
+            const { 
+                nom_centre, 
+                nom_coordinador, 
+                correu_coordinador,
+                seleccio_tallers, 
+                nivell_interes, 
+                referent_contacte, // Conté .nom i .correu del professor
+                comentaris 
+            } = req.body;
 
-        const novaPeticio = {
-            nom_centre: nom_centre,
-            // Guardamos el coordinador como un objeto para que coincida con tu esquema de usuarios
-            coordinador: {
-                nom: nom_coordinador,
-                email: correu_coordinador,
-            },
-            seleccio_tallers: {
-                taller_id: seleccio_tallers.taller_id,
-                num_alumnes: parseInt(seleccio_tallers.num_alumnes)
-            },
-            nivell_interes,
-            referent_contacte,
-            comentaris,
-            estat: 'PENDENT',
-            data_creacio: new Date(),
-            finalitzat: false
-        };
+            const novaPeticio = {
+                nom_centre,
+                coordinador: { nom: nom_coordinador, email: correu_coordinador },
+                seleccio_tallers: {
+                    taller_id: seleccio_tallers.taller_id,
+                    num_alumnes: parseInt(seleccio_tallers.num_alumnes)
+                },
+                nivell_interes,
+                referent_contacte,
+                comentaris,
+                estat: 'PENDENT',
+                data_creacio: new Date(),
+                finalitzat: false
+            };
 
-        const result = await db.collection('peticions').insertOne(novaPeticio);
-        res.status(201).json(result);
-    } catch (error) {
-        console.error("Error creant petició:", error);
-        res.status(500).json({ error: "Error al crear la petició" });
-    }
-};
+            const result = await db.collection('peticions').insertOne(novaPeticio);
+
+            // --- ENVIAMENT AUTOMÀTIC DEL CORREU ---
+            if (result.acknowledged && referent_contacte && referent_contacte.correu) {
+                await transporter.sendMail({
+                    from: '"Projecte ENGINY" <martamartahf@gmail.com>',
+                    to: referent_contacte.correu, 
+                    subject: `ADMIN CREAR CREDENCIALES PROFESSOR REFERENT ${referent_contacte.nom.toUpperCase()}`,
+                    html: `
+                        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+                            <h2 style="color: #333;">Hola ${referent_contacte.nom},</h2>
+                            <p>El centre <strong>${nom_centre}</strong> t'ha seleccionat com a <strong>Professor Referent</strong> per a una sol·licitud de taller.</p>
+                            <p>Aquest correu és una notificació perquè l'administrador et creï les credencials d'accés.</p>
+                            <hr>
+                            <p style="font-size: 11px; color: #999;">Projecte ENGINY - Notificació automàtica</p>
+                        </div>`
+                });
+            }
+
+            res.status(201).json(result);
+        } catch (error) {
+            console.error("Error creant petició:", error);
+            res.status(500).json({ error: "Error al crear la petició" });
+        }
+    };
 
     // 4. ACTUALITZAR ESTAT
     const updateEstat = async (req, res) => {

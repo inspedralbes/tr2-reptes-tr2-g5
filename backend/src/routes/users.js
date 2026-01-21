@@ -16,4 +16,7 @@ router.post('/invite', userController.inviteCentre);
 router.post('/confirmar-participacion', userController.confirmParticipation);
 // En tu archivo de rutas:
 router.post('/invite-multiple', userController.inviteMultiple);
+// --- NOVA RUTA PER NOTIFICAR PROFESSOR REFERENT ---
+// Aquesta ruta permetrà a l'administrador enviar el correu de credencials
+router.post('/notify-referent', userController.notifyProfessorReferent);
 module.exports = router;

@@ -336,6 +336,45 @@ const inviteMultiple = async (req, res) => {
     }
 };
 
+// NOTIFICAR PROFESSOR REFERENT
+const notifyProfessorReferent = async (req, res) => {
+    try {
+        const { email, nomProfessor, nomTaller } = req.body;
+
+        if (!email || !nomProfessor || !nomTaller) {
+            return res.status(400).json({ error: "Falten dades per enviar la notificació" });
+        }
+
+        // Enviament del correu amb el format sol·licitat
+        await transporter.sendMail({
+            from: '"Projecte ENGINY" <martamartahf@gmail.com>',
+            to: email, 
+            subject: `ADMIN CREAR CREDENCIALES PROFESSOR REFERENT ${nomProfessor}`,
+            html: `
+                <div style="font-family: sans-serif; max-width: 600px; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
+                    <h2 style="color: #333;">Hola ${nomProfessor},</h2>
+                    <p>Has estat seleccionat com a <strong>Professor Referent</strong> per al següent taller:</p>
+                    
+                    <div style="background-color: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 5px solid #3465a4;">
+                        <p style="margin: 0; font-size: 18px;"><strong>Taller:</strong> ${nomTaller}</p>
+                    </div>
+                    
+                    <p>Aviat rebràs les teves credencials per poder accedir a l'aplicatiu i veure la llista d'alumnes i els detalls de l'assignació.</p>
+                    
+                    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                    <p style="color: #999; font-size: 11px; text-align: center;">
+                        Aquest és un correu automàtic de gestió d'ENGINY.
+                    </p>
+                </div>`
+        });
+
+        res.status(200).json({ missatge: "Notificació enviada al professor referent" });
+    } catch (error) {
+        console.error("ERROR NOTIFICACIÓ PROFESSOR:", error);
+        res.status(500).json({ error: "Error al enviar la notificació al correu" });
+    }
+};
+
 module.exports = {
     getUsers,
     createUser,
@@ -345,5 +384,7 @@ module.exports = {
     getUserById,
     inviteCentre,
     confirmParticipation,
-    inviteMultiple
+    inviteMultiple,
+    notifyProfessorReferent,
+    transporter
 };
