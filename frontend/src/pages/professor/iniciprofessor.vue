@@ -29,30 +29,78 @@ onMounted(() => {
   carregarTallers();
 });
 
-const carregarTallers = async () => {
+const tallersOficials = ref([]); // Nova variable d'estat
+
+
+
+const carregarTallersOficials = async () => {
   try {
-    // Cridem a la API usant l'email
-    const res = await fetch(`/api/peticions/professor/${encodeURIComponent(EMAIL_PROFESSOR)}`)
-    // ... resta del codi
-    
+    const res = await fetch(`/api/tallers/representant/${EMAIL_PROFESSOR}`);
     if (res.ok) {
-      tallers.value = await res.json()
-    } else {
-      console.error("Error en la resposta del servidor")
+      tallersOficials.value = await res.json();
     }
-  } catch (e) { 
-    console.error("Error de connexió:", e) 
-  } finally { 
-    loading.value = false 
+  } catch (error) {
+    console.error("Error carregant representació oficial");
+  }
+};
+
+// Crida la funció a l'onMounted
+onMounted(() => {
+  carregarTallers();
+  carregarTallersOficials(); // Carreguem també la representació oficial
+});
+
+const carregarTallers = async () => {
+  loading.value = true
+  try {
+    // 1. Busquem quins tallers gestiones tu oficialment
+    const resTallers = await fetch(`/api/peticions/representant/${EMAIL_PROFESSOR}`)
+    const meusTallersCertificats = await resTallers.json()
+
+    if (meusTallersCertificats.length > 0) {
+      // 2. Busquem totes les peticions del sistema
+      const resPeticions = await fetch('/api/peticions/admin')
+      const totes = await resPeticions.json()
+      
+      // 3. Filtrem: Només guardem les peticions que coincideixin amb els teus tallers
+      const idsDelsMeusTallers = meusTallersCertificats.map(t => t._id)
+      
+      tallers.value = totes.filter(p => 
+        idsDelsMeusTallers.includes(p.taller_busqueda) || idsDelsMeusTallers.includes(p.tallerId)
+      )
+      console.log("Dades carregades:", tallers.value)
+    }
+  } catch (error) {
+    console.error("Error en la càrrega de dades:", error)
+  } finally {
+    loading.value = false
   }
 }
 
-const anarADetalls = (id) => router.push(`/professor/detallsprofessor?id=${id}`)
+const anarADetalls = (id) => {
+  // Ara 'path' coincideix amb la ruta que Vite ha generat automàticament 
+  // en moure el fitxer a la carpeta /pages/professor/
+  router.push({ 
+    path: '/professor/detallsprofessor', 
+    query: { id: id } 
+  })
+}
 
 onMounted(carregarTallers)
 </script>
 
 <template>
+  <v-alert
+  v-for="taller in tallersOficials"
+  :key="taller._id"
+  color="success"
+  icon="mdi-star-decagram"
+  variant="elevated"
+  class="mb-6 rounded-lg"
+>
+  <div class="text-h6">Ets el representant oficial de: <strong>{{ taller.titol }}</strong></div>
+  <div>Com a representant oficial, apareixeràs com a contacte preferent per a aquest taller en futures sol·licituds.</div>
+</v-alert>
   <v-container class="professor-wrapper pa-10" fluid>
     <header class="mb-10">
       <h1 class="text-h4 font-weight-bold mb-2 text-blue-darken-4">El meu Panell</h1>

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { useTallers } = require('../controllers/tallerController');
+const { usePeticions } = require('../controllers/peticioController');
 
 // Ruta per llistar: GET /api/tallers
 router.get('/', async (req, res) => {
@@ -26,6 +27,11 @@ router.delete('/:id', async (req, res) => {
     await deleteTaller(req, res);
 });
 
+router.put('/:id/representant', async (req, res) => {
+    const { assignarRepresentantOficial } = usePeticions(); 
+    await assignarRepresentantOficial(req, res);
+});
+
 router.get('/voluntaris-representants', async (req, res) => {
     const { getVoluntarisPerTaller } = usePeticions();
     await getVoluntarisPerTaller(req, res);
@@ -35,5 +41,11 @@ router.get('/voluntaris-representants', async (req, res) => {
 router.put('/:id/representant', async (req, res) => {
     const { assignarRepresentantOficial } = usePeticions(); // Importem del controlador de peticions
     await assignarRepresentantOficial(req, res);
+});
+
+// A tallers.js
+router.get('/representant/:emailProfessor', async (req, res) => {
+    const { getTallersRepresentantOficial } = usePeticions();
+    await getTallersRepresentantOficial(req, res);
 });
 module.exports = router;
