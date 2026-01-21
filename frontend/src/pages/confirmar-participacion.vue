@@ -168,15 +168,15 @@ const processarActivacio = async () => {
     const data = await res.json();
 
     if (res.ok) {
-      // 1. GUARDEM LES DADES PERQUÈ SURTIN AL FORMULARI DE SOL·LICITUD
-      localStorage.setItem('coordinatorName', dadesForm.value.nomCoordinador);
-      localStorage.setItem('userEmail', dadesForm.value.emailCoordinador);
-
-      // 2. MOSTREREM LES CREDENCIALS
-      dadesAcces.value = { 
-        email: data.email, 
-        password: data.password 
-      };
+  // Guardamos los datos con llaves claras
+  localStorage.setItem('coordinadorNom', dadesForm.value.nomCoordinador);
+  localStorage.setItem('coordinadorEmail', dadesForm.value.emailCoordinador);
+  localStorage.setItem('userName', data.nom_centre || dadesForm.value.nom_centre); 
+  
+  dadesAcces.value = { 
+    email: data.email, 
+    password: data.password 
+  };
     } else {
       alert(data.error || "L'enllaç d'invitació no és vàlid o ha caducat.");
     }

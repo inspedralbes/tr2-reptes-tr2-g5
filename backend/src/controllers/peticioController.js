@@ -37,7 +37,7 @@ const usePeticions = () => {
         const { 
             nom_centre, 
             nom_coordinador, 
-            email_coordinador, 
+            correu_coordinador,
             seleccio_tallers, 
             nivell_interes, 
             referent_contacte, 
@@ -49,7 +49,7 @@ const usePeticions = () => {
             // Guardamos el coordinador como un objeto para que coincida con tu esquema de usuarios
             coordinador: {
                 nom: nom_coordinador,
-                email: email_coordinador
+                email: correu_coordinador,
             },
             seleccio_tallers: {
                 taller_id: seleccio_tallers.taller_id,

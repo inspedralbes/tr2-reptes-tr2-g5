@@ -25,9 +25,26 @@
       </div>
       
       <div class="field-group">
-        <label>Nom del Coordinador/a: *</label>
-        <input v-model="form.nom_coordinador" placeholder="Nom i cognoms" required />
+      <label>Nom del Coordinador/a: *</label>
+      <input 
+        v-model="form.nom_coordinador" 
+        readonly 
+        class="input-readonly" 
+        placeholder="Nom i cognoms" 
+        required 
+      />
+      <small style="color: #666;">Dada recuperada del registre d'activació.</small>
       </div>
+      <div class="field-group">
+      <label>Correu del Coordinador/a: *</label>
+      <input 
+        v-model="form.correu_coordinador" 
+        readonly 
+        class="input-readonly" 
+        required 
+      />
+      <small style="color: #666;">Dades automàtiques del vostre perfil de centre.</small>
+    </div>
 
       <div class="field-group">
         <label>Taller sol·licitat: *</label>
@@ -109,6 +126,7 @@ const tallersDisponibles = ref([]);
 const form = ref({
   nom_centre: '',
   nom_coordinador: '',
+  correu_coordinador: '',
   seleccio_tallers: { taller_id: '', num_alumnes: 0 },
   nivell_interes: '',
   referent_contacte: { nom: '', correu: '' },
@@ -120,11 +138,15 @@ const tallerSeleccionat = computed(() => {
 });
 
 onMounted(async () => {
-  const nomUsuariLoguejat = localStorage.getItem('userName');
-  if (nomUsuariLoguejat) {
-    form.value.nom_centre = nomUsuariLoguejat;
-  }
+  const nomCentreSaved = localStorage.getItem('userName');
+  const nomCoordinadorSaved = localStorage.getItem('coordinadorNom');
+  const emailCoordinadorSaved = localStorage.getItem('coordinadorEmail');
 
+  if (nomCentreSaved) form.value.nom_centre = nomCentreSaved;
+  if (nomCoordinadorSaved) form.value.nom_coordinador = nomCoordinadorSaved;
+  if (emailCoordinadorSaved) form.value.correu_coordinador = emailCoordinadorSaved;
+
+  // Carga de tallers ...
   try {
     const resTallers = await fetch('/api/tallers');
     tallersDisponibles.value = await resTallers.json();
