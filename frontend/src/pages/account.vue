@@ -128,10 +128,6 @@
                 </p>
               </div>
             </v-card>
-
-            <p class="mt-6 text-caption text-grey text-center">
-              © {{ new Date().getFullYear() }} Consorci d'Educació de Barcelona.
-            </p>
           </v-col>
         </v-row>
       </v-col>

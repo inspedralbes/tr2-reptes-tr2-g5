@@ -11,6 +11,7 @@ const checklist = ref({ material: false, espai: false, satisfaccio: false })
 onMounted(async () => {
   try {
     const id = route.query.id
+<<<<<<< HEAD
     // Fem la crida a admin per obtenir les dades del taller
     const res = await fetch(`/api/peticions/admin`)
     const data = await res.json()
@@ -30,6 +31,9 @@ onMounted(async () => {
 const enviarChecklist = async () => {
   try {
     const res = await fetch(`/api/peticions/${peticio.value._id}/finalitzar`, {
+=======
+    const res = await fetch(`http://localhost:5173/api/peticions/${peticio.value._id}/finalitzar`, {
+>>>>>>> bf12335 (quitar una cosa de la cuenta)
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ checklist: checklist.value })
