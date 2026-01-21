@@ -45,5 +45,9 @@ router.patch('/:id/estat', async (req, res) => {
     const { updateEstat } = usePeticions();
     await updateEstat(req, res);
 });
+router.post('/', async (req, res) => {
+    const { createPeticio } = usePeticions();
+    await createPeticio(req, res);
+});
 
 module.exports = router;

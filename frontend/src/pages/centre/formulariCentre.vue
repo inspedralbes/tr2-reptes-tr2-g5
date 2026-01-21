@@ -27,7 +27,7 @@
       <div class="field-group">
       <label>Nom del Coordinador/a: *</label>
       <input 
-        v-model="form.nom_coordinador" 
+        v-model="form.coordinador.nom" 
         readonly 
         class="input-readonly" 
         placeholder="Nom i cognoms" 
@@ -38,7 +38,7 @@
       <div class="field-group">
       <label>Correu del Coordinador/a: *</label>
       <input 
-        v-model="form.correu_coordinador" 
+        v-model="form.coordinador.email" 
         readonly 
         class="input-readonly" 
         required 
@@ -106,9 +106,9 @@
       <button 
         type="submit" 
         class="submit-btn" 
-        :disabled="!form.seleccio_tallers.taller_id || form.seleccio_tallers.num_alumnes === 0" 
-        :style="(!form.seleccio_tallers.taller_id || form.seleccio_tallers.num_alumnes === 0) ? 'background-color: #ccc; cursor: not-allowed;' : ''"
-      >
+        :disabled="!form.seleccio_tallers.taller_id || form.seleccio_tallers.num_alumnes === 0 || !form.coordinador.email" 
+        :style="(!form.seleccio_tallers.taller_id || form.seleccio_tallers.num_alumnes === 0 || !form.coordinador.email) ? 'background-color: #ccc; cursor: not-allowed;' : ''"
+>
         Enviar Sol·licitud
       </button>
     </form>
@@ -125,28 +125,27 @@ const tallersDisponibles = ref([]);
 
 const form = ref({
   nom_centre: '',
-  nom_coordinador: '',
-  correu_coordinador: '',
+  coordinador: {
+    nom: '',
+    email: ''
+  },
   seleccio_tallers: { taller_id: '', num_alumnes: 0 },
   nivell_interes: '',
   referent_contacte: { nom: '', correu: '' },
   comentaris: ''
 });
-
-const tallerSeleccionat = computed(() => {
-  return tallersDisponibles.value.find(t => t._id === form.value.seleccio_tallers.taller_id);
-});
-
 onMounted(async () => {
+  // Recuperamos los datos del localStorage
   const nomCentreSaved = localStorage.getItem('userName');
   const nomCoordinadorSaved = localStorage.getItem('coordinadorNom');
   const emailCoordinadorSaved = localStorage.getItem('coordinadorEmail');
 
+  // Los asignamos a la nueva estructura
   if (nomCentreSaved) form.value.nom_centre = nomCentreSaved;
-  if (nomCoordinadorSaved) form.value.nom_coordinador = nomCoordinadorSaved;
-  if (emailCoordinadorSaved) form.value.correu_coordinador = emailCoordinadorSaved;
+  if (nomCoordinadorSaved) form.value.coordinador.nom = nomCoordinadorSaved;
+  if (emailCoordinadorSaved) form.value.coordinador.email = emailCoordinadorSaved;
 
-  // Carga de tallers ...
+  // Carga de tallers (mismo código que ya tenías)...
   try {
     const resTallers = await fetch('/api/tallers');
     tallersDisponibles.value = await resTallers.json();
@@ -156,31 +155,30 @@ onMounted(async () => {
 });
 
 const enviarFormulari = async () => {
-  const f = form.value;
-  
-  if (!f.nom_centre || !f.nom_coordinador || !f.seleccio_tallers.taller_id || f.seleccio_tallers.num_alumnes <= 0 || !f.nivell_interes || !f.referent_contacte.nom || !f.referent_contacte.correu) {
-    alert("Si us plau, emplena tots els camps obligatoris.");
+  // Validación de seguridad
+  if (!form.value.coordinador.email || !form.value.seleccio_tallers.taller_id) {
+    alert("Falten camps obligatoris.");
     return;
   }
 
-  if (!confirm(`Confirmes la sol·licitud per al taller: "${tallerSeleccionat.value.titol}" el dia ${tallerSeleccionat.value.data} amb un interès ${f.nivell_interes}?`)) return;
-
   try {
-    const res = await fetch('/api/peticions', {
+    const res = await fetch('/api/peticions', { // URL Relativa para el Proxy
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form.value)
+      body: JSON.stringify(form.value) // Enviamos todo el objeto 'form'
     });
 
     if (res.ok) {
-      alert("Petició enviada correctament!");
+      alert("Petició guardada correctament!");
       router.push('/centre/indexcentre');
     } else {
-      const data = await res.json();
-      alert(data.error || "Error al guardar la petició.");
+      const errorData = await res.json();
+      console.error("Error del servidor:", errorData);
+      alert("Error: " + (errorData.error || "No s'ha pogut guardar"));
     }
   } catch (error) {
-    alert("Error de connexió amb el servidor.");
+    console.error("Error de xarxa:", error);
+    alert("No es pot connectar amb el servidor. ");
   }
 };
 </script>

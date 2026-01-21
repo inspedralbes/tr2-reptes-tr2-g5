@@ -36,7 +36,7 @@ async function startServer() {
         app.use('/api/users', usersRoutes); // <--- AÑADIDO USERS
 
         const PORT = process.env.PORT || 8088;
-        app.listen(PORT, () => {
+        app.listen(PORT,'0.0.0.0', () => {
             console.log(`🚀 Servidor ENGINY a http://localhost:${PORT}`);
         });
     } catch (error) {

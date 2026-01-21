@@ -48,24 +48,17 @@ const peticions = ref([]);
 
 // Funció per anar a buscar les dades al backend
 const carregarPeticions = async () => {
+  const centreNom = localStorage.getItem('userName'); 
+  if (!centreNom) return;
+
   try {
-    const nomDelCentre = localStorage.getItem('userName'); 
-    // AQUESTS LOGS APAREIXERAN A LA CONSOLA DEL NAVEGADOR (F12)
-    console.log("1. Nom del centre a cercar:", nomDelCentre);
-    
-    if (nomDelCentre) {
-      const res = await fetch(`/api/peticions/centre/${encodeURIComponent(nomDelCentre)}`);
-      
-      if (res.ok) {
-        const totes = await res.json();
-        
-        // FILTRE: Només guardem les que NO estan assignades.
-        // Això inclou automàticament PENDENT i REBUTJAT.
-        peticions.value = totes.filter(p => p.estat !== 'ASSIGNAT');
-      }
+    // Esta ruta debe existir en tu index.js de rutas del backend
+    const res = await fetch(`/api/peticions/centre/${encodeURIComponent(centreNom)}`);
+    if (res.ok) {
+      peticions.value = await res.json();
     }
   } catch (error) {
-    console.error("Error carregant les peticions:", error);
+    console.error("Error al llistar:", error);
   }
 };
 
