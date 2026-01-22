@@ -44,6 +44,47 @@ onMounted(async () => {
         Estat actual: {{ faseActual === 1 ? 'Inscripcions Obertes' : faseActual === 2 ? 'Validació de Sol·licituds' : 'Assignacions Publicades' }}
       </v-chip>
     </header>
+    <v-row v-if="!cargando" class="mb-12 mt-4 justify-center">
+  <v-col cols="12" md="10" class="position-relative d-flex justify-space-between align-center">
+    
+    <div class="linea-progreso-fondo"></div>
+    <div 
+      class="linea-progreso-activa" 
+      :style="{ width: faseActual === 1 ? '0%' : faseActual === 2 ? '50%' : '100%' }"
+    ></div>
+
+    <div class="punto-fase">
+      <v-avatar :color="faseActual >= 1 ? '#3465a4' : 'grey-lighten-2'" size="45" class="elevation-2 text-white">
+        <v-icon v-if="faseActual > 1">mdi-check</v-icon>
+        <span v-else class="text-subtitle-1 font-weight-bold">1</span>
+      </v-avatar>
+      <div :class="['text-caption mt-2 text-center', faseActual === 1 ? 'font-weight-bold color-primari' : 'text-grey-darken-1']">
+        INSCRIPCIONS
+      </div>
+    </div>
+
+    <div class="punto-fase">
+      <v-avatar :color="faseActual >= 2 ? '#3465a4' : 'grey-lighten-2'" size="45" class="elevation-2 text-white">
+        <v-icon v-if="faseActual > 2">mdi-check</v-icon>
+        <span v-else class="text-subtitle-1 font-weight-bold">2</span>
+      </v-avatar>
+      <div :class="['text-caption mt-2 text-center', faseActual === 2 ? 'font-weight-bold color-primari' : 'text-grey-darken-1']">
+        VALIDACIÓ
+      </div>
+    </div>
+
+    <div class="punto-fase">
+      <v-avatar :color="faseActual >= 3 ? '#3465a4' : 'grey-lighten-2'" size="45" class="elevation-2 text-white">
+        <v-icon v-if="faseActual >= 3 && faseActual < 4">mdi-star</v-icon>
+        <span v-else class="text-subtitle-1 font-weight-bold">3</span>
+      </v-avatar>
+      <div :class="['text-caption mt-2 text-center', faseActual === 3 ? 'font-weight-bold color-primari' : 'text-grey-darken-1']">
+        ASSIGNACIONS
+      </div>
+    </div>
+
+  </v-col>
+</v-row>
 
     <v-row class="mb-8" v-if="!cargando">
       
@@ -125,5 +166,49 @@ onMounted(async () => {
     background-color: #f0f4fa;
     transform: translateY(-5px);
     box-shadow: 0 4px 12px rgba(52, 101, 164, 0.2) !important;
+}
+.position-relative {
+  position: relative;
+}
+
+.punto-fase {
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100px;
+}
+
+.linea-progreso-fondo {
+  position: absolute;
+  top: 22px; /* Mitad del avatar */
+  left: 50px;
+  right: 50px;
+  height: 4px;
+  background-color: #e0e0e0;
+  z-index: 0;
+  border-radius: 2px;
+}
+
+.linea-progreso-activa {
+  position: absolute;
+  top: 22px;
+  left: 50px;
+  height: 4px;
+  background-color: #3465a4;
+  z-index: 1;
+  transition: width 0.8s ease-in-out;
+  border-radius: 2px;
+}
+
+.color-primari {
+  color: #3465a4 !important;
+}
+
+/* Ajuste para que los textos no se amontonen en móvil */
+@media (max-width: 600px) {
+  .text-caption {
+    font-size: 0.65rem !important;
+  }
 }
 </style>
