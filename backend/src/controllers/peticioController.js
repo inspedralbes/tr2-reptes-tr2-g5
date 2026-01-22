@@ -17,20 +17,23 @@ const usePeticions = () => {
     };
 
     // 2. OBTENIR PETICIONS (Admin)
-    const getPeticionsAdmin = async (req, res) => {
-        try {
-            const db = getDB();
-            const peticions = await db.collection('peticions').aggregate([
-                { $addFields: { taller_busqueda: { $ifNull: ["$tallerId", { $toObjectId: "$seleccio_tallers.taller_id" }] } } },
-                { $lookup: { from: 'tallers', localField: 'taller_busqueda', foreignField: '_id', as: 'tallerInfo' } },
-                { $unwind: { path: '$tallerInfo', preserveNullAndEmptyArrays: true } },
-                { $addFields: { taller_titol: '$tallerInfo.titol' } }
-            ]).toArray();
-            res.status(200).json(peticions);
-        } catch (error) {
-            res.status(500).json({ error: "Error admin" });
-        }
-    };
+   // A peticioController.js -> getPeticionsAdmin
+const getPeticionsAdmin = async (req, res) => {
+    try {
+        const db = getDB();
+        const peticions = await db.collection('peticions').aggregate([
+            { $addFields: { taller_busqueda: { $ifNull: ["$tallerId", { $toObjectId: "$seleccio_tallers.taller_id" }] } } },
+            { $lookup: { from: 'tallers', localField: 'taller_busqueda', foreignField: '_id', as: 'tallerInfo' } },
+            { $unwind: { path: '$tallerInfo', preserveNullAndEmptyArrays: true } },
+            { $addFields: { taller_titol: '$tallerInfo.titol' } },
+            // Important: Assegurar que data_creacio es manté i ordenem de més antiga a més nova (FIFO)
+            { $sort: { data_creacio: 1 } } 
+        ]).toArray();
+        res.status(200).json(peticions);
+    } catch (error) {
+        res.status(500).json({ error: "Error admin" });
+    }
+};
 
     // 3. CREAR PETICIÓ (La que s'executa quan el centre envia el formulari)
     const createPeticio = async (req, res) => {
@@ -125,20 +128,34 @@ const usePeticions = () => {
 
     // 6. VOLUNTARIS PER TALLER (La que et fallava)
     const getVoluntarisPerTaller = async (req, res) => {
-        try {
-            const db = getDB();
-            const voluntaris = await db.collection('peticions').aggregate([
-                { $group: { _id: "$seleccio_tallers.taller_id", candidats: { $push: { nom: "$referent_contacte.nom", correu: "$referent_contacte.correu", centre: "$nom_centre", peticioId: "$_id" } } } },
-                { $addFields: { taller_obj_id: { $toObjectId: "$_id" } } },
-                { $lookup: { from: 'tallers', localField: 'taller_obj_id', foreignField: '_id', as: 'infoTaller' } },
-                { $unwind: "$infoTaller" },
-                { $project: { taller_titol: "$infoTaller.titol", representant_actual: "$infoTaller.representant_oficial", candidats: 1 } }
-            ]).toArray();
-            res.status(200).json(voluntaris);
-        } catch (error) {
-            res.status(500).json({ error: "Error voluntaris" });
-        }
-    };
+    try {
+        const db = getDB();
+        const voluntaris = await db.collection('peticions').aggregate([
+            { $sort: { data_creacio: 1 } }, // Ordenem abans d'agrupar per mantenir la prioritat
+            { 
+                $group: { 
+                    _id: "$seleccio_tallers.taller_id", 
+                    candidats: { 
+                        $push: { 
+                            nom: "$referent_contacte.nom", 
+                            correu: "$referent_contacte.correu", 
+                            centre: "$nom_centre", 
+                            peticioId: "$_id",
+                            createdAt: "$data_creacio" // Passem la data real per al frontend
+                        } 
+                    } 
+                } 
+            },
+            { $addFields: { taller_obj_id: { $toObjectId: "$_id" } } },
+            { $lookup: { from: 'tallers', localField: 'taller_obj_id', foreignField: '_id', as: 'infoTaller' } },
+            { $unwind: "$infoTaller" },
+            { $project: { taller_titol: "$infoTaller.titol", representant_actual: "$infoTaller.representant_oficial", candidats: 1 } }
+        ]).toArray();
+        res.status(200).json(voluntaris);
+    } catch (error) {
+        res.status(500).json({ error: "Error voluntaris" });
+    }
+};
 
     // 7. FINALITZAR TALLER
     const finalitzarPeticio = async (req, res) => {
