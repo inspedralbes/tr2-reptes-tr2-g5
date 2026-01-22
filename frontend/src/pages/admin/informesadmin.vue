@@ -201,59 +201,64 @@ const exportarPDF = () => {
 </script>
 
 <template>
-  <v-container class="dashboard-wrapper pa-8" fluid v-if="!loading">
+  <v-container class="dashboard-wrapper pa-10" fluid v-if="!loading">
     
-    <header class="d-flex justify-space-between align-center mb-8">
+    <header class="d-flex justify-space-between align-start mb-10 border-bottom-ceb pb-6">
       <div>
         <div class="d-flex align-center">
-          <v-btn icon="mdi-chevron-left" variant="tonal" size="small" class="mr-4 bg-white" @click="router.push('/admin/indexadmin')"/>
-          <h1 class="text-h4 font-weight-black text-black">Gestió i Impacte Educatiu</h1>
+          <v-btn icon="mdi-arrow-left" variant="text" size="small" class="mr-2" color="black" @click="router.push('/admin/indexadmin')"/>
+          <h1 class="text-h4 font-weight-bold text-black uppercase-ceb">Gestió i Impacte Educatiu</h1>
         </div>
-        <p class="text-body-2 text-grey-darken-1 mt-1 ml-12">Monitorització en temps real del rendiment acadèmic</p>
+        <p class="text-body-2 text-grey-darken-2 mt-2 ml-12">Panel d'anàlisi tècnica i rendiment de la convocatòria</p>
       </div>
-      <div class="d-flex gap-3">
-        <v-btn variant="flat" color="red-darken-4" class="rounded-pill px-6" prepend-icon="mdi-file-pdf-box" @click="exportarPDF">INFORME PDF</v-btn>
-      </div>
+      <v-btn 
+        variant="flat" 
+        color="#3465a4" 
+        class="rounded-0 px-8 text-white font-weight-bold" 
+        prepend-icon="mdi-file-pdf-box" 
+        @click="exportarPDF"
+      >
+        DESCARREGAR INFORME
+      </v-btn>
     </header>
 
-    <v-row class="mb-8">
+    <v-row class="mb-10">
       <v-col cols="12" md="4">
-        <v-card class="kpi-card glass-amber pa-6 text-white">
-          <div class="d-flex justify-space-between align-center mb-4">
-            <v-icon color="#FFD700" size="38">mdi-star</v-icon>
-            <v-chip color="rgba(255,255,255,0.2)" size="x-small" variant="flat" class="font-weight-bold">QUALITAT</v-chip>
-          </div>
-          <div class="text-h3 font-weight-black mb-1">
-            <span v-if="millorsTallers.length > 0">
+        <v-card variant="outlined" class="kpi-card-ceb pa-6">
+          <div class="text-overline text-grey-darken-1 mb-2">SATISFACCIÓ GLOBAL</div>
+          <div class="d-flex align-baseline">
+            <span class="text-h3 font-weight-bold text-black" v-if="millorsTallers.length > 0">
               {{ (millorsTallers.reduce((acc, t) => acc + parseFloat(t.nota), 0) / millorsTallers.length).toFixed(1) }}
             </span>
-            <span v-else class="text-h5 opacity-70">SENSE DADES</span>
+            <span v-else class="text-h5 text-grey">PENDENT</span>
+            <span class="ml-2 text-body-1 text-grey">/ 5.0</span>
           </div>
-          <div class="text-caption font-weight-bold uppercase opacity-80">Satisfacció mitjana global</div>
+          <v-divider class="my-4" color="#3465a4"></v-divider>
+          <div class="text-caption font-weight-bold text-blue-ceb uppercase-ceb">Qualitat mitjana de servei</div>
         </v-card>
       </v-col>
 
       <v-col cols="12" md="4">
-        <v-card class="kpi-card glass-indigo pa-6">
-          <div class="d-flex justify-space-between align-center mb-2">
-            <v-icon color="indigo-lighten-1" size="32">mdi-account-group</v-icon>
-            <div class="text-h6 font-weight-bold">{{ Math.round((tallers.reduce((acc, t) => acc + getAlumnesPerTaller(t.titol), 0) / (tallers.reduce((acc, t) => acc + t.places, 0) || 1)) * 100) }}%</div>
+        <v-card variant="outlined" class="kpi-card-ceb pa-6">
+          <div class="text-overline text-grey-darken-1 mb-2">OCUPACIÓ DE PLACES</div>
+          <div class="text-h3 font-weight-bold text-black">
+            {{ Math.round((tallers.reduce((acc, t) => acc + getAlumnesPerTaller(t.titol), 0) / (tallers.reduce((acc, t) => acc + t.places, 0) || 1)) * 100) }}%
           </div>
           <v-progress-linear 
             :model-value="(tallers.reduce((acc, t) => acc + getAlumnesPerTaller(t.titol), 0) / (tallers.reduce((acc, t) => acc + t.places, 0) || 1)) * 100"
-            color="white" height="12" rounded class="mt-4"
+            color="#3465a4" height="8" class="mt-4"
           />
-          <div class="text-caption mt-3 opacity-8">Taxa d'ocupació de places total</div>
+          <div class="text-caption mt-3 text-grey-darken-1 uppercase-ceb">Total d'alumnat inscrit</div>
         </v-card>
       </v-col>
 
       <v-col cols="12" md="4">
-        <v-card class="kpi-card bg-grey-darken-4 text-white pa-6">
-          <div class="text-overline mb-4 text-grey-lighten-1">🚀 Demanda per Modalitat</div>
-          <div v-for="mod in statsModalitats" :key="mod.nom" class="d-flex align-center mb-2">
-            <v-icon :color="mod.color" class="mr-2" size="18">{{ mod.icon }}</v-icon>
-            <v-progress-linear :model-value="mod.percent" :color="mod.color" height="6" rounded class="flex-grow-1" />
-            <span class="ml-3 text-caption font-weight-bold" style="min-width: 35px">{{ mod.percent }}%</span>
+        <v-card variant="outlined" class="kpi-card-ceb pa-6 bg-ceb-grey">
+          <div class="text-overline text-grey-darken-1 mb-4">DEMANDA PER MODALITAT</div>
+          <div v-for="mod in statsModalitats" :key="mod.nom" class="d-flex align-center mb-3">
+            <span class="text-caption font-weight-bold text-black" style="min-width: 80px">{{ mod.nom }}</span>
+            <v-progress-linear :model-value="mod.percent" color="#3465a4" height="6" class="flex-grow-1" />
+            <span class="ml-3 text-caption font-weight-black text-blue-ceb">{{ mod.percent }}%</span>
           </div>
         </v-card>
       </v-col>
@@ -261,44 +266,42 @@ const exportarPDF = () => {
 
     <v-row>
       <v-col cols="12" md="8">
-        <v-card class="table-card border-thin bg-white elevation-1">
-          <div class="pa-6 border-bottom d-flex justify-space-between align-center">
-            <h3 class="text-subtitle-1 font-weight-bold">Detall de Disponibilitat per Taller</h3>
+        <v-card variant="outlined" class="table-card-ceb">
+          <div class="pa-4 bg-black d-flex justify-space-between align-center">
+            <h3 class="text-subtitle-2 font-weight-bold text-white uppercase-ceb">Disponibilitat i Mètriques per Taller</h3>
           </div>
-          <v-table class="custom-table">
+          <v-table class="ceb-table">
             <thead>
               <tr>
-                <th class="text-left font-weight-bold">ID</th>
+                <th class="text-left font-weight-bold">CODI</th>
                 <th class="text-left font-weight-bold">TALLER</th>
-                <th class="text-left font-weight-bold">MODALITAT</th>
-                <th class="text-center font-weight-bold">OCUPACIÓ</th>
-                <th class="text-center font-weight-bold">LLIURES</th>
-                <th class="text-right font-weight-bold">NOTA</th>
+                <th class="text-center font-weight-bold">PLACES</th>
+                <th class="text-center font-weight-bold">ESTAT</th>
+                <th class="text-right font-weight-bold">VALORACIÓ</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="t in tallers" :key="t._id">
-                <td class="text-caption text-grey">#{{ t._id.substring(t._id.length - 4) }}</td>
-                <td class="font-weight-bold py-4">{{ t.titol }}</td>
-                <td class="text-caption">{{ t.modalitat || 'N/A' }}</td>
+              <tr v-for="t in tallers" :key="t._id" class="ceb-row">
+                <td class="text-caption font-mono text-grey">#{{ t._id.substring(t._id.length - 4) }}</td>
+                <td class="font-weight-bold py-4 text-black">{{ t.titol }}</td>
                 <td class="text-center">
-                  <div class="text-caption font-weight-bold mb-1">{{ getAlumnesPerTaller(t.titol) }} / {{ t.places }}</div>
-                  <v-progress-linear 
-                    :model-value="(getAlumnesPerTaller(t.titol) / t.places) * 100" 
-                    :color="getAlumnesPerTaller(t.titol) >= t.places ? 'red' : 'blue'"
-                    height="4" rounded
-                  />
+                  <div class="text-caption font-weight-bold">{{ getAlumnesPerTaller(t.titol) }} / {{ t.places }}</div>
                 </td>
                 <td class="text-center">
-                  <v-chip :color="t.places - getAlumnesPerTaller(t.titol) <= 5 ? 'orange-darken-4' : 'green-darken-1'" size="x-small" variant="tonal" class="font-weight-black">
-                    {{ t.places - getAlumnesPerTaller(t.titol) }} VACANTS
+                  <v-chip 
+                    :color="getAlumnesPerTaller(t.titol) >= t.places ? 'black' : '#3465a4'" 
+                    size="x-small" 
+                    variant="flat" 
+                    class="rounded-0 text-white px-3"
+                  >
+                    {{ getAlumnesPerTaller(t.titol) >= t.places ? 'COMPLET' : 'VACANTS' }}
                   </v-chip>
                 </td>
                 <td class="text-right">
-                  <span v-if="getSatisfaccioPerTaller(t.titol)" class="font-weight-black text-amber-darken-3">
+                  <span v-if="getSatisfaccioPerTaller(t.titol)" class="font-weight-black text-blue-ceb">
                     {{ getSatisfaccioPerTaller(t.titol) }}
                   </span>
-                  <span v-else class="text-caption text-grey-lighten-1 italic">Pendent de valorar</span>
+                  <span v-else class="text-caption text-grey italic">S/D</span>
                 </td>
               </tr>
             </tbody>
@@ -307,71 +310,73 @@ const exportarPDF = () => {
       </v-col>
 
       <v-col cols="12" md="4">
-        <v-card class="pa-6 border-thin bg-white elevation-1 mb-6">
-          <h3 class="text-subtitle-1 font-weight-bold mb-6 d-flex align-center">
-            <v-icon color="blue-darken-2" class="mr-2">mdi-fire</v-icon>
-            Més Sol·licitats
-          </h3>
-          <div v-for="(t, idx) in tallersMesSolicitats" :key="idx" class="mb-4">
-            <div class="d-flex justify-space-between text-caption font-weight-bold mb-1">
-              <span class="text-truncate" style="max-width: 150px">{{ t.titol }}</span>
-              <span>{{ t.alumnes }} de {{ t.places }}</span>
+        <v-card variant="outlined" class="pa-6 mb-6 rounded-0">
+          <h3 class="text-subtitle-2 font-weight-bold mb-6 text-black border-left-ceb pl-3 uppercase-ceb">Major demanda</h3>
+          <div v-for="(t, idx) in tallersMesSolicitats" :key="idx" class="mb-5">
+            <div class="d-flex justify-space-between text-caption mb-1">
+              <span class="text-truncate font-weight-bold" style="max-width: 200px">{{ t.titol }}</span>
+              <span class="font-weight-black">{{ t.alumnes }} inscrits</span>
             </div>
-            <v-progress-linear :model-value="t.percentatge" color="blue-lighten-2" height="8" rounded></v-progress-linear>
+            <v-progress-linear :model-value="t.percentatge" color="#3465a4" height="4"></v-progress-linear>
           </div>
         </v-card>
 
-        <v-card class="pa-6 border-thin bg-white elevation-1">
-          <h3 class="text-subtitle-1 font-weight-bold mb-6 d-flex align-center">
-            <v-icon color="amber-darken-2" class="mr-2">mdi-trophy-outline</v-icon>
-            Líders en Satisfacció
-          </h3>
-          <v-list lines="two">
-            <v-list-item v-for="(taller, idx) in millorsTallers" :key="idx" class="px-0 mb-4 border-dashed-bottom pb-4">
-              <template v-slot:prepend>
-                <div class="rank-number mr-4" :class="'rank-' + (idx + 1)">{{ idx + 1 }}</div>
-              </template>
-              <v-list-item-title class="font-weight-bold text-body-2">{{ taller.titol }}</v-list-item-title>
-              <v-list-item-subtitle class="mt-1">
-                <v-rating :model-value="parseFloat(taller.nota)" color="amber-darken-3" density="compact" size="x-small" readonly />
-              </v-list-item-subtitle>
+        <v-card variant="outlined" class="pa-6 rounded-0">
+          <h3 class="text-subtitle-2 font-weight-bold mb-6 text-black border-left-ceb pl-3 uppercase-ceb">Líders en qualitat</h3>
+          <v-list lines="one" class="pa-0">
+            <v-list-item v-for="(taller, idx) in millorsTallers" :key="idx" class="px-0 py-3 border-bottom-thin">
+              <div class="d-flex justify-space-between align-center">
+                <span class="text-body-2 font-weight-bold text-black">{{ taller.titol }}</span>
+                <v-chip size="small" variant="text" class="font-weight-black text-blue-ceb">{{ taller.nota }}</v-chip>
+              </div>
             </v-list-item>
           </v-list>
         </v-card>
       </v-col>
     </v-row>
   </v-container>
-
-  <v-container v-else class="fill-height d-flex justify-center align-center">
-    <v-progress-circular indeterminate size="50" color="blue-darken-2" width="5"></v-progress-circular>
-  </v-container>
 </template>
 
 <style scoped>
-.dashboard-wrapper { background-color: #f8fafc; min-height: 100vh; }
-.kpi-card { border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); transition: transform 0.2s; }
-.kpi-card:hover { transform: translateY(-4px); }
-
-/* ESTILO COLOR NARANJA/ÁMBAR PARA SATISFACCIÓN */
-.glass-amber { 
-  background: linear-gradient(135deg, #f1874eff 0%, #FF8F00 100%); 
-  border-left: 6px solid #FFD700 !important; 
+.dashboard-wrapper { 
+  background-color: #ffffff; 
+  font-family: 'Arial', sans-serif;
 }
 
-.glass-indigo { background: #303F9F; color: white; }
-.table-card { border-radius: 16px; overflow: hidden; }
-.custom-table :deep(thead) { background-color: #f1f5f9; }
-.custom-table :deep(th) { text-transform: uppercase; letter-spacing: 0.5px; color: #64748b !important; font-size: 11px !important; }
-.rank-number { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; }
-.rank-1 { background-color: #FFECB3; color: #FF8F00; }
-.rank-2 { background-color: #F1F5F9; color: #64748B; }
-.rank-3 { background-color: #EFEBE9; color: #795548; }
-.border-thin { border: 1px solid #e2e8f0 !important; }
-.border-dashed-bottom { border-bottom: 1px dashed #e2e8f0; }
-.border-bottom { border-bottom: 1px solid #e2e8f0; }
-.uppercase { text-transform: uppercase; letter-spacing: 1px; }
-.gap-3 { gap: 12px; }
-.italic { font-style: italic; }
-.opacity-70 { opacity: 0.7; }
-.opacity-80 { opacity: 0.8; }
+
+.text-blue-ceb { color: #3465a4 !important; }
+.bg-ceb-grey { background-color: #f9f9f9 !important; }
+.uppercase-ceb { text-transform: uppercase; letter-spacing: 1.5px; }
+
+.border-bottom-ceb { border-bottom: 2px solid #000000; }
+.border-left-ceb { border-left: 4px solid #3465a4; }
+.border-bottom-thin { border-bottom: 1px solid #eeeeee; }
+
+.kpi-card-ceb {
+  border-radius: 0 !important;
+  border: 1px solid #e0e0e0 !important;
+  transition: all 0.2s;
+}
+
+.kpi-card-ceb:hover {
+  border-color: #3465a4 !important;
+  background-color: #fcfcfc;
+}
+
+.table-card-ceb {
+  border-radius: 0 !important;
+  border: 1px solid #000000 !important;
+}
+
+/* TABLA ESTILO CEB */
+.ceb-table :deep(th) {
+  background-color: #f2f2f2 !important;
+  color: #000000 !important;
+  font-size: 11px !important;
+  text-transform: uppercase;
+  border-bottom: 2px solid #000000 !important;
+}
+
+
+.font-mono { font-family: monospace; }
 </style>
