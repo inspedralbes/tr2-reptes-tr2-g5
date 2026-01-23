@@ -22,16 +22,50 @@ const getPeticionsAdmin = async (req, res) => {
     try {
         const db = getDB();
         const peticions = await db.collection('peticions').aggregate([
-            { $addFields: { taller_busqueda: { $ifNull: ["$tallerId", { $toObjectId: "$seleccio_tallers.taller_id" }] } } },
-            { $lookup: { from: 'tallers', localField: 'taller_busqueda', foreignField: '_id', as: 'tallerInfo' } },
+            // 1. Unim amb la col·lecció d'usuaris per buscar el centre
+            {
+                $lookup: {
+                    from: 'usuaris',
+                    localField: 'nom_centre', // O centreId si el fas servir
+                    foreignField: 'nom',
+                    as: 'dadesCentre'
+                }
+            },
+            { $unwind: { path: "$dadesCentre", preserveNullAndEmptyArrays: true } },
+            {
+                $addFields: {
+                    // Si la petició no té coordinador, agafem el de la fitxa del centre
+                    "coordinador.nom": { $ifNull: ["$coordinador.nom", "$dadesCentre.coordinador.nom", "No indicat"] },
+                    "coordinador.email": { $ifNull: ["$coordinador.email", "$dadesCentre.coordinador.email", "No indicat"] },
+                    
+                    taller_busqueda: {
+                        $cond: {
+                            if: { $gt: ["$tallerId", null] },
+                            then: "$tallerId",
+                            else: { $toObjectId: "$seleccio_tallers.taller_id" }
+                        }
+                    }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'tallers',
+                    localField: 'taller_busqueda',
+                    foreignField: '_id',
+                    as: 'tallerInfo'
+                }
+            },
             { $unwind: { path: '$tallerInfo', preserveNullAndEmptyArrays: true } },
-            { $addFields: { taller_titol: '$tallerInfo.titol' } },
-            // Important: Assegurar que data_creacio es manté i ordenem de més antiga a més nova (FIFO)
-            { $sort: { data_creacio: 1 } } 
+            {
+                $addFields: {
+                    taller_titol: { $ifNull: ["$tallerInfo.titol", "Taller no trobat"] }
+                }
+            },
+            { $sort: { data_creacio: 1 } }
         ]).toArray();
         res.status(200).json(peticions);
     } catch (error) {
-        res.status(500).json({ error: "Error admin" });
+        res.status(500).json({ error: "Error obtenint peticions" });
     }
 };
 
