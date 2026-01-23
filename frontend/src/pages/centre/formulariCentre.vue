@@ -118,15 +118,16 @@ const enviarFormulari = async () => {
         </div>
       </div>
 
-      <div class="field-group">
-        <label>Nombre d'alumnes: *</label>
-        <select v-model="form.seleccio_tallers.num_alumnes" required :disabled="!form.seleccio_tallers.taller_id">
-          <option disabled value="0">Selecciona el nombre d'alumnes</option>
-          <option value="5">Entre 0 i 5 alumnes</option>
-          <option value="10">Entre 5 i 10 alumnes</option>
-          <option value="15">Entre 10 i 15 alumnes</option>
-        </select>
-      </div>
+     <div class="field-group">
+  <label>Nombre d'alumnes (Màxim 4):</label>
+  <select v-model="form.seleccio_tallers.num_alumnes" required>
+    <option disabled value="0">Selecciona el nombre d'alumnes</option>
+    <option v-for="n in 4" :key="n" :value="n">{{ n }} alumnes</option>
+  </select>
+  <small v-if="form.seleccio_tallers.num_alumnes > 0" class="help-text">
+    Es presentarà una sol·licitud per a {{ form.seleccio_tallers.num_alumnes }} alumnes.
+  </small>
+</div>
 
       <div class="field-group">
         <label>Nivell d'interès en aquest taller: *</label>
