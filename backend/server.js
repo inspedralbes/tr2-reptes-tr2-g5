@@ -26,6 +26,7 @@ async function startServer() {
         const fasesRoutes = require('./src/routes/fases');
         const authRoutes = require('./src/routes/auth'); // <--- AÑADIDO
         const usersRoutes = require('./src/routes/users'); // <--- AÑADIDO USERS
+        const informesRoutes = require('./src/routes/informes');
 
         // 2. USAR LAS RUTAS
         app.use('/api/tallers', tallersRoutes);
@@ -34,7 +35,8 @@ async function startServer() {
         app.use('/api/assignacions', assignacionsRoutes);
         app.use('/api/auth', authRoutes); // <--- AÑADIDO (Esto soluciona el error 404)
         app.use('/api/users', usersRoutes); // <--- AÑADIDO USERS
-
+        app.use('/api/informes', informesRoutes);
+        
         const PORT = process.env.PORT || 8088;
         app.listen(PORT,'0.0.0.0', () => {
             console.log(`🚀 Servidor ENGINY a http://localhost:${PORT}`);
