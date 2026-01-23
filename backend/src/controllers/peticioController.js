@@ -125,19 +125,40 @@ const getPeticionsAdmin = async (req, res) => {
     };
 
     // 4. ACTUALITZAR ESTAT
-    const updateEstat = async (req, res) => {
-        try {
-            const db = getDB();
-            const { id } = req.params;
-            const { estat, tallerId } = req.body;
-            const updateData = { estat };
-            if (tallerId) updateData.tallerId = new ObjectId(tallerId);
-            await db.collection('peticions').updateOne({ _id: new ObjectId(id) }, { $set: updateData });
-            res.status(200).json({ missatge: "Estat actualitzat" });
-        } catch (error) {
-            res.status(500).json({ error: "Error update" });
-        }
-    };
+   const updateEstat = async (req, res) => {
+    try {
+        const db = getDB();
+        const { id } = req.params;
+        // Rebem les dades tal com les envies des del frontend
+        const { estat, tallerIdDefinitiu, num_alumnes_final } = req.body;
+
+        const updateData = { estat };
+
+        if (estat === 'ASSIGNAT') {
+    const tId = new ObjectId(tallerIdDefinitiu);
+    const numAlumnes = parseInt(num_alumnes_final);
+
+    // RESTAR PLACES AL TALLER
+    await db.collection('tallers').updateOne(
+        { _id: tId },
+        { $inc: { places_disponibles: -numAlumnes } } // Resta el número assignat
+    );
+
+    updateData.tallerId = tId;
+    updateData["seleccio_tallers.num_alumnes"] = numAlumnes;
+}
+        // 4. Actualitzem la petició
+        await db.collection('peticions').updateOne(
+            { _id: new ObjectId(id) },
+            { $set: updateData }
+        );
+
+        res.status(200).json({ missatge: "Estat actualitzat i places reservades" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error en el servidor" });
+    }
+};
 
     // 5. PETICIONS PER CENTRE / PROFESSOR
     const getPeticionsPerCentre = async (req, res) => {

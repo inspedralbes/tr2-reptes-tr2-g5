@@ -2,6 +2,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
+
 const router = useRouter()
 const peticions = ref([])
 const llistaTallers = ref([])
@@ -75,12 +76,24 @@ const groupedData = computed(() => {
 
 const obrir = (p) => {
   state.selected = p
-  state.selectedTaller = null
+  // 1. Assignem el taller que el centre demanava per defecte
+  state.selectedTaller = p.tallerId?._id || p.seleccio_tallers?.taller_id || null
+  
+  // 2. Eliminat: state.selectedTaller = null (això trencava la càrrega inicial)
+  
   state.accepted = false
-  state.placesAssignades = p.seleccio_tallers?.num_alumnes
+  state.placesAssignades = p.seleccio_tallers?.num_alumnes || 0 
   state.dialog = true
 }
 
+const getPlacesRestants = (tId) => {
+  if (!tId) return 0;
+  const taller = llistaTallers.value.find(t => t._id === tId);
+  if (!taller) return 0;
+  
+  // Lògica: si hem restat places usem places_disponibles, si no, la capacitat_maxima original
+  return taller.places_disponibles !== undefined ? taller.places_disponibles : taller.capacitat_maxima;
+};
 const accio = async (tipus) => {
   const url = `/api/peticions/${state.selected._id}/estat`
   let body = {}
@@ -95,7 +108,7 @@ const accio = async (tipus) => {
     }
   }
     
-  try {
+ try {
     const res = await fetch(url, { 
       method: 'PATCH', 
       headers: { 'Content-Type': 'application/json' }, 
@@ -104,8 +117,10 @@ const accio = async (tipus) => {
     
     if (res.ok) { 
       state.dialog = false
-      carregarDades() 
-      alert("Operació realitzada amb èxit")
+      state.accepted = false
+      // AQUESTA LÍNIA ÉS CLAU: Torna a demanar tallers i peticions a la DB
+      await carregarDades() 
+      alert("Assignació realitzada i places actualitzades")
     }
   } catch (e) { 
     console.error("Error:", e)
@@ -233,19 +248,69 @@ const accio = async (tipus) => {
               <v-btn color="red-darken-2" variant="tonal" class="flex-grow-1" @click="accio('REBUTJAR')" prepend-icon="mdi-close">REBUTJAR</v-btn>
               <v-btn color="green-darken-2" class="flex-grow-1 text-white" @click="state.accepted = true" prepend-icon="mdi-check">ACCEPTAR</v-btn>
             </div>
-            <div v-else class="bg-white pa-4 rounded-lg border">
-              <v-select 
-                v-model="state.selectedTaller" 
-                :items="llistaTallers" 
-                item-title="titol" 
-                item-value="_id" 
-                label="Confirma taller definitiu" 
-                variant="outlined"
-              ></v-select>
-              <v-btn block color="black" class="text-white mt-2" @click="accio('ASSIGNAR')">FINALITZAR ASSIGNACIÓ</v-btn>
-              <v-btn block variant="text" size="small" @click="state.accepted = false">Enrere</v-btn>
-            </div>
-          </div>
+
+         <div v-else class="bg-white pa-4 rounded-lg border">
+  <p class="text-caption font-weight-black mb-2 text-uppercase text-grey">Configuració final de l'assignació</p>
+  
+  <v-select 
+  v-model="state.selectedTaller" 
+  :items="llistaTallers" 
+  item-title="titol" 
+  item-value="_id" 
+  label="Taller definitiu" 
+  variant="outlined"
+>
+  <template v-slot:item="{ props, item }">
+    <v-list-item v-bind="props">
+      <template v-slot:subtitle>
+        <span class="text-indigo-darken-2 font-weight-bold">
+          Lliures: {{ item.raw.places_disponibles !== undefined ? item.raw.places_disponibles : item.raw.capacitat_maxima }}
+        </span>
+      </template>
+    </v-list-item>
+  </template>
+</v-select>
+
+  <v-select
+    v-model="state.placesAssignades"
+    :items="[1, 2, 3, 4]"
+    label="Nombre d'alumnes"
+    variant="outlined"
+    density="comfortable"
+    prepend-inner-icon="mdi-account-group"
+  ></v-select>
+
+  <v-alert
+    v-if="state.selectedTaller"
+    :type="getPlacesRestants(state.selectedTaller) < state.placesAssignades ? 'error' : 'info'"
+    variant="tonal"
+    density="compact"
+    class="mt-2 mb-4"
+  >
+    <div class="d-flex justify-space-between">
+      <span>Disponibilitat al taller:</span>
+      <strong>{{ getPlacesRestants(state.selectedTaller) }} places</strong>
+    </div>
+    <div v-if="getPlacesRestants(state.selectedTaller) < state.placesAssignades" class="font-weight-bold mt-1">
+      ⚠️ No hi ha prou places per a {{ state.placesAssignades }} alumnes!
+    </div>
+  </v-alert>
+
+  <v-btn 
+    block 
+    color="black" 
+    class="text-white mt-2" 
+    @click="accio('ASSIGNAR')"
+    :disabled="!state.selectedTaller || !state.placesAssignades || getPlacesRestants(state.selectedTaller) < state.placesAssignades"
+  >
+    FINALITZAR ASSIGNACIÓ
+  </v-btn>
+  
+  <v-btn block variant="text" size="small" class="mt-2" @click="state.accepted = false">Enrere</v-btn>
+</div>
+  <v-btn block variant="text" size="small" @click="state.accepted = false">Enrere</v-btn>
+</div>
+          
         </v-card-text>
         
         <v-card-actions class="pa-4 bg-white border-top">
