@@ -14,7 +14,8 @@ const state = reactive({
   dialog: false,
   selected: null,
   selectedTaller: null,
-  accepted: false
+  accepted: false,
+  placesAssignades: null
 })
 
 const colors = {
@@ -43,45 +44,8 @@ const carregarDades = async () => {
 
 onMounted(carregarDades)
 
-const dialogRepresentants = ref(false)
-const voluntarisPerTaller = ref([])
-
-// Funció per carregar els voluntaris del backend
-const obrirGestioRepresentants = async () => {
-  try {
-    const res = await fetch('/api/peticions/voluntaris-representants')
-    if (res.ok) {
-      voluntarisPerTaller.value = await res.json()
-      dialogRepresentants.value = true
-    }
-  } catch (error) {
-    console.error("Error carregant voluntaris:", error)
-  }
-}
-
-// Funció per assignar el representant oficial
-const triarRepresentant = async (tallerId, v) => {
-  try {
-    const res = await fetch(`/api/tallers/${tallerId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        representant_oficial: { nom: v.nom, correu: v.correu } 
-      })
-    })
-    if (res.ok) {
-      alert(`S'ha assignat a ${v.nom} com a representant oficial.`)
-      dialogRepresentants.value = false
-      carregarDades() // Refresquem
-    }
-  } catch (error) {
-    alert("Error en l'assignació")
-  }
-}
-
-
 const groupedData = computed(() => {
-  const filteredList = peticions.value.filter(p => {
+  let filteredList = peticions.value.filter(p => {
     const nomCentre = (p.centreId?.nom || p.nom_centre || '').toLowerCase()
     const nomTaller = p.taller_titol || p.tallerId?.titol || ''
     const coincideixInstitut = nomCentre.includes(state.searchInstitut.toLowerCase())
@@ -97,6 +61,9 @@ const groupedData = computed(() => {
     }
   })
 
+  // ORDENACIÓ FIFO: El més antic primer
+  filteredList.sort((a, b) => new Date(a.data_creacio) - new Date(b.data_creacio))
+
   const groups = {}
   filteredList.forEach(p => {
     const tNom = p.taller_titol || p.tallerId?.titol || 'Sense Taller'
@@ -110,14 +77,12 @@ const obrir = (p) => {
   state.selected = p
   state.selectedTaller = null
   state.accepted = false
+  state.placesAssignades = p.seleccio_tallers?.num_alumnes
   state.dialog = true
 }
 
 const accio = async (tipus) => {
-  // 1. Definimos la URL (usando el ID de la petición seleccionada)
   const url = `/api/peticions/${state.selected._id}/estat`
-  
-  // 2. Preparamos el cuerpo del mensaje según la acción
   let body = {}
   
   if (tipus === 'REBUTJAR') {
@@ -125,7 +90,6 @@ const accio = async (tipus) => {
   } else {
     body = { 
       estat: 'ASSIGNAT', 
-      // IMPORTANTE: Estos nombres deben coincidir con tu backend
       tallerIdDefinitiu: state.selectedTaller, 
       num_alumnes_final: state.placesAssignades 
     }
@@ -140,16 +104,11 @@ const accio = async (tipus) => {
     
     if (res.ok) { 
       state.dialog = false
-      // Recargamos la lista para ver los cambios reflejados (el nuevo chip, etc.)
       carregarDades() 
       alert("Operació realitzada amb èxit")
-    } else {
-      const errorData = await res.json()
-      alert("Error: " + errorData.error)
     }
   } catch (e) { 
-    console.error("Error en la petició:", e)
-    alert("Error de connexió amb el servidor")
+    console.error("Error:", e)
   }
 }
 </script>
@@ -157,11 +116,10 @@ const accio = async (tipus) => {
 <template>
   <v-container class="admin-wrapper pa-6" fluid>
     <div class="d-flex align-center mb-6">
-  <v-btn icon="mdi-arrow-left" variant="text" color="black" class="mr-4" @click="router.push('/admin/indexadmin')"/>
-  <h1 class="text-h4 font-weight-bold ml-4 text-black">Gestió de Peticions</h1>
-  <v-spacer />
-  
-</div>
+      <v-btn icon="mdi-arrow-left" variant="text" color="black" class="mr-4" @click="router.push('/admin/indexadmin')"/>
+      <h1 class="text-h4 font-weight-bold text-black">Gestió de Peticions</h1>
+      <v-spacer />
+    </div>
 
     <v-row class="mb-6">
       <v-col cols="12" md="4">
@@ -172,23 +130,14 @@ const accio = async (tipus) => {
         <label class="text-overline font-weight-bold text-black">Cerca Institut</label>
         <v-text-field v-model="state.searchInstitut" placeholder="Escriu el centre..." variant="outlined" density="comfortable" prepend-inner-icon="mdi-school" bg-color="white" hide-details rounded="lg"/>
       </v-col>
-      
       <v-col cols="12" md="4" class="d-flex align-end justify-end pb-1">
-        
         <v-btn-toggle v-model="state.filterStatus" mandatory variant="flat" class="custom-toggle border">
           <v-btn value="ACTIVES" class="px-6">ACTIVES</v-btn>
           <v-btn value="REBUTJADES" class="px-6">REBUTJADES</v-btn>
-             <v-btn 
-  prepend-icon="mdi-account-star" 
-  @click="router.push('/admin/gestiorepresentants')"
->
-  GESTIÓ DE REPRESENTANTS
-</v-btn>
+          <v-btn prepend-icon="mdi-account-star" @click="router.push('/admin/gestiorepresentants')">REPRESENTANTS</v-btn>
         </v-btn-toggle>
       </v-col>
     </v-row>
-
-    
 
     <div v-if="state.filterStatus === 'ACTIVES'" class="mb-8 d-flex gap-2">
       <v-btn :variant="state.subFilter === 'PENDENTS' ? 'flat' : 'outlined'" color="orange-darken-3" rounded="pill" @click="state.subFilter = 'PENDENTS'">PENDENTS</v-btn>
@@ -203,12 +152,23 @@ const accio = async (tipus) => {
           <v-card class="rounded-xl card-peticio" elevation="1" border>
             <v-card-text class="pa-5">
               <div class="d-flex justify-space-between align-center mb-4">
-                <span class="text-subtitle-1 font-weight-bold text-truncate text-black">{{ p.nom_centre || p.centreId?.nom }}</span>
+                <span class="text-subtitle-1 font-weight-bold text-truncate text-black">{{ p.nom_centre }}</span>
                 <v-chip size="x-small" :color="colors[p.estat]" class="text-white font-weight-bold">{{ p.estat }}</v-chip>
               </div>
-              <div class="d-flex justify-space-between align-center">
+
+              <div class="text-body-2 font-weight-bold text-indigo-darken-4 mb-4">
+                <v-icon size="small" class="mr-1">mdi-hammer-wrench</v-icon>
+                {{ p.taller_titol || 'Pendent de carregar' }}
+              </div>
+
+              <div class="d-flex justify-space-between align-end">
                 <div class="text-caption text-grey-darken-1">
-                  <strong>Coordinador/a:</strong> {{ p.referent_contacte?.nom || p.nom_coordinador }}
+                  <div><strong>Coordinador/a:</strong> {{ p.coordinador?.nom || 'No assignat' }}</div>
+                  <div><strong>Referent:</strong> {{ p.referent_contacte?.nom }}</div>
+                  <div class="mt-1 text-indigo-darken-3 font-weight-bold d-flex align-center">
+                    <v-icon size="x-small" class="mr-1">mdi-clock-outline</v-icon>
+                    {{ p.data_creacio ? new Date(p.data_creacio).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' }) : 'Sense hora' }}
+                  </div>
                 </div>
                 <v-btn icon="mdi-plus" variant="flat" color="black" size="small" class="text-white" @click="obrir(p)"></v-btn>
               </div>
@@ -218,130 +178,83 @@ const accio = async (tipus) => {
       </v-row>
     </div>
 
-    <v-dialog v-model="state.dialog" max-width="550">
-  <v-card class="rounded-xl overflow-hidden">
-    <v-card-title class="pa-6 bg-black text-white">
-      <span class="text-h6">Detalls de la Sol·licitud</span>
-    </v-card-title>
-    
-    <v-card-text class="pa-6 bg-grey-lighten-4 text-black">
-      <v-row dense>
-        <v-col cols="12" class="mb-4">
-          <v-card variant="flat" class="pa-4 rounded-lg border">
-            <label class="text-overline text-grey-darken-1 d-block mb-1">Nivell d'Interès del Centre</label>
-            <v-chip 
-              :color="state.selected?.nivell_interes === 'Alt' ? 'red-darken-1' : 'amber-darken-3'" 
-              variant="flat" 
-              class="text-uppercase font-weight-black text-white"
-            >
-              {{ state.selected?.nivell_interes || 'No indicat' }}
-            </v-chip>
-          </v-card>
-        </v-col>
-
-        <v-col cols="12" md="6">
-          <label class="text-overline text-grey">INSTITUT</label>
-          <div class="text-body-1 font-weight-bold mb-4">{{ state.selected?.nom_centre }}</div>
-          
-          <label class="text-overline text-grey">NOMBRE D'ALUMNES</label>
-          <div class="text-body-1 font-weight-bold mb-4">
-            {{ 
-              Number(state.selected?.seleccio_tallers?.num_alumnes) === 5 ? '0 - 5' : 
-              Number(state.selected?.seleccio_tallers?.num_alumnes) === 10 ? '5 - 10' : 
-              Number(state.selected?.seleccio_tallers?.num_alumnes) === 15 ? '10 - 15' : 
-              (state.selected?.seleccio_tallers?.num_alumnes || 'No indicat') 
-            }} alumnes
-          </div>
-        </v-col>
-
-        <v-col cols="12">
-  <label class="text-overline text-grey">TALLER SOL·LICITAT</label>
-  <div class="text-body-1 font-weight-bold mb-4 text-indigo-darken-4">
-    {{ state.selected?.taller_titol || state.selected?.tallerId?.titol || 'No especificat' }}
-  </div>
-</v-col>
-
-        <v-col cols="12" md="6">
-          <label class="text-overline text-grey">COORDINADOR/A GENERAL</label>
-          <div class="text-body-2 font-weight-bold mb-4">{{ state.selected?.nom_coordinador }}</div>
-          
-          <label class="text-overline text-grey">PROFESSOR/A REFERENT</label>
-          <div class="text-body-2 font-weight-bold text-black">
-            {{ state.selected?.referent_contacte?.nom }}
-          </div>
-          <div class="text-caption text-grey-darken-2 mb-4">
-            <v-icon size="small">mdi-email</v-icon> {{ state.selected?.referent_contacte?.correu }}
-          </div>
-        </v-col>
-
-        <v-col cols="12" v-if="state.selected?.comentaris">
-          <label class="text-overline text-grey">COMENTARIS ADDICIONALS</label>
-          <div class="text-body-2 pa-3 bg-white border rounded mt-1 shadow-sm italic">
-            "{{ state.selected.comentaris }}"
-          </div>
-        </v-col>
-      </v-row>
-
-      <v-divider class="my-6"></v-divider>
-      
-      <div v-if="state.selected?.estat === 'PENDENT'">
+    <v-dialog v-model="state.dialog" max-width="600">
+      <v-card class="rounded-xl overflow-hidden" v-if="state.selected">
+        <v-card-title class="pa-6 bg-black text-white">Detalls de la Sol·licitud</v-card-title>
         
-        <div v-if="!state.accepted" class="d-flex gap-2">
-          <v-btn color="red-darken-2" variant="tonal" class="flex-grow-1" @click="accio('REBUTJAR')" prepend-icon="mdi-close">REBUTJAR</v-btn>
-          <v-btn color="green-darken-2" class="flex-grow-1 text-white" @click="state.accepted = true" prepend-icon="mdi-check">ACCEPTAR</v-btn>
-        </div>
-        <div v-else class="bg-white pa-4 rounded-lg border">
-          <label class="text-caption font-weight-bold mb-2 d-block">Confirma el taller definitiu a assignar:</label>
-          <v-select 
-            v-model="state.selectedTaller" 
-            :items="llistaTallers" 
-            item-title="titol" 
-            item-value="_id" 
-            variant="outlined" 
-            density="compact"
-          ></v-select>
-          <v-btn block color="black" class="text-white mt-2" :disabled="!state.selectedTaller" @click="accio('ASSIGNAR')">FINALITZAR ASSIGNACIÓ</v-btn>
-          <v-btn block variant="text" size="small" class="mt-1" @click="state.accepted = false">Tornar enrere</v-btn>
-        </div>
-      </div>
-    </v-card-text>
-    
-    <v-card-actions class="pa-4 bg-white border-top">
-      <v-spacer/>
-      <v-btn variant="text" color="grey-darken-1" @click="state.dialog = false">TANCAR</v-btn>
-    </v-card-actions>
-  </v-card>
-</v-dialog>
-  </v-container>
+        <v-card-text class="pa-6 bg-grey-lighten-4 text-black">
+          <v-row dense>
+            <v-col cols="12" class="mb-4">
+              <v-card variant="flat" class="pa-4 rounded-lg border">
+                <label class="text-overline text-grey-darken-1 d-block mb-1">Nivell d'Interès</label>
+                <v-chip :color="state.selected.nivell_interes === 'Alt' ? 'red-darken-1' : 'amber-darken-3'" variant="flat" class="text-white font-weight-black">
+                  {{ state.selected.nivell_interes }}
+                </v-chip>
+              </v-card>
+            </v-col>
 
-  <v-dialog v-model="dialogRepresentants" max-width="700">
-  <v-card class="rounded-xl pa-4">
-    <v-card-title class="font-weight-bold text-h5 mb-4">Representants Voluntaris</v-card-title>
-    <v-card-text>
-      <div v-for="t in voluntarisPerTaller" :key="t._id" class="mb-6">
-        <h3 class="text-subtitle-1 font-weight-black mb-2 text-indigo">{{ t.taller_titol }}</h3>
-        <v-divider class="mb-3"></v-divider>
-        
-        <v-list border class="rounded-lg pa-0">
-          <v-list-item v-for="v in t.candidats" :key="v.correu" class="pa-4">
-            <v-list-item-title class="font-weight-bold">{{ v.nom }}</v-list-item-title>
-            <v-list-item-subtitle>{{ v.centre }} — {{ v.correu }}</v-list-item-subtitle>
+            <v-col cols="12">
+              <label class="text-overline text-grey">TALLER SOL·LICITAT PEL CENTRE</label>
+              <div class="text-h6 font-weight-black text-indigo-darken-4 mb-4">
+                {{ state.selected.taller_titol || 'No especificat' }}
+              </div>
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <label class="text-overline text-grey">INSTITUT</label>
+              <div class="text-body-1 font-weight-bold">{{ state.selected.nom_centre }}</div>
+              <div class="text-caption text-indigo-darken-2 mb-4">
+                Rebuda: {{ state.selected.data_creacio ? new Date(state.selected.data_creacio).toLocaleString('ca-ES') : '--' }}
+              </div>
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <label class="text-overline text-grey">ALUMNES</label>
+              <div class="text-body-1 font-weight-bold mb-4">{{ state.selected.seleccio_tallers?.num_alumnes }} alumnes</div>
+            </v-col>
             
-            <template v-slot:append>
-              <v-btn color="black" rounded="pill" size="small" @click="triarRepresentant(t._id, v)">
-                TRIA
-              </v-btn>
-            </template>
-          </v-list-item>
-        </v-list>
-      </div>
-    </v-card-text>
-    <v-card-actions>
-      <v-spacer />
-      <v-btn variant="text" @click="dialogRepresentants = false">TANCAR</v-btn>
-    </v-card-actions>
-  </v-card>
-</v-dialog>
+            <v-col cols="12" md="6">
+              <label class="text-overline text-grey">COORDINADOR/A GENERAL</label>
+              <div class="text-body-2 font-weight-bold">{{ state.selected.coordinador?.nom || 'No indicat' }}</div>
+              <div class="text-caption text-grey-darken-2">{{ state.selected.coordinador?.email }}</div>
+            </v-col>
+
+            <v-col cols="12" md="6">
+              <label class="text-overline text-grey">PROFESSOR/A REFERENT</label>
+              <div class="text-body-2 font-weight-bold">{{ state.selected.referent_contacte?.nom }}</div>
+              <div class="text-caption text-grey-darken-2">{{ state.selected.referent_contacte?.correu }}</div>
+            </v-col>
+          </v-row> 
+
+          <v-divider class="my-6"></v-divider>
+          
+          <div v-if="state.selected.estat === 'PENDENT'">
+            <div v-if="!state.accepted" class="d-flex gap-2">
+              <v-btn color="red-darken-2" variant="tonal" class="flex-grow-1" @click="accio('REBUTJAR')" prepend-icon="mdi-close">REBUTJAR</v-btn>
+              <v-btn color="green-darken-2" class="flex-grow-1 text-white" @click="state.accepted = true" prepend-icon="mdi-check">ACCEPTAR</v-btn>
+            </div>
+            <div v-else class="bg-white pa-4 rounded-lg border">
+              <v-select 
+                v-model="state.selectedTaller" 
+                :items="llistaTallers" 
+                item-title="titol" 
+                item-value="_id" 
+                label="Confirma taller definitiu" 
+                variant="outlined"
+              ></v-select>
+              <v-btn block color="black" class="text-white mt-2" @click="accio('ASSIGNAR')">FINALITZAR ASSIGNACIÓ</v-btn>
+              <v-btn block variant="text" size="small" @click="state.accepted = false">Enrere</v-btn>
+            </div>
+          </div>
+        </v-card-text>
+        
+        <v-card-actions class="pa-4 bg-white border-top">
+          <v-spacer/>
+          <v-btn variant="text" @click="state.dialog = false">TANCAR</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-container>
 </template>
 
 <style scoped>
