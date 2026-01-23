@@ -18,47 +18,23 @@ const usePeticions = () => {
 
     // 2. OBTENIR PETICIONS (Admin)
    // A peticioController.js -> getPeticionsAdmin
-// Substitueix la funció getPeticionsAdmin per aquesta:
-// A peticioController.js -> Substitueix getPeticionsAdmin
 const getPeticionsAdmin = async (req, res) => {
     try {
         const db = getDB();
         const peticions = await db.collection('peticions').aggregate([
-            {
-                $addFields: {
-                    // Mirem si existeix tallerId (ja assignat) o si hem de mirar dins de seleccio_tallers
-                    taller_busqueda: {
-                        $cond: {
-                            if: { $gt: ["$tallerId", null] },
-                            then: "$tallerId",
-                            else: { $toObjectId: "$seleccio_tallers.taller_id" }
-                        }
-                    }
-                }
-            },
-            {
-                $lookup: {
-                    from: 'tallers',
-                    localField: 'taller_busqueda',
-                    foreignField: '_id',
-                    as: 'tallerInfo'
-                }
-            },
+            { $addFields: { taller_busqueda: { $ifNull: ["$tallerId", { $toObjectId: "$seleccio_tallers.taller_id" }] } } },
+            { $lookup: { from: 'tallers', localField: 'taller_busqueda', foreignField: '_id', as: 'tallerInfo' } },
             { $unwind: { path: '$tallerInfo', preserveNullAndEmptyArrays: true } },
-            {
-                $addFields: {
-                    // Ara sí, assignem el títol real del taller
-                    taller_titol: { $ifNull: ["$tallerInfo.titol", "Taller no trobat"] }
-                }
-            },
-            { $sort: { data_creacio: 1 } }
+            { $addFields: { taller_titol: '$tallerInfo.titol' } },
+            // Important: Assegurar que data_creacio es manté i ordenem de més antiga a més nova (FIFO)
+            { $sort: { data_creacio: 1 } } 
         ]).toArray();
         res.status(200).json(peticions);
     } catch (error) {
-        console.error("Error a getPeticionsAdmin:", error);
-        res.status(500).json({ error: "Error obtenint peticions" });
+        res.status(500).json({ error: "Error admin" });
     }
 };
+
     // 3. CREAR PETICIÓ (La que s'executa quan el centre envia el formulari)
     const createPeticio = async (req, res) => {
         try {
