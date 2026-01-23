@@ -13,11 +13,12 @@ const form = ref({
   },
   seleccio_tallers: { taller_id: '', num_alumnes: 0 },
   nivell_interes: '',
+  primera_vegada: false,
   referent_contacte: { nom: '', correu: '' },
   comentaris: ''
 });
 
-// El computed s'ha de definir UNA VEGADA i fora de l'onMounted
+// El computed es defineix una sola vegada fora de l'onMounted
 const tallerSeleccionat = computed(() => {
   return tallersDisponibles.value.find(t => t._id === form.value.seleccio_tallers.taller_id);
 });
@@ -128,6 +129,16 @@ const enviarFormulari = async () => {
       </div>
 
       <div class="field-group">
+        <label>Nivell d'interès en aquest taller: *</label>
+        <select v-model="form.nivell_interes" required>
+          <option disabled value="">Selecciona el nivell d'interès</option>
+          <option value="Baix">Baix</option>
+          <option value="Mig">Mig</option>
+          <option value="Alt">Alt</option>
+        </select>
+      </div>
+
+      <div class="field-group">
         <label>Professor/a Referent: *</label>
         <input v-model="form.referent_contacte.nom" placeholder="Nom del referent" required />
       </div>
@@ -141,17 +152,17 @@ const enviarFormulari = async () => {
         <label>Comentaris addicionals (opcional):</label>
         <textarea v-model="form.comentaris" placeholder="Explica aquí qualsevol detall rellevant..." rows="4"></textarea>
       </div>
-        <div class="field-group checkbox-group">
-        <label class="d-flex align-center cursor-pointer">
-        <input 
-          type="checkbox" 
-          v-model="form.primera_vegada" 
-          style="width: auto; margin-right: 12px;"
-        />
-        <span>És la primera vegada que el centre participa en aquest taller?</span>
-      </label>
-    </div>
 
+      <div class="field-group checkbox-group">
+        <label class="d-flex align-center cursor-pointer">
+          <input 
+            type="checkbox" 
+            v-model="form.primera_vegada" 
+            style="width: auto; margin-right: 12px;"
+          />
+          <span>És la primera vegada que el centre participa en aquest taller?</span>
+        </label>
+      </div>
 
       <button 
         type="submit" 
@@ -164,75 +175,6 @@ const enviarFormulari = async () => {
     </form>
   </div>
 </template>
-
-<script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router'; 
-
-const router = useRouter();
-
-const tallersDisponibles = ref([]);
-
-const form = ref({
-  nom_centre: '',
-  coordinador: {
-    nom: '',
-    email: ''
-  },
-  seleccio_tallers: { taller_id: '', num_alumnes: 0 },
-  nivell_interes: '',
-  primera_vegada: false,
-  referent_contacte: { nom: '', correu: '' },
-  comentaris: ''
-});
-onMounted(async () => {
-  // Recuperamos los datos del localStorage
-  const nomCentreSaved = localStorage.getItem('userName');
-  const nomCoordinadorSaved = localStorage.getItem('coordinadorNom');
-  const emailCoordinadorSaved = localStorage.getItem('coordinadorEmail');
-
-  // Los asignamos a la nueva estructura
-  if (nomCentreSaved) form.value.nom_centre = nomCentreSaved;
-  if (nomCoordinadorSaved) form.value.coordinador.nom = nomCoordinadorSaved;
-  if (emailCoordinadorSaved) form.value.coordinador.email = emailCoordinadorSaved;
-
-  // Carga de tallers (mismo código que ya tenías)...
-  try {
-    const resTallers = await fetch('/api/tallers');
-    tallersDisponibles.value = await resTallers.json();
-  } catch (error) {
-    console.error("Error carregant dades:", error);
-  }
-});
-
-const enviarFormulari = async () => {
-  // Validación de seguridad
-  if (!form.value.coordinador.email || !form.value.seleccio_tallers.taller_id) {
-    alert("Falten camps obligatoris.");
-    return;
-  }
-
-  try {
-    const res = await fetch('/api/peticions', { // URL Relativa para el Proxy
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form.value) // Enviamos todo el objeto 'form'
-    });
-
-    if (res.ok) {
-      alert("Petició guardada correctament!");
-      router.push('/centre/indexcentre');
-    } else {
-      const errorData = await res.json();
-      console.error("Error del servidor:", errorData);
-      alert("Error: " + (errorData.error || "No s'ha pogut guardar"));
-    }
-  } catch (error) {
-    console.error("Error de xarxa:", error);
-    alert("No es pot connectar amb el servidor. ");
-  }
-};
-</script>
 
 <style scoped>
 .input-readonly {

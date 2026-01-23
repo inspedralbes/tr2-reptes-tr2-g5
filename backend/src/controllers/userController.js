@@ -152,7 +152,7 @@ const getUserById = async (req, res) => {
     }
 };
 
-// INVITAR CENTRE
+// INVITAR CENTRE (ENVIAMENT A CORREU DE CENTRE)
 const inviteCentre = async (req, res) => {
     try {
         const db = getDB();
@@ -209,7 +209,7 @@ const inviteCentre = async (req, res) => {
     }
 };
 
-// CONFIRMAR PARTICIPACIÓ (CORREGIDA)
+// CONFIRMAR PARTICIPACIÓ (ENVIAMENT A CORREU DE CENTRE)
 const confirmParticipation = async (req, res) => {
     try {
         const db = getDB();
@@ -280,7 +280,7 @@ const confirmParticipation = async (req, res) => {
     }
 };
 
-// INVITACIÓ MÚLTIPLE
+// INVITACIÓ MÚLTIPLE (ENVIAMENT A CORREU DE CENTRE)
 const inviteMultiple = async (req, res) => {
     try {
         const db = getDB();
@@ -336,21 +336,13 @@ const inviteMultiple = async (req, res) => {
     }
 };
 
-// NOTIFICAR PROFESSOR REFERENT
+// FUNCIÓ NETEJADA: S'ha eliminat la lògica de Nodemailer per al professor referent.
 const notifyProfessorReferent = async (req, res) => {
     try {
-        const { email, nomProfessor, nomTaller } = req.body;
-
-        if (!email || !nomProfessor || !nomTaller) {
-            return res.status(400).json({ error: "Falten dades per enviar la notificació" });
-        }
-
-    
-
-        res.status(200).json({ missatge: "Notificació enviada al professor referent" });
+        // No s'executa cap enviament de correu aquí.
+        res.status(200).json({ missatge: "Lògica de correu al professor eliminada. Només es processa internament." });
     } catch (error) {
-        console.error("ERROR NOTIFICACIÓ PROFESSOR:", error);
-        res.status(500).json({ error: "Error al enviar la notificació al correu" });
+        res.status(500).json({ error: "Error en la petició" });
     }
 };
 
