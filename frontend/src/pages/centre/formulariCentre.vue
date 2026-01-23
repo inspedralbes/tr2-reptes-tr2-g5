@@ -102,6 +102,17 @@
         <label>Comentaris addicionals (opcional):</label>
         <textarea v-model="form.comentaris" placeholder="Explica aquí qualsevol detall rellevant..." rows="4"></textarea>
       </div>
+        <div class="field-group checkbox-group">
+        <label class="d-flex align-center cursor-pointer">
+        <input 
+          type="checkbox" 
+          v-model="form.primera_vegada" 
+          style="width: auto; margin-right: 12px;"
+        />
+        <span>És la primera vegada que el centre participa en aquest taller?</span>
+      </label>
+    </div>
+
 
       <button 
         type="submit" 
@@ -131,6 +142,7 @@ const form = ref({
   },
   seleccio_tallers: { taller_id: '', num_alumnes: 0 },
   nivell_interes: '',
+  primera_vegada: false,
   referent_contacte: { nom: '', correu: '' },
   comentaris: ''
 });
@@ -229,6 +241,17 @@ input, select, textarea {
   width: 100%;
   font-size: 1.1rem;
   font-weight: bold;
+}
+.checkbox-group {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+.cursor-pointer { cursor: pointer; }
+input[type="checkbox"] {
+  accent-color: #4CAF50; 
+  transform: scale(1.2);
 }
 .d-flex { display: flex; }
 .align-center { align-items: center; }
