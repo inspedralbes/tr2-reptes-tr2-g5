@@ -142,7 +142,7 @@ const enviarChecklist = async () => {
                   :color="peticio.finalitzat ? 'success' : 'indigo-darken-4'" 
                   size="x-large" 
                   class="rounded-lg font-weight-bold px-8"
-                  :disabled="!checklist.material || !checklist.espai || !checklist.satisfaccio || peticio.finalitzat"
+                  :disabled="!checklist.material && !checklist.espai && !checklist.satisfaccio && peticio.finalitzat"
                   elevation="2"
                   @click="enviarChecklist"
                 >
