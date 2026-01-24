@@ -78,10 +78,16 @@ const processarCSV = async () => {
 
 <template>
   <v-container class="pa-10">
-    <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.back()" class="mb-5">Tornar al Panell</v-btn>
-    
-    <h1 class="text-h4 font-weight-bold mb-8">Convidar Nous Centres</h1>
-
+    <div class="d-flex align-center mb-8">
+      <v-btn 
+        icon="mdi-arrow-left" 
+        variant="text" 
+        class="mr-2" 
+        color="black" 
+        @click="router.back()" 
+      />
+      <h1 class="text-h4 font-weight-bold text-black uppercase-ceb">Convidar Nous Centres</h1>
+    </div>
     <v-row>
       <v-col cols="12" md="4">
         <v-card variant="outlined" class="pa-6 border-consorci bg-grey-lighten-5 h-100">
@@ -141,4 +147,6 @@ const processarCSV = async () => {
 
 <style scoped>
 .border-consorci { border: 1px solid #e0e0e0 !important; border-radius: 12px; }
+.dashboard-wrapper { background-color: #ffffff; }
+.uppercase-ceb { text-transform: uppercase; letter-spacing: 2px; }
 </style>

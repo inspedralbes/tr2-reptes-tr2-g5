@@ -162,7 +162,6 @@ const generarDocument = () => {
             <v-chip 
               :color="t.percentatge >= 100 ? 'red-darken-1' : '#3465a4'" 
               variant="flat" 
-              size="small" 
               class="text-white font-weight-bold px-4"
               style="min-width: 80px; justify-content: center;"
             >

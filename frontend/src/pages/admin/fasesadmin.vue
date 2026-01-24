@@ -41,13 +41,26 @@ onMounted(cargarConfiguracion)
 </script>
 
 <template>
-  <v-container class="pa-10">
-    <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.back()" class="mb-5">
-      Tornar al Panell
-    </v-btn>
-
-    <h1 class="text-h4 font-weight-bold mb-6">Configuració de Fases del Sistema</h1>
+  <v-container class="dashboard-wrapper pa-10" fluid>
     
+    <header class="d-flex justify-space-between align-start mb-10 pb-6">
+      <div>
+        <div class="d-flex align-center">
+          <v-btn 
+            icon="mdi-arrow-left" 
+            variant="text" 
+            class="mr-2" 
+            color="black" 
+            @click="router.push('/admin/indexadmin')"
+          />
+          <h1 class="text-h4 font-weight-bold text-black uppercase-ceb">Configuració de Fases</h1>
+        </div>
+        <p class="text-body-2 text-grey-darken-2 mt-2 ml-12">
+          Gestió dels períodes actius i permisos del sistema
+        </p>
+      </div>
+    </header>
+
     <v-card variant="outlined" class="pa-8 border-consorci bg-white">
       <div class="d-flex align-center mb-6 ga-4">
         <v-icon size="40" color="black">mdi-sync</v-icon>
@@ -103,7 +116,12 @@ onMounted(cargarConfiguracion)
   </v-container>
 </template>
 
+
 <style scoped>
 .border-consorci { border: 1px solid #e0e0e0 !important; border-radius: 12px; }
 .v-btn-group--vertical { flex-direction: column; }
+
+.dashboard-wrapper { background-color: #ffffff; }
+.uppercase-ceb { text-transform: uppercase; letter-spacing: 2px; }
+/* He eliminado la clase .border-bottom-ceb de aquí también */
 </style>

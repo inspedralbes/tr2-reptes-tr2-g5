@@ -79,21 +79,37 @@ const useTallers = () => {
         }
     };
 
-    // 4. Eliminar un taller
-    const deleteTaller = async (req, res) => {
-        try {
-            const db = getDB();
-            const { id } = req.params;
-            await db.collection('tallers').deleteOne({ _id: new ObjectId(id) });
-            
-            console.log(" Taller eliminat del sistema:", { tallerId: id });
-            res.status(200).json({ missatge: "Taller eliminat" });
-        } catch (error) {
-            console.error("Error al esborrar taller:", error);
-            res.status(500).json({ error: "Error al esborrar" });
-        }
-    };
+   // backend/src/controllers/tallerController.js
 
+const deleteTaller = async (req, res) => {
+    try {
+        const db = getDB();
+        const { id } = req.params;
+
+        // 1. Borrar el taller de la colección 'tallers'
+        await db.collection('tallers').deleteOne({ _id: new ObjectId(id) });
+        
+        // 2. BORRADO COMPLETO: Eliminar todas las peticiones vinculadas a este taller
+        // Buscamos tanto por ObjectId como por String para mayor seguridad
+        const resultPeticions = await db.collection('peticions').deleteMany({ 
+            $or: [
+                { tallerId: new ObjectId(id) },
+                { tallerId: id },
+                { "seleccio_tallers.taller_id": id }, // Por si guardas el ID en este subobjeto
+                { "seleccio_tallers.taller_id": new ObjectId(id) }
+            ]
+        });
+
+        console.log(`Sistema: Taller ${id} eliminado. Peticiones borradas: ${resultPeticions.deletedCount}`);
+        
+        res.status(200).json({ 
+            missatge: "Taller i totes les seves peticions s'han esborrat completament" 
+        });
+    } catch (error) {
+        console.error("Error al esborrar taller i peticions:", error);
+        res.status(500).json({ error: "Error al esborrar el taller del sistema" });
+    }
+};
     return { getCatàleg, createTaller, updateTaller, deleteTaller };
 };
 

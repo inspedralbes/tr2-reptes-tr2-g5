@@ -49,8 +49,22 @@ const obrir = (t, i = -1) => {
     state.dialog = true 
   } 
 }
-const esborrar = async (id, i) => { if (confirm('Eliminar?')) await apiCall(`${API_URL}/${id}`, 'DELETE') && tallers.value.splice(i, 1) }
+// frontend/src/pages/admin/tallersadmin.vue
 
+const esborrar = async (id, i) => { 
+  // Mensaje de advertencia más claro
+  const confirmar = confirm('ATENCIÓ: Si esborres aquest taller, s\'ELIMINARAN PER SEMPRE totes les sol·licituds associades. Vols continuar?');
+  
+  if (confirmar) {
+    const success = await apiCall(`${API_URL}/${id}`, 'DELETE');
+    if (success) {
+      tallers.value.splice(i, 1);
+      // Opcional: podrías recargar las peticiones si tienes una store global
+    } else {
+      alert("Error al eliminar el taller i les peticions.");
+    }
+  } 
+}
 const getPlaces = (taller) => {
   return taller.places_disponibles ?? taller.capacitat_maxima ?? taller.places ?? 0
 }
