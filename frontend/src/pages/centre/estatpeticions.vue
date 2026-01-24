@@ -1,41 +1,72 @@
 <template>
-  <div class="list-container">
-    <div class="d-flex align-center mb-6">
+  <v-container class="pa-8 bg-white" fluid>
+    <div class="d-flex align-center mb-8">
       <v-btn 
         icon="mdi-arrow-left" 
         variant="text" 
+        size="small" 
         color="black" 
         class="mr-4" 
         @click="router.push('/centre/indexcentre')" 
       />
-      <h2 class="text-h4 font-weight-bold mb-0">Estat de les meves sol·licituds</h2>
+      <h1 class="text-h4 font-weight-bold text-black uppercase-ceb">Estat de les meves sol·licituds</h1>
     </div>
-    
-    <p v-if="peticions.length === 0">No s'han trobat sol·licituds pendents o rebutjades.</p>
 
-    <table v-else>
-      <thead>
-        <tr>
-          <th>Centre</th>
-          <th>Taller</th>
-          <th>Alumnes</th>
-          <th>Estat</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="peticio in peticions" :key="peticio._id">
-          <td>{{ peticio.nom_centre }}</td>
-          <td>{{ peticio.taller_titol || 'No especificat' }}</td>
-          <td>{{ peticio.seleccio_tallers?.num_alumnes }}</td>
-          <td>
-            <span :class="getEstatClass(peticio.estat)">
-              {{ formatEstatText(peticio.estat) }}
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <v-tabs v-model="tab" color="blue-darken-4" class="mb-6 border-bottom">
+      <v-tab value="pendents" class="font-weight-bold">Pendents i Altres</v-tab>
+      <v-tab value="assignades" class="font-weight-bold">Assignades (Èxit)</v-tab>
+    </v-tabs>
+
+    <v-responsive max-width="400" class="mb-4">
+      <v-text-field
+        v-model="search"
+        prepend-inner-icon="mdi-magnify"
+        label="Cerca taller per nom..."
+        variant="outlined"
+        density="compact"
+        hide-details
+        class="custom-search"
+      ></v-text-field>
+    </v-responsive>
+
+    <v-window v-model="tab">
+      <v-window-item value="pendents">
+        <v-card variant="flat" class="dark-table-card shadow-sm">
+          <v-data-table 
+            :headers="headers" 
+            :items="peticionsFiltrades('PENDENT')" 
+            :search="search"
+            hover
+            class="dark-theme-table"
+          >
+            <template v-slot:item.estat="{ item }">
+              <v-chip :color="getEstatColor(item.estat)" size="small" class="font-weight-black px-4 text-white">
+                {{ formatEstatText(item.estat) }}
+              </v-chip>
+            </template>
+          </v-data-table>
+        </v-card>
+      </v-window-item>
+
+      <v-window-item value="assignades">
+        <v-card variant="flat" class="dark-table-card shadow-sm">
+          <v-data-table 
+            :headers="headers" 
+            :items="peticionsFiltrades('ASSIGNAT')" 
+            :search="search"
+            hover
+            class="dark-theme-table"
+          >
+            <template v-slot:item.estat="{ item }">
+              <v-chip color="green-darken-1" size="small" class="font-weight-black px-4 text-white">
+                ASSIGNAT
+              </v-chip>
+            </template>
+          </v-data-table>
+        </v-card>
+      </v-window-item>
+    </v-window>
+  </v-container>
 </template>
 
 <script setup>
@@ -43,29 +74,38 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router'; 
 
 const router = useRouter();               
-
 const peticions = ref([]);
+const tab = ref('pendents'); 
+const search = ref('');
 
-// Funció per anar a buscar les dades al backend
+const headers = [
+  { title: 'TALLER', key: 'taller_titol', align: 'start' },
+  { title: 'ALUMNES', key: 'seleccio_tallers.num_alumnes', align: 'center' },
+  { title: 'ESTAT', key: 'estat', align: 'end', sortable: false },
+];
+
 const carregarPeticions = async () => {
   const centreNom = localStorage.getItem('userName'); 
   if (!centreNom) return;
-
   try {
-    // Esta ruta debe existir en tu index.js de rutas del backend
     const res = await fetch(`/api/peticions/centre/${encodeURIComponent(centreNom)}`);
     if (res.ok) {
       peticions.value = await res.json();
     }
   } catch (error) {
-    console.error("Error al llistar:", error);
+    console.error("Error cargando peticiones:", error);
   }
 };
 
-// Funcions auxiliars per gestionar els estats sense esborrar res
-const getEstatClass = (estat) => {
-  if (estat === 'REBUTJAT') return 'rebutjat';
-  return 'pendent'; // Per a PENDENT o qualsevol altre que no sigui ASSIGNAT
+const peticionsFiltrades = (tipo) => {
+  if (tipo === 'ASSIGNAT') return peticions.value.filter(p => p.estat === 'ASSIGNAT');
+  return peticions.value.filter(p => p.estat !== 'ASSIGNAT');
+};
+
+const getEstatColor = (estat) => {
+  if (estat === 'REBUTJAT') return 'red-darken-2';
+  if (estat === 'PENDENT') return 'orange-darken-2';
+  return 'grey-darken-1';
 };
 
 const formatEstatText = (estat) => {
@@ -74,71 +114,58 @@ const formatEstatText = (estat) => {
   return estat;
 };
 
-// Executar la funció quan el component s'ha muntat
-onMounted(() => {
-  carregarPeticions();
-});
+onMounted(carregarPeticions);
 </script>
 
 <style scoped>
-.list-container {
-  max-width: 800px;
-  margin: 20px auto;
-  font-family: sans-serif;
+.uppercase-ceb {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #000000 !important;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
+/* Contenedor oscuro de la tabla */
+.dark-table-card {
+  background-color: #1e1e1e !important;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-th, td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
+/* Configuración de la tabla para letras BLANCAS */
+.dark-theme-table {
+  background-color: #1e1e1e !important;
+  color: #ffffff !important; /* Letras blancas en el cuerpo */
 }
 
-/* Apliquem el color gris de fons a les capçaleres per coherència */
-th {
-  background-color: #ececec;
-  font-weight: bold;
+/* Cabeceras de la tabla */
+.dark-theme-table :deep(th) {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important; /* Letras blancas en cabecera */
+  font-weight: bold !important;
+  border-bottom: 1px solid #444 !important;
 }
 
-/* Estils per a l'estat Pendent (Groc/Marró) */
-.pendent {
-  color: #856404;
-  background-color: #fff3cd;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.9em;
-  font-weight: bold;
+/* Filas y celdas */
+.dark-theme-table :deep(td) {
+  color: #ffffff !important; /* Forzar blanco en celdas */
+  border-bottom: 1px solid #333 !important;
 }
 
-/* Estils per a l'estat Rebutjat (Vermell) - AFEGIT */
-.rebutjat {
-  color: #721c24;
-  background-color: #f8d7da;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.9em;
-  font-weight: bold;
+/* Efecto hover en filas */
+.dark-theme-table :deep(tr:hover) {
+  background-color: #333333 !important;
 }
 
-/* Mantinc la classe completat per si la necessites en un futur, 
-encara que el filtre l'exclogui d'aquesta llista */
-.completat {
-  color: #155724;
-  background-color: #d4edda;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.9em;
+/* Buscador */
+.custom-search :deep(input) {
+  color: #000000 !important;
 }
 
-/* CLASSES PER L'ALINEACIÓ DEL BOTÓ */
-.d-flex { display: flex; }
-.align-center { align-items: center; }
-.mr-4 { margin-right: 16px; }
-.mb-6 { margin-bottom: 24px; }
-.mb-0 { margin-bottom: 0 !important; }
+.shadow-sm {
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;
+}
+
+.border-bottom {
+  border-bottom: 1px solid #e2e8f0;
+}
 </style>
