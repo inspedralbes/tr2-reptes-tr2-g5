@@ -82,21 +82,28 @@ const password = ref('');
 const handleSubmit = async () => {
   const usuario = await authStore.login(email.value, password.value);
   
-  if (usuario) {
-    if (usuario.rol === 'centre') {
+  if (usuario && usuario.rol) {
+    // Normalizamos el rol a minúsculas para que la comparación no falle
+    const rolNormalizado = usuario.rol.toLowerCase();
+
+    if (rolNormalizado === 'centre') {
       localStorage.setItem('userName', usuario.nom);
       if (usuario.coordinador) {
         localStorage.setItem('coordinadorNom', usuario.coordinador.nom);
         localStorage.setItem('coordinadorEmail', usuario.coordinador.email);
       }
     }
-    if (usuario.rol === 'admin') {
+
+    // Redirección basada en el rol normalizado
+    if (rolNormalizado === 'admin') {
       router.push('/admin/indexadmin');
-    } else if (usuario.rol === 'centre') {
+    } else if (rolNormalizado === 'centre') {
       router.push('/centre/indexcentre');
-    } else if (usuario.rol === 'professor') {
+    } else if (rolNormalizado === 'professor') {
+      // Esta ruta coincide con tu archivo src/pages/professor/iniciprofessor.vue
       router.push('/professor/iniciprofessor');
     } else {
+      console.warn("Rol no reconocido:", usuario.rol);
       router.push('/'); 
     }
   }
