@@ -167,30 +167,48 @@ const accio = async (tipus) => {
       <v-row>
         <v-col v-for="p in peticionsTaller" :key="p._id" cols="12" sm="6" md="4">
           <v-card class="rounded-xl card-peticio" elevation="1" border>
-            <v-card-text class="pa-5">
-              <div class="d-flex justify-space-between align-center mb-4">
-                <span class="text-subtitle-1 font-weight-bold text-truncate text-black">{{ p.nom_centre }}</span>
-                <v-chip size="x-small" :color="colors[p.estat]" class="text-white font-weight-bold">{{ p.estat }}</v-chip>
-              </div>
+  <v-card-text class="pa-5">
+    
+    <div class="d-flex justify-space-between align-center mb-4">
+  <div class="d-flex align-center" style="max-width: 75%;">
+    <span class="text-subtitle-1 font-weight-bold text-truncate text-black">
+      {{ p.nom_centre }}
+    </span>
+    
+    <v-icon 
+      v-if="p.primera_vegada === true || p.primera_vegada === 'true'" 
+      color="indigo-darken-2" 
+      size="small" 
+      class="ml-2"
+    >
+      mdi-star-circle
+    </v-icon>
+  </div>
 
-              <div class="text-body-2 font-weight-bold text-indigo-darken-4 mb-4">
-                <v-icon size="small" class="mr-1">mdi-hammer-wrench</v-icon>
-                {{ p.taller_titol || 'Pendent de carregar' }}
-              </div>
+  <div class="d-flex align-center gap-1">
+    <v-icon v-if="p.comentaris" color="orange-darken-2" size="small" class="mr-1">mdi-comment-text</v-icon>
+    <v-chip size="x-small" :color="colors[p.estat]" class="text-white font-weight-bold">{{ p.estat }}</v-chip>
+  </div>
+</div>
 
-              <div class="d-flex justify-space-between align-end">
-                <div class="text-caption text-grey-darken-1">
-                  <div><strong>Coordinador/a:</strong> {{ p.coordinador?.nom || 'No assignat' }}</div>
-                  <div><strong>Referent:</strong> {{ p.referent_contacte?.nom }}</div>
-                  <div class="mt-1 text-indigo-darken-3 font-weight-bold d-flex align-center">
-                    <v-icon size="x-small" class="mr-1">mdi-clock-outline</v-icon>
-                    {{ p.data_creacio ? new Date(p.data_creacio).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' }) : 'Sense hora' }}
-                  </div>
-                </div>
-                <v-btn icon="mdi-plus" variant="flat" color="black" size="small" class="text-white" @click="obrir(p)"></v-btn>
-              </div>
-            </v-card-text>
-          </v-card>
+    <div class="text-body-2 font-weight-bold text-indigo-darken-4 mb-4">
+      <v-icon size="small" class="mr-1">mdi-hammer-wrench</v-icon>
+      {{ p.taller_titol || 'Pendent de carregar' }}
+    </div>
+
+    <div class="d-flex justify-space-between align-end">
+      <div class="text-caption text-grey-darken-1">
+        <div><strong>Coordinador/a:</strong> {{ p.coordinador?.nom || 'No assignat' }}</div>
+        <div><strong>Referent:</strong> {{ p.referent_contacte?.nom }}</div>
+        <div class="mt-1 text-indigo-darken-3 font-weight-bold d-flex align-center">
+          <v-icon size="x-small" class="mr-1">mdi-clock-outline</v-icon>
+          {{ p.data_creacio ? new Date(p.data_creacio).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' }) : 'Sense hora' }}
+        </div>
+      </div>
+      <v-btn icon="mdi-plus" variant="flat" color="black" size="small" class="text-white" @click="obrir(p)"></v-btn>
+    </div>
+
+  </v-card-text> </v-card>
         </v-col>
       </v-row>
     </div>
@@ -241,6 +259,38 @@ const accio = async (tipus) => {
           <div class="text-caption text-grey-darken-2">{{ state.selected.referent_contacte?.correu }}</div>
         </v-col>
       </v-row> 
+
+     
+
+      <v-row dense>
+        <v-col cols="12" class="mt-4">
+          <v-card variant="outlined" class="pa-4 rounded-lg bg-white" border>
+            <div class="d-flex align-center mb-2">
+              <v-icon size="small" class="mr-2" color="grey-darken-3">mdi-comment-text-multiple</v-icon>
+              <label class="text-overline font-weight-bold mb-0">Comentaris del Centre</label>
+            </div>
+            
+            <div class="text-body-2 pa-3 rounded bg-grey-lighten-5 mb-3" style="border-left: 4px solid #000; font-style: italic;">
+              {{ state.selected.comentaris || 'El centre no ha deixat cap comentari addicional.' }}
+            </div>
+
+            <v-divider class="mb-3"></v-divider>
+
+            <div class="d-flex align-center">
+              <v-chip 
+                size="small" 
+                :color="(state.selected.primera_vegada === true || state.selected.primera_vegada === 'true') ? 'indigo-darken-2' : 'grey-darken-1'" 
+                class="text-white font-weight-bold"
+              >
+                <v-icon start size="small">
+                  {{ (state.selected.primera_vegada === true || state.selected.primera_vegada === 'true') ? 'mdi-star-circle' : 'mdi-history' }}
+                </v-icon>
+                {{ (state.selected.primera_vegada === true || state.selected.primera_vegada === 'true') ? 'PRIMERA VEGADA QUE PARTICIPEN' : 'JA HAN PARTICIPAT ABANS' }}
+              </v-chip>
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
 
       <v-divider class="my-6"></v-divider>
       
@@ -324,6 +374,9 @@ const accio = async (tipus) => {
 </template>
 
 <style scoped>
+.border-indigo {
+  border: 1px solid #303f9f !important;
+}
 .admin-wrapper { min-height: 100vh; background-color: #f5f5f5; }
 .card-peticio { transition: all 0.2s; background: white; }
 .card-peticio:hover { border-color: #000 !important; transform: translateY(-2px); }
