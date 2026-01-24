@@ -168,16 +168,18 @@ onMounted(carregarTallers)
             <template v-slot:item.taller_titol="{ item }">
               <div class="text-body-2 font-weight-bold text-indigo-darken-4">{{ item.taller_titol }}</div>
             </template>
-
-            <template v-slot:item.seleccio_tallers.num_alumnes="{ item }">
-              <div class="text-body-2 font-weight-bold text-indigo-lighten-1">{{ item.seleccio_tallers?.num_alumnes }}</div>
-            </template>
-
-            <template v-slot:item.actions="{ item }">
-              <v-btn color="indigo-darken-2" variant="tonal" size="small" rounded="lg" prepend-icon="mdi-eye" @click="anarADetalls(item._id)">
-                REVISAR
-              </v-btn>
-            </template>
+<template v-slot:item.actions="{ item }">
+  <div class="d-flex align-center justify-end">
+    <v-chip
+      color="success"
+      variant="flat"
+      prepend-icon="mdi-check-circle"
+      class="font-weight-bold"
+    >
+      VALIDAT
+    </v-chip>
+  </div>
+</template>
           </v-data-table>
         </v-card>
       </v-window-item>

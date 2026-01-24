@@ -45,6 +45,12 @@ router.patch('/:id/estat', async (req, res) => {
     const { updateEstat } = usePeticions();
     await updateEstat(req, res);
 });
+
+router.put('/:id/finalitzar', async (req, res) => {
+    const { finalitzarPeticio } = usePeticions();
+    await finalitzarPeticio(req, res);
+});
+
 router.post('/', async (req, res) => {
     const { createPeticio } = usePeticions();
     await createPeticio(req, res);

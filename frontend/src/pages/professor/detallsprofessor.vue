@@ -27,20 +27,25 @@ onMounted(async () => {
   }
 })
 
+// A detallsprofessor.vue
 const enviarChecklist = async () => {
   try {
     const res = await fetch(`/api/peticions/${peticio.value._id}/finalitzar`, {
-      method: 'PATCH',
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ checklist: checklist.value })
-    })
+    }); // <--- Aquí acaba el fetch
+
     if (res.ok) {
-      router.push('/professor/iniciprofessor')
+      alert("Validació enviada correctament!");
+      router.push('/professor/iniciprofessor');
     }
-  } catch (e) { 
-    console.error("Error al finalitzar:", e) 
+    // AQUÍ ÉS ON SOL ESTAR L'ERROR: Només hi ha d'haver UNA clau tancant el try.
+  } catch (e) {
+    console.error("Error a la petició:", e);
   }
-}
+};
+    
 </script>
 
 <template>
@@ -107,7 +112,7 @@ const enviarChecklist = async () => {
               </p>
 
               <div 
-                v-for="(label, key) in { material: 'Material complet i funcional', espai: 'Espai de treball adequat', satisfaccio: 'Objectius assolits i satisfacció' }" 
+                v-for="(label, key) in { Actitud: 'Actitud adecuada i escolta activa', Assistencia: 'Assistencia completa dels inscrits', Responsabilitat: 'Tenir cura dels materials i les instalacions utilitzades' }" 
                 :key="key"
                 class="checklist-item mb-3"
               >
@@ -142,7 +147,7 @@ const enviarChecklist = async () => {
                   :color="peticio.finalitzat ? 'success' : 'indigo-darken-4'" 
                   size="x-large" 
                   class="rounded-lg font-weight-bold px-8"
-                  :disabled="!checklist.material && !checklist.espai && !checklist.satisfaccio && peticio.finalitzat"
+                  :disabled="!checklist.Actitud && !checklist.Assistencia && !checklist.Responsabilitat && peticio.finalitzat"
                   elevation="2"
                   @click="enviarChecklist"
                 >

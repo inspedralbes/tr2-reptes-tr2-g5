@@ -252,13 +252,31 @@ const getPeticionsAdmin = async (req, res) => {
 };
 
     // 7. FINALITZAR TALLER
-    const finalitzarPeticio = async (req, res) => {
-        try {
-            const db = getDB();
-            await db.collection('peticions').updateOne({ _id: new ObjectId(req.params.id) }, { $set: { finalitzat: true, checklist_detalls: req.body.checklist, data_finalitzacio: new Date() } });
-            res.status(200).json({ missatge: "Taller finalitzat" });
-        } catch (error) { res.status(500).json({ error: "Error finalitzar" }); }
-    };
+    // A src/controllers/peticioController.js
+
+const finalitzarPeticio = async (req, res) => {
+    try {
+        const db = getDB();
+        const { id } = req.params;
+        const { checklist } = req.body;
+
+        await db.collection('peticions').updateOne(
+            { _id: new ObjectId(id) },
+            { 
+                $set: { 
+                    finalitzat: true,
+                    checklist_detalls: checklist,
+                    data_finalitzacio: new Date()
+                } 
+            }
+        );
+
+        res.status(200).json({ missatge: "Petició finalitzada amb èxit" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error en finalitzar la petició" });
+    }
+};
 
     // 8. ESTADÍSTIQUES
     const getEstadistiques = async (req, res) => {
