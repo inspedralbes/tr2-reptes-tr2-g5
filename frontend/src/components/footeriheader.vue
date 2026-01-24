@@ -22,10 +22,7 @@
 
         <!-- SI ESTÁ LOGIN: MOSTRAR PANEL Y LOGOUT -->
         <template v-else>
-            <v-btn @click="goToDashboard" variant="text" class="text-none font-weight-bold px-2 custom-blue">
-                <v-icon start size="small">mdi-view-dashboard</v-icon>
-                El meu Espai
-            </v-btn>
+            
             <v-divider vertical inset class="mx-1" length="15"></v-divider>
             
             <v-btn @click="logout" variant="text" class="text-none font-weight-bold px-2 text-red">
