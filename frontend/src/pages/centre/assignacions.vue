@@ -1,17 +1,50 @@
 <template>
   <div class="assignacions-container">
-  <div class="d-flex align-center mb-6">
-    <v-btn 
-      icon="mdi-arrow-left" 
-      variant="text" 
-      color="black" 
-      class="mr-4" 
-@click="router.push('/centre/indexcentre')"
-    />
-    <h2 class="text-h4 font-weight-bold mb-0">Tallers Confirmats i Assignacions</h2>
-  </div>
-  <div v-if="assignacions.length === 0" class="no-data">
-    
+    <div class="d-flex align-center mb-6">
+      <v-btn 
+        icon="mdi-arrow-left" 
+        variant="text" 
+        color="black" 
+        class="mr-4" 
+        @click="router.push('/centre/indexcentre')"
+      />
+      <h2 class="text-h4 font-weight-bold mb-0">Tallers Confirmats i Assignacions</h2>
+    </div>
+
+    <!-- ✅ NOTIFICACIÓ DESPLEGABLE DE REPRESENTANTS SELECCIONATS -->
+    <v-expand-transition>
+      <v-alert 
+        v-if="representantsSeleccionats.length > 0 && mostrarNotificacio"
+        type="success"
+        variant="tonal"
+        prominent
+        closable
+        @click:close="mostrarNotificacio = false"
+        class="mb-6 notificacio-representant"
+      >
+        <v-alert-title class="text-h6 mb-2">
+          Teniu professors seleccionats com a Representants Oficials
+        </v-alert-title>
+
+        <div v-for="p in representantsSeleccionats" :key="p._id" class="representant-item">
+          <v-chip 
+            color="success" 
+            variant="flat" 
+            size="small" 
+            prepend-icon="mdi-star"
+            class="mr-2 mb-2"
+          >
+            {{ p.taller_titol }}
+          </v-chip>
+          <span>
+            <strong>{{ p.referent_contacte?.nom }}</strong> ha estat escollit com a 
+            <strong>Representant Oficial</strong> d'aquest taller.
+          </span>
+        </div>
+      </v-alert>
+    </v-expand-transition>
+
+    <div v-if="assignacions.length === 0" class="no-data">
       Encara no teniu cap taller assignat oficialment.
     </div>
 
@@ -19,7 +52,19 @@
       <div v-for="item in assignacions" :key="item._id" class="card">
         <div class="card-header">
           <h3>{{ item.taller_titol }}</h3>
-          <span class="badge">Assignat</span>
+          <div class="d-flex align-center gap-2">
+            <!-- Badge de Representant Oficial -->
+            <v-chip 
+              v-if="item.es_representant_triat" 
+              color="success" 
+              size="x-small"
+              prepend-icon="mdi-star"
+              class="representant-badge"
+            >
+              OFICIAL
+            </v-chip>
+            <span class="badge">Assignat</span>
+          </div>
         </div>
         
         <div class="card-body">
@@ -27,11 +72,26 @@
           <p><strong>Alumnes:</strong> {{ item.seleccio_tallers.num_alumnes }}</p>
           
           <div class="referents-box">
-            <h4>Professors Referents:</h4>
+            <div class="d-flex justify-space-between align-center mb-2">
+              <h4>Professors Referents:</h4>
+              <v-icon 
+                v-if="item.es_representant_triat" 
+                color="success" 
+                size="24"
+              >
+                mdi-shield-star
+              </v-icon>
+            </div>
             <ul>
               <li>{{ item.referent_contacte.nom }} ({{ item.referent_contacte.correu }})</li>
               <li v-if="item.referent_contacte.nom_segon">{{ item.referent_contacte.nom_segon }}</li>
             </ul>
+            
+            <!-- Missatge especial si és representant -->
+            <div v-if="item.es_representant_triat" class="representant-info">
+              <v-icon size="16" color="success">mdi-information</v-icon>
+              Aquest professor és el Representant Oficial del taller
+            </div>
           </div>
         </div>
       </div>
@@ -40,12 +100,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router'; // <--- AÑADIDO: Importar el router
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 
-const router = useRouter(); // <--- AÑADIDO: Inicializar el router
-
+const router = useRouter();
 const assignacions = ref([]);
+const mostrarNotificacio = ref(true);
+
+const representantsSeleccionats = computed(() => {
+  return assignacions.value.filter(p => p.es_representant_triat === true);
+});
 
 const carregarAssignacions = async () => {
   try {
@@ -54,14 +118,13 @@ const carregarAssignacions = async () => {
     
     if (res.ok) {
       const dades = await res.json();
-      
-      // FILTRE: Només les que SÍ que estan assignades
       assignacions.value = dades.filter(p => p.estat === 'ASSIGNAT');
     }
   } catch (error) {
     console.error("Error carregant assignacions:", error);
   }
 };
+
 onMounted(() => {
   carregarAssignacions();
 });
@@ -76,8 +139,37 @@ onMounted(() => {
 
 .d-flex { display: flex; }
 .align-center { align-items: center; }
+.justify-space-between { justify-content: space-between; }
 .mb-6 { margin-bottom: 24px; }
+.mb-2 { margin-bottom: 8px; }
 .mr-4 { margin-right: 16px; }
+.mr-2 { margin-right: 8px; }
+.gap-2 { gap: 8px; }
+
+
+.notificacio-representant {
+  animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.representant-item {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.representant-item:last-child {
+  border-bottom: none;
+}
 
 .grid-assignacions {
   display: grid;
@@ -91,10 +183,16 @@ onMounted(() => {
   background-color: #fff;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
 }
 
 .card-header {
-  background-color: #ececec; /* El teu gris de referència */
+  background-color: #ececec;
   padding: 15px;
   display: flex;
   justify-content: space-between;
@@ -109,6 +207,10 @@ onMounted(() => {
   font-size: 0.8em;
 }
 
+.representant-badge {
+  font-weight: bold;
+}
+
 .card-body {
   padding: 15px;
 }
@@ -120,13 +222,23 @@ onMounted(() => {
   border-radius: 4px;
 }
 
-.btn-detalls {
-  width: 100%;
-  padding: 10px;
-  border: none;
-  background-color: #2196F3;
-  color: white;
-  cursor: pointer;
+.referents-box h4 {
+  margin: 0 0 8px 0;
+  font-size: 0.95em;
+  color: #333;
+}
+
+.representant-info {
+  margin-top: 12px;
+  padding: 8px;
+  background-color: #e8f5e9;
+  border-left: 3px solid #4CAF50;
+  border-radius: 4px;
+  font-size: 0.85em;
+  color: #2e7d32;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .no-data {
