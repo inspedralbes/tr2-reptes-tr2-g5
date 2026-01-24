@@ -80,12 +80,16 @@ const email = ref('');
 const password = ref('');
 
 const handleSubmit = async () => {
-  // Intentar login
   const usuario = await authStore.login(email.value, password.value);
   
-  // Si el login fue exitoso (usuario no es null)
   if (usuario) {
-    // Redirigir según el rol
+    if (usuario.rol === 'centre') {
+      localStorage.setItem('userName', usuario.nom);
+      if (usuario.coordinador) {
+        localStorage.setItem('coordinadorNom', usuario.coordinador.nom);
+        localStorage.setItem('coordinadorEmail', usuario.coordinador.email);
+      }
+    }
     if (usuario.rol === 'admin') {
       router.push('/admin/indexadmin');
     } else if (usuario.rol === 'centre') {
@@ -93,10 +97,9 @@ const handleSubmit = async () => {
     } else if (usuario.rol === 'professor') {
       router.push('/professor/iniciprofessor');
     } else {
-      router.push('/'); // Fallback
+      router.push('/'); 
     }
   }
-  // Si falla, el v-alert mostrará authStore.error automáticamente
 };
 </script>
 

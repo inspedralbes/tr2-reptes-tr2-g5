@@ -21,18 +21,19 @@ exports.login = async (req, res) => {
 
         // Verificación con log de comparación
         if (user.password !== password) {
-            console.log("❌ ERROR: Les contrasenyes no coincideixen exactament");
+            console.log(" ERROR: Les contrasenyes no coincideixen exactament");
             return res.status(401).json({ error: "Credencials incorrectes" });
         }
 
-        console.log("✅ LOGIN CORRECTE");
+        console.log(" LOGIN CORRECTE");
         res.status(200).json({
             missatge: "Login correcte",
             usuari: {
                 id: user._id,
                 nom: user.nom,
                 email: user.email,
-                rol: user.rol
+                rol: user.rol,
+                coordinador: user.coordinador
             }
         });
 
