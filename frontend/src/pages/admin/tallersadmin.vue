@@ -6,8 +6,17 @@ const router = useRouter(); const API_URL = '/api/tallers'; const MAX_DESC = 300
 const tallers = ref([])
 const state = reactive({ dialog: false, dialogEdit: false, filter: 'Totes', form: {}, editIdx: -1 })
 
-// Se añade 'ubicacio' al formulario inicial
-const initForm = () => ({ titol: '', descripcio: '', durada: '', places: '', modalitat: '', data: '', ubicacio: '' })
+const initForm = () => ({ 
+  titol: '', 
+  descripcio: '', 
+  durada: '', 
+  places: '', 
+  modalitat: '', 
+  data: '', 
+  ubicacio: '',
+  capacitat_maxima: 0,
+  places_disponibles: 0
+})
 state.form = initForm()
 
 const apiCall = async (url, method = 'GET', body = null) => {
@@ -31,11 +40,20 @@ const guardar = async () => {
 }
 
 const obrir = (t, i = -1) => { 
-  state.form = { ...t }; 
-  if (i >= 0) { state.editIdx = i; state.dialogEdit = true } 
-  else { state.dialog = true } 
+  state.form = { ...t }
+  if (i >= 0) { 
+    state.form.places = t.capacitat_maxima || t.places || ''
+    state.editIdx = i
+    state.dialogEdit = true 
+  } else { 
+    state.dialog = true 
+  } 
 }
 const esborrar = async (id, i) => { if (confirm('Eliminar?')) await apiCall(`${API_URL}/${id}`, 'DELETE') && tallers.value.splice(i, 1) }
+
+const getPlaces = (taller) => {
+  return taller.places_disponibles ?? taller.capacitat_maxima ?? taller.places ?? 0
+}
 </script>
 
 <template>
@@ -84,7 +102,9 @@ const esborrar = async (id, i) => { if (confirm('Eliminar?')) await apiCall(`${A
               </v-col>
               <v-col cols="4">
                 <div class="text-overline text-grey-lighten-1" style="line-height: 1rem">PLACES</div>
-                <div class="text-caption font-weight-bold">{{ t.places }}</div>
+                <div class="text-caption font-weight-bold">
+                  {{ t.places_disponibles ?? t.capacitat_maxima ?? 0 }} / {{ t.capacitat_maxima ?? 0 }}
+                </div>
               </v-col>
             </v-row>
           </v-card-text>
@@ -137,7 +157,18 @@ const esborrar = async (id, i) => { if (confirm('Eliminar?')) await apiCall(`${A
           <v-row>
             <v-col cols="12"><v-text-field v-model="state.form.data" label="Data" type="date" variant="outlined" color="white" class="custom-input"/></v-col> 
             <v-col cols="6"><v-text-field v-model="state.form.durada" label="Durada" variant="outlined" color="white" class="custom-input"/></v-col>
-            <v-col cols="6"><v-text-field v-model="state.form.places" label="Places" type="number" variant="outlined" color="white" class="custom-input"/></v-col>
+            <v-col cols="6">
+              <v-text-field 
+                v-model="state.form.places" 
+                label="Capacitat Total" 
+                type="number" 
+                variant="outlined" 
+                color="white" 
+                class="custom-input"
+                hint="Canviar la capacitat no afecta les reserves ja fetes"
+                persistent-hint
+              />
+            </v-col>
           </v-row>
           <v-select v-model="state.form.modalitat" :items="['Modalitat A', 'Modalitat B', 'Modalitat C']" label="Modalitat" variant="outlined" color="white" class="custom-input" :menu-props="{ contentClass: 'custom-menu' }"/>
         </v-card-text>
@@ -172,5 +203,6 @@ const esborrar = async (id, i) => { if (confirm('Eliminar?')) await apiCall(`${A
 :deep(.custom-input .v-field__input), :deep(.custom-input .v-select__selection-text) { color: white !important; }
 :deep(.custom-input .v-label) { color: rgba(255, 255, 255, 0.9) !important; }
 :deep(.custom-input .v-counter) { color: rgba(255, 255, 255, 0.6) !important; }
+:deep(.custom-input .v-messages) { color: rgba(255, 255, 255, 0.7) !important; }
 :deep(.filtre-superior .v-select__selection-text) { color: #333 !important; font-weight: 500; }
 </style>
