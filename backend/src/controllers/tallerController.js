@@ -18,15 +18,33 @@ const useTallers = () => {
     const createTaller = async (req, res) => {
         try {
             const db = getDB();
-            const result = await db.collection('tallers').insertOne(req.body);
             
-            console.log("🆕 Taller creat correctament:", {
+    
+            const nouTaller = {
+                titol: req.body.titol,
+                descripcio: req.body.descripcio,
+                durada: req.body.durada,
+                modalitat: req.body.modalitat,
+                data: req.body.data,
+                ubicacio: req.body.ubicacio,
+            
+                capacitat_maxima: parseInt(req.body.places) || 0,
+                places_disponibles: parseInt(req.body.places) || 0
+ 
+            };
+            
+            const result = await db.collection('tallers').insertOne(nouTaller);
+            
+            console.log("Taller creat correctament:", {
                 tallerId: result.insertedId,
-                titol: req.body.titol
+                titol: nouTaller.titol,
+                capacitat_maxima: nouTaller.capacitat_maxima,
+                places_disponibles: nouTaller.places_disponibles
             });
 
-            res.status(201).json({ ...req.body, _id: result.insertedId });
+            res.status(201).json({ ...nouTaller, _id: result.insertedId });
         } catch (error) {
+            console.error("Error al crear taller:", error);
             res.status(500).json({ error: "Error al crear taller" });
         }
     };
@@ -36,17 +54,27 @@ const useTallers = () => {
         try {
             const db = getDB();
             const { id } = req.params;
+            
+           
             const dades = { ...req.body };
-            delete dades._id; 
+            delete dades._id;
+            
+            // Si estan actualitzant 'places', convertir-lo
+            if (dades.places) {
+                dades.capacitat_maxima = parseInt(dades.places);
+                
+                delete dades.places;
+            }
             
             await db.collection('tallers').updateOne(
                 { _id: new ObjectId(id) },
                 { $set: dades }
             );
 
-            console.log("✏️ Taller modificat:", { tallerId: id });
+            console.log(" Taller modificat:", { tallerId: id });
             res.status(200).json({ _id: id, ...dades });
         } catch (error) {
+            console.error("Error al modificar taller:", error);
             res.status(500).json({ error: "Error al modificar" });
         }
     };
@@ -58,9 +86,10 @@ const useTallers = () => {
             const { id } = req.params;
             await db.collection('tallers').deleteOne({ _id: new ObjectId(id) });
             
-            console.log("🗑️ Taller eliminat del sistema:", { tallerId: id });
+            console.log(" Taller eliminat del sistema:", { tallerId: id });
             res.status(200).json({ missatge: "Taller eliminat" });
         } catch (error) {
+            console.error("Error al esborrar taller:", error);
             res.status(500).json({ error: "Error al esborrar" });
         }
     };

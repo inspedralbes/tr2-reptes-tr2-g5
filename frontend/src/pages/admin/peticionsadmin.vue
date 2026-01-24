@@ -92,7 +92,7 @@ const getPlacesRestants = (tId) => {
   if (!taller) return 0;
   
   // Lògica: si hem restat places usem places_disponibles, si no, la capacitat_maxima original
-  return taller.places_disponibles !== undefined ? taller.places_disponibles : taller.capacitat_maxima;
+  return taller.places_disponibles ?? taller.capacitat_maxima ?? 0;
 };
 const accio = async (tipus) => {
   const url = `/api/peticions/${state.selected._id}/estat`
@@ -126,6 +126,8 @@ const accio = async (tipus) => {
     console.error("Error:", e)
   }
 }
+
+
 </script>
 
 <template>
@@ -192,133 +194,132 @@ const accio = async (tipus) => {
         </v-col>
       </v-row>
     </div>
+<v-dialog v-model="state.dialog" max-width="600">
+  <v-card class="rounded-xl overflow-hidden" v-if="state.selected">
+    <v-card-title class="pa-6 bg-black text-white">Detalls de la Sol·licitud</v-card-title>
+    
+    <v-card-text class="pa-6 bg-grey-lighten-4 text-black">
+      <v-row dense>
+        <v-col cols="12" class="mb-4">
+          <v-card variant="flat" class="pa-4 rounded-lg border">
+            <label class="text-overline text-grey-darken-1 d-block mb-1">Nivell d'Interès</label>
+            <v-chip :color="state.selected.nivell_interes === 'Alt' ? 'red-darken-1' : 'amber-darken-3'" variant="flat" class="text-white font-weight-black">
+              {{ state.selected.nivell_interes }}
+            </v-chip>
+          </v-card>
+        </v-col>
 
-    <v-dialog v-model="state.dialog" max-width="600">
-      <v-card class="rounded-xl overflow-hidden" v-if="state.selected">
-        <v-card-title class="pa-6 bg-black text-white">Detalls de la Sol·licitud</v-card-title>
+        <v-col cols="12">
+          <label class="text-overline text-grey">TALLER SOL·LICITAT PEL CENTRE</label>
+          <div class="text-h6 font-weight-black text-indigo-darken-4 mb-4">
+            {{ state.selected.taller_titol || 'No especificat' }}
+          </div>
+        </v-col>
+
+        <v-col cols="12" md="6">
+          <label class="text-overline text-grey">INSTITUT</label>
+          <div class="text-body-1 font-weight-bold">{{ state.selected.nom_centre }}</div>
+          <div class="text-caption text-indigo-darken-2 mb-4">
+            Rebuda: {{ state.selected.data_creacio ? new Date(state.selected.data_creacio).toLocaleString('ca-ES') : '--' }}
+          </div>
+        </v-col>
+
+        <v-col cols="12" md="6">
+          <label class="text-overline text-grey">ALUMNES</label>
+          <div class="text-body-1 font-weight-bold mb-4">{{ state.selected.seleccio_tallers?.num_alumnes }} alumnes</div>
+        </v-col>
         
-        <v-card-text class="pa-6 bg-grey-lighten-4 text-black">
-          <v-row dense>
-            <v-col cols="12" class="mb-4">
-              <v-card variant="flat" class="pa-4 rounded-lg border">
-                <label class="text-overline text-grey-darken-1 d-block mb-1">Nivell d'Interès</label>
-                <v-chip :color="state.selected.nivell_interes === 'Alt' ? 'red-darken-1' : 'amber-darken-3'" variant="flat" class="text-white font-weight-black">
-                  {{ state.selected.nivell_interes }}
-                </v-chip>
-              </v-card>
-            </v-col>
+        <v-col cols="12" md="6">
+          <label class="text-overline text-grey">COORDINADOR/A GENERAL</label>
+          <div class="text-body-2 font-weight-bold">{{ state.selected.coordinador?.nom || 'No indicat' }}</div>
+          <div class="text-caption text-grey-darken-2">{{ state.selected.coordinador?.email }}</div>
+        </v-col>
 
-            <v-col cols="12">
-              <label class="text-overline text-grey">TALLER SOL·LICITAT PEL CENTRE</label>
-              <div class="text-h6 font-weight-black text-indigo-darken-4 mb-4">
-                {{ state.selected.taller_titol || 'No especificat' }}
-              </div>
-            </v-col>
+        <v-col cols="12" md="6">
+          <label class="text-overline text-grey">PROFESSOR/A REFERENT</label>
+          <div class="text-body-2 font-weight-bold">{{ state.selected.referent_contacte?.nom }}</div>
+          <div class="text-caption text-grey-darken-2">{{ state.selected.referent_contacte?.correu }}</div>
+        </v-col>
+      </v-row> 
 
-            <v-col cols="12" md="6">
-              <label class="text-overline text-grey">INSTITUT</label>
-              <div class="text-body-1 font-weight-bold">{{ state.selected.nom_centre }}</div>
-              <div class="text-caption text-indigo-darken-2 mb-4">
-                Rebuda: {{ state.selected.data_creacio ? new Date(state.selected.data_creacio).toLocaleString('ca-ES') : '--' }}
-              </div>
-            </v-col>
+      <v-divider class="my-6"></v-divider>
+      
+      <div v-if="state.selected.estat === 'PENDENT'">
+        <!-- Botons inicials -->
+        <div v-if="!state.accepted" class="d-flex gap-2">
+          <v-btn color="red-darken-2" variant="tonal" class="flex-grow-1" @click="accio('REBUTJAR')" prepend-icon="mdi-close">REBUTJAR</v-btn>
+          <v-btn color="green-darken-2" class="flex-grow-1 text-white" @click="state.accepted = true" prepend-icon="mdi-check">ACCEPTAR</v-btn>
+        </div>
 
-            <v-col cols="12" md="6">
-              <label class="text-overline text-grey">ALUMNES</label>
-              <div class="text-body-1 font-weight-bold mb-4">{{ state.selected.seleccio_tallers?.num_alumnes }} alumnes</div>
-            </v-col>
-            
-            <v-col cols="12" md="6">
-              <label class="text-overline text-grey">COORDINADOR/A GENERAL</label>
-              <div class="text-body-2 font-weight-bold">{{ state.selected.coordinador?.nom || 'No indicat' }}</div>
-              <div class="text-caption text-grey-darken-2">{{ state.selected.coordinador?.email }}</div>
-            </v-col>
-
-            <v-col cols="12" md="6">
-              <label class="text-overline text-grey">PROFESSOR/A REFERENT</label>
-              <div class="text-body-2 font-weight-bold">{{ state.selected.referent_contacte?.nom }}</div>
-              <div class="text-caption text-grey-darken-2">{{ state.selected.referent_contacte?.correu }}</div>
-            </v-col>
-          </v-row> 
-
-          <v-divider class="my-6"></v-divider>
+        <!-- Configuració final -->
+        <div v-else class="bg-white pa-4 rounded-lg border">
+          <p class="text-caption font-weight-black mb-2 text-uppercase text-grey">Configuració final de l'assignació</p>
           
-          <div v-if="state.selected.estat === 'PENDENT'">
-            <div v-if="!state.accepted" class="d-flex gap-2">
-              <v-btn color="red-darken-2" variant="tonal" class="flex-grow-1" @click="accio('REBUTJAR')" prepend-icon="mdi-close">REBUTJAR</v-btn>
-              <v-btn color="green-darken-2" class="flex-grow-1 text-white" @click="state.accepted = true" prepend-icon="mdi-check">ACCEPTAR</v-btn>
+          <v-select 
+            v-model="state.selectedTaller" 
+            :items="llistaTallers" 
+            item-title="titol" 
+            item-value="_id" 
+            label="Taller definitiu" 
+            variant="outlined"
+          >
+            <template v-slot:item="{ props, item }">
+              <v-list-item v-bind="props">
+                <template v-slot:subtitle>
+                  <span class="text-indigo-darken-2 font-weight-bold">
+                    Lliures: {{ item.raw.places_disponibles !== undefined ? item.raw.places_disponibles : item.raw.capacitat_maxima }}
+                  </span>
+                </template>
+              </v-list-item>
+            </template>
+          </v-select>
+
+          <v-select
+            v-model="state.placesAssignades"
+            :items="Array.from({length: Math.min(getPlacesRestants(state.selectedTaller) || 10, 10)}, (_, i) => i + 1)"
+            label="Nombre d'alumnes"
+            variant="outlined"
+            density="comfortable"
+            prepend-inner-icon="mdi-account-group"
+          ></v-select>
+
+          <v-alert
+            v-if="state.selectedTaller"
+            :type="getPlacesRestants(state.selectedTaller) < state.placesAssignades ? 'error' : 'info'"
+            variant="tonal"
+            density="compact"
+            class="mt-2 mb-4"
+          >
+            <div class="d-flex justify-space-between">
+              <span>Disponibilitat al taller:</span>
+              <strong>{{ getPlacesRestants(state.selectedTaller) }} places</strong>
             </div>
+            <div v-if="getPlacesRestants(state.selectedTaller) < state.placesAssignades" class="font-weight-bold mt-1">
+              ⚠️ No hi ha prou places per a {{ state.placesAssignades }} alumnes!
+            </div>
+          </v-alert>
 
-         <div v-else class="bg-white pa-4 rounded-lg border">
-  <p class="text-caption font-weight-black mb-2 text-uppercase text-grey">Configuració final de l'assignació</p>
-  
-  <v-select 
-  v-model="state.selectedTaller" 
-  :items="llistaTallers" 
-  item-title="titol" 
-  item-value="_id" 
-  label="Taller definitiu" 
-  variant="outlined"
->
-  <template v-slot:item="{ props, item }">
-    <v-list-item v-bind="props">
-      <template v-slot:subtitle>
-        <span class="text-indigo-darken-2 font-weight-bold">
-          Lliures: {{ item.raw.places_disponibles !== undefined ? item.raw.places_disponibles : item.raw.capacitat_maxima }}
-        </span>
-      </template>
-    </v-list-item>
-  </template>
-</v-select>
-
-  <v-select
-    v-model="state.placesAssignades"
-    :items="[1, 2, 3, 4]"
-    label="Nombre d'alumnes"
-    variant="outlined"
-    density="comfortable"
-    prepend-inner-icon="mdi-account-group"
-  ></v-select>
-
-  <v-alert
-    v-if="state.selectedTaller"
-    :type="getPlacesRestants(state.selectedTaller) < state.placesAssignades ? 'error' : 'info'"
-    variant="tonal"
-    density="compact"
-    class="mt-2 mb-4"
-  >
-    <div class="d-flex justify-space-between">
-      <span>Disponibilitat al taller:</span>
-      <strong>{{ getPlacesRestants(state.selectedTaller) }} places</strong>
-    </div>
-    <div v-if="getPlacesRestants(state.selectedTaller) < state.placesAssignades" class="font-weight-bold mt-1">
-      ⚠️ No hi ha prou places per a {{ state.placesAssignades }} alumnes!
-    </div>
-  </v-alert>
-
-  <v-btn 
-    block 
-    color="black" 
-    class="text-white mt-2" 
-    @click="accio('ASSIGNAR')"
-    :disabled="!state.selectedTaller || !state.placesAssignades || getPlacesRestants(state.selectedTaller) < state.placesAssignades"
-  >
-    FINALITZAR ASSIGNACIÓ
-  </v-btn>
-  
-  <v-btn block variant="text" size="small" class="mt-2" @click="state.accepted = false">Enrere</v-btn>
-</div>
-  <v-btn block variant="text" size="small" @click="state.accepted = false">Enrere</v-btn>
-</div>
+          <v-btn 
+            block 
+            color="black" 
+            class="text-white mt-2" 
+            @click="accio('ASSIGNAR')"
+            :disabled="!state.selectedTaller || !state.placesAssignades || getPlacesRestants(state.selectedTaller) < state.placesAssignades"
+          >
+            FINALITZAR ASSIGNACIÓ
+          </v-btn>
           
-        </v-card-text>
-        
-        <v-card-actions class="pa-4 bg-white border-top">
-          <v-spacer/>
-          <v-btn variant="text" @click="state.dialog = false">TANCAR</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          <v-btn block variant="text" size="small" class="mt-2" @click="state.accepted = false">Enrere</v-btn>
+        </div>
+      </div>
+    </v-card-text>
+    
+    <v-card-actions class="pa-4 bg-white border-top">
+      <v-spacer/>
+      <v-btn variant="text" @click="state.dialog = false">TANCAR</v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
   </v-container>
 </template>
 

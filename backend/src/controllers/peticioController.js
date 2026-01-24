@@ -129,45 +129,84 @@ const getPeticionsAdmin = async (req, res) => {
     try {
         const db = getDB();
         const { id } = req.params;
-        // Rebem les dades tal com les envies des del frontend
         const { estat, tallerIdDefinitiu, num_alumnes_final } = req.body;
 
         const updateData = { estat };
 
         if (estat === 'ASSIGNAT') {
-    const tId = new ObjectId(tallerIdDefinitiu);
-    const numAlumnes = parseInt(num_alumnes_final);
+        const tId = new ObjectId(tallerIdDefinitiu);
+        const numAlumnes = parseInt(num_alumnes_final);
 
-    // RESTAR PLACES AL TALLER
-    await db.collection('tallers').updateOne(
-        { _id: tId },
-        { $inc: { places_disponibles: -numAlumnes } } // Resta el número assignat
-    );
+        const taller = await db.collection('tallers').findOne({ _id: tId });
+            
+            if (!taller) {
+                return res.status(404).json({ error: "Taller no trobat" });
+            }
 
-    updateData.tallerId = tId;
-    updateData["seleccio_tallers.num_alumnes"] = numAlumnes;
-}
-        // 4. Actualitzem la petició
+            const placesDisponibles = taller.places_disponibles ?? taller.capacitat_maxima;
+            
+            if (placesDisponibles < numAlumnes) {
+                return res.status(400).json({ 
+                    error: `No hi ha prou places. Disponibles: ${placesDisponibles}, Sol·licitades: ${numAlumnes}` 
+                });
+            }
+
+            // Restar places al taller
+            await db.collection('tallers').updateOne(
+                { _id: tId },
+                { 
+                    $inc: { places_disponibles: -numAlumnes },
+                    $setOnInsert: { capacitat_maxima: taller.capacitat_maxima || placesDisponibles }
+                }
+            );
+
+            updateData.tallerId = tId;
+            updateData["seleccio_tallers.num_alumnes"] = numAlumnes;
+            updateData.data_assignacio = new Date();
+        }
+
+        // Actualitzar la petició
         await db.collection('peticions').updateOne(
             { _id: new ObjectId(id) },
             { $set: updateData }
         );
 
-        res.status(200).json({ missatge: "Estat actualitzat i places reservades" });
+        res.status(200).json({ missatge: "Estat actualitzat i places reservades correctament" });
     } catch (error) {
-        console.error(error);
+        console.error("Error updateEstat:", error);
         res.status(500).json({ error: "Error en el servidor" });
     }
 };
 
     // 5. PETICIONS PER CENTRE / PROFESSOR
     const getPeticionsPerCentre = async (req, res) => {
-        try {
-            const db = getDB();
-            const peticions = await db.collection('peticions').find({ nom_centre: req.params.centreNom }).toArray();
-            res.status(200).json(peticions);
-        } catch (error) { res.status(500).json({ error: "Error centre" }); }
-    };
+    try {
+        const db = getDB();
+        const peticions = await db.collection('peticions')
+            .find({ nom_centre: req.params.centreNom })
+            .toArray();
+        
+        for (let peticio of peticions) {
+            const tallerId = peticio.tallerId || peticio.seleccio_tallers?.taller_id;
+            
+            if (tallerId) {
+                const taller = await db.collection('tallers').findOne({ 
+                    _id: new ObjectId(tallerId) 
+                });
+                
+                if (taller) {
+                    peticio.taller_titol = taller.titol;
+                    peticio.tallerId = taller;
+                }
+            }
+        }
+        res.status(200).json(peticions);
+    } catch (error) { 
+        console.error("Error:", error);
+        res.status(500).json({ error: "Error centre" }); 
+    }
+};
+
 
     const getPeticionsProfessor = async (req, res) => {
         try {
