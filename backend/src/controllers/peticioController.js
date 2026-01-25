@@ -21,8 +21,20 @@ const usePeticions = () => {
     const getPeticionsAdmin = async (req, res) => {
         try {
             const db = getDB();
-            const peticions = await db.collection('peticions').aggregate([
-                // 1. Unim amb la col·lecció d'usuaris per buscar el centre
+
+            // 0. DEFINIM PIPELINE BASE
+            const pipeline = [];
+
+            // IMPLEMENTACIÓ DE $in: Si ens passen ?estats=PENDENT,ASSIGNAT
+            if (req.query.estats) {
+                const estatsArray = req.query.estats.split(',');
+                pipeline.push({
+                    $match: { estat: { $in: estatsArray } }
+                });
+            }
+
+            // Afegim la resta d'etapes (Lookup, Unwind, etc.)
+            pipeline.push(
                 {
                     $lookup: {
                         from: 'usuaris',
@@ -62,7 +74,9 @@ const usePeticions = () => {
                     }
                 },
                 { $sort: { data_creacio: 1 } }
-            ]).toArray();
+            );
+
+            const peticions = await db.collection('peticions').aggregate(pipeline).toArray();
             res.status(200).json(peticions);
         } catch (error) {
             res.status(500).json({ error: "Error obtenint peticions" });
@@ -359,10 +373,35 @@ const usePeticions = () => {
         }
     };
 
+    // 11. CERCA PER CHECKLIST ($elemMatch)
+    const getSearchByChecklist = async (req, res) => {
+        try {
+            const db = getDB();
+            const { item } = req.params;
+
+            // Busquem peticions on l'array 'checklist_detalls' contingui un element
+            // que coincideixi amb l'item buscat I que estigui marcat com a fet.
+            const peticions = await db.collection('peticions').find({
+                checklist_detalls: {
+                    $elemMatch: {
+                        item: { $regex: item, $options: 'i' }, // Regex per fer la cerca flexible
+                        fet: true
+                    }
+                }
+            }).toArray();
+
+            res.status(200).json(peticions);
+        } catch (error) {
+            console.error("Error cerca checklist:", error);
+            res.status(500).json({ error: "Error cercant per checklist" });
+        }
+    };
+
     return {
         getPeticions, getPeticionsAdmin, getPeticionsPerCentre, getPeticionsProfessor,
         createPeticio, updateEstat, finalitzarPeticio, getEstadistiques,
-        getVoluntarisPerTaller, assignarRepresentantOficial, getTallersRepresentantOficial
+        getVoluntarisPerTaller, assignarRepresentantOficial, getTallersRepresentantOficial,
+        getSearchByChecklist
     };
 };
 

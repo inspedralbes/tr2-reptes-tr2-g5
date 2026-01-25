@@ -9,13 +9,18 @@ router.get('/voluntaris-representants', async (req, res) => {
 });
 
 router.get('/estadistiques', async (req, res) => {
-    const { getEstadistiques } = usePeticions(); 
+    const { getEstadistiques } = usePeticions();
     await getEstadistiques(req, res);
 });
 
 router.get('/admin', async (req, res) => {
-    const { getPeticionsAdmin } = usePeticions(); 
+    const { getPeticionsAdmin } = usePeticions();
     await getPeticionsAdmin(req, res);
+});
+
+router.get('/checklist/search/:item', async (req, res) => {
+    const { getSearchByChecklist } = usePeticions();
+    await getSearchByChecklist(req, res);
 });
 
 // 2. Rutes amb PARÀMETRES ESPECÍFICS
@@ -31,7 +36,7 @@ router.get('/professor/:emailProfessor', async (req, res) => {
 
 // 3. Rutes amb ID o ARREL (Sempre al final)
 router.get('/', async (req, res) => {
-    const { getPeticions } = usePeticions(); 
+    const { getPeticions } = usePeticions();
     await getPeticions(req, res);
 });
 
