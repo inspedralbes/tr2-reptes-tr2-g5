@@ -24,9 +24,13 @@ const login = async (email, password) => {
       loading.value = false;
       return null;
     }
+    // --- DETECTAR ENTORNO ---
+    const BASE_URL = window.location.protocol === 'file:' 
+      ? 'http://localhost:8088/api' 
+      : '/api';
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
