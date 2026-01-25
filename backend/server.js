@@ -36,7 +36,37 @@ async function startServer() {
         app.use('/api/auth', authRoutes); // <--- AÑADIDO (Esto soluciona el error 404)
         app.use('/api/users', usersRoutes); // <--- AÑADIDO USERS
         app.use('/api/informes', informesRoutes);
-        
+
+        // --- ENDPOINT PARA UNITY (Login simplificado) ---
+        app.post('/api/login', async (req, res) => {
+            try {
+                const { getDB } = require('./src/config/db');
+                const db = getDB();
+                const { email, password } = req.body;
+
+                // Buscamos el usuario en la misma base de datos
+                const user = await db.collection('usuaris').findOne({ email: email });
+
+                if (!user || user.password !== password) {
+                    return res.status(401).json({ message: 'Credencials incorrectes' });
+                }
+
+                res.json({
+                    message: 'Inici de sessió correcte',
+                    email: user.email,
+                    nombre: user.nom,
+                    rol: user.rol
+                });
+            } catch (error) {
+                res.status(500).json({ message: 'Error en el servidor' });
+            }
+        });
+
+        // --- SERVIR EL APK PARA DESCARGA ---
+        const path = require('path');
+        // Esto permite que si pones el APK en una carpeta llamada 'public', se pueda bajar
+        app.use('/download', express.static(path.join(__dirname, 'public')));
+
         const PORT = process.env.PORT || 8088;
         app.listen(PORT,'0.0.0.0', () => {
             console.log(`🚀 Servidor ENGINY a http://localhost:${PORT}`);
