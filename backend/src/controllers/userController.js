@@ -158,7 +158,9 @@ const inviteCentre = async (req, res) => {
         const db = getDB();
         const { email, nom } = req.body;
 
-        if (!email || !nom) return res.status(400).json({ error: "Faltan datos del centro" });
+        if (!email || !nom) {
+            return res.status(400).json({ error: "Falten dades del centre" });
+        }
 
         const token = crypto.randomBytes(20).toString('hex');
         
@@ -171,11 +173,15 @@ const inviteCentre = async (req, res) => {
             data_invitacio: new Date()
         };
 
+        // 1. IMPORTANT: Guardar a la base de dades
         await db.collection('usuaris').insertOne(nouCentrePendent);
 
-        const linkAceptar = `http://localhost:5173/confirmar-participacion?token=${token}`; 
-
-        await transporter.sendMail({
+        // 2. URL Dinàmica (Local vs Producció)
+        const BASE_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const linkAceptar = `${BASE_URL}/confirmar-participacion?token=${token}`;
+        
+        // 3. Enviament de mail en segon pla (sense await)
+        transporter.sendMail({
             from: '"Projecte ENGINY" <martamartahf@gmail.com>',
             to: email, 
             subject: `Invitació Projecte ENGINY - Centre ${nom}`,
@@ -183,32 +189,26 @@ const inviteCentre = async (req, res) => {
                 <div style="font-family: sans-serif; max-width: 600px; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
                     <h2 style="color: #333;">Hola ${nom},</h2>
                     <p>L'equip de <strong>ENGINY</strong> us convida a participar en els tallers d'aquest curs.</p>
-                    <p>Voleu participar-hi amb els vostres alumnes?</p>
-                    
                     <div style="text-align: center; margin: 35px 0;">
                         <a href="${linkAceptar}" 
                            style="background-color: #3465a4; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
                            SÍ, VOLEM PARTICIPAR
                         </a>
                     </div>
-                    
-                    <p style="color: #666; font-size: 13px; line-height: 1.5;">
-                        En fer clic al botó, serreu redirigits a la pàgina de confirmació on podreu activar el vostre compte.
-                    </p>
-                    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                    <p style="color: #999; font-size: 11px; text-align: center;">
-                        Aquest és un correu automàtic enviat pel sistema de gestió d'ENGINY.
-                    </p>
+                    <p style="color: #666; font-size: 13px;">Aquest és un correu automàtic enviat per ENGINY.</p>
                 </div>`
+        }).catch(err => {
+            console.error("LOG: Error enviant mail (però l'usuari s'ha creat):", err.message);
         });
 
-        res.status(201).json({ missatge: "Invitación enviada al centro", token });
+        // 4. Resposta immediata per evitar el 504 Gateway Timeout
+        res.status(201).json({ missatge: "Invitació processada correctament", token });
+
     } catch (error) {
-        console.error("ERROR INVITACIÓN:", error);
-        res.status(500).json({ error: "Error al enviar la invitación" });
+        console.error("ERROR CRÍTIC:", error);
+        res.status(500).json({ error: "Error intern del servidor" });
     }
 };
-
 // CONFIRMAR PARTICIPACIÓ (ENVIAMENT A CORREU DE CENTRE)
 const confirmParticipation = async (req, res) => {
     try {
@@ -242,6 +242,8 @@ const confirmParticipation = async (req, res) => {
                 } 
             }
         );
+        const BASE_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const loginLink = `${BASE_URL}/login`;
 
         await transporter.sendMail({
             from: '"Projecte ENGINY" <martamartahf@gmail.com>',
@@ -266,7 +268,7 @@ const confirmParticipation = async (req, res) => {
                         Si teniu qualsevol dubte, contacteu amb l'administrador del projecte.
                     </p>
                 </div>`
-        });
+        }) .catch(err => console.error("Error enviant credencials per mail:", err.message));
 
         res.status(200).json({ 
             missatge: "Participació confirmada",
@@ -290,6 +292,9 @@ const inviteMultiple = async (req, res) => {
             return res.status(400).json({ error: "El format de les dades no és correcte" });
         }
 
+        const BASE_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+        // Procesamos la base de datos con await para asegurar que se guardan
         const resultados = await Promise.all(centres.map(async (centro) => {
             const { nom, email } = centro;
             if (!nom || !email) return null;
@@ -305,16 +310,18 @@ const inviteMultiple = async (req, res) => {
                 data_invitacio: new Date()
             });
 
-            const linkAceptar = `http://localhost:5173/confirmar-participacion?token=${token}`;
+            const linkAceptar = `${BASE_URL}/confirmar-participacion?token=${token}`;
 
-            await transporter.sendMail({
+            // ENVIAMOS EL MAIL SIN AWAIT
+            // Dejamos que Nodemailer los gestione en paralelo sin bloquear la respuesta HTTP
+            transporter.sendMail({
                 from: '"Projecte ENGINY" <martamartahf@gmail.com>',
                 to: email,
                 subject: `Invitació Projecte ENGINY - Centre ${nom}`,
                 html: `
                     <div style="font-family: sans-serif; max-width: 600px; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
                         <h2 style="color: #333;">Hola ${nom},</h2>
-                        <p>L'equip de <strong>ENGINY</strong> us convida a participar en els tallers d'aquest curs.</p>
+                        <p>L'equip de <strong>ENGINY</strong> us convida a participar en els tallers.</p>
                         <div style="text-align: center; margin: 35px 0;">
                             <a href="${linkAceptar}" 
                                style="background-color: #3465a4; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
@@ -322,13 +329,18 @@ const inviteMultiple = async (req, res) => {
                             </a>
                         </div>
                     </div>`
-            });
+            }).catch(err => console.error(`Error enviando mail a ${email}:`, err.message));
 
             return email;
         }));
 
         const enviados = resultados.filter(r => r !== null);
-        res.status(201).json({ missatge: `${enviados.length} invitacions enviades`, count: enviados.length });
+        
+        // Respondemos rápido al admin
+        res.status(201).json({ 
+            missatge: `${enviados.length} invitacions processades correctament`, 
+            count: enviados.length 
+        });
 
     } catch (error) {
         console.error("ERROR INVITACIÓ MÚLTIPLE:", error);

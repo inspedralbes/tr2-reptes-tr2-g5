@@ -19,6 +19,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=8088
+      - FRONTEND_URL=https://enginycat.dam.inspedralbes.cat
 
   proxy:
     image: nginx:stable
