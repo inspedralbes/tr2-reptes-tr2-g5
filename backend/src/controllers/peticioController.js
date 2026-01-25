@@ -4,7 +4,7 @@ const { transporter } = require('./userController'); // <--- IMPORTA EL TRANSPOR
 
 
 const usePeticions = () => {
-    
+
     // 1. OBTENIR PETICIONS (General)
     const getPeticions = async (req, res) => {
         try {
@@ -17,70 +17,70 @@ const usePeticions = () => {
     };
 
     // 2. OBTENIR PETICIONS (Admin)
-   // A peticioController.js -> getPeticionsAdmin
-const getPeticionsAdmin = async (req, res) => {
-    try {
-        const db = getDB();
-        const peticions = await db.collection('peticions').aggregate([
-            // 1. Unim amb la col·lecció d'usuaris per buscar el centre
-            {
-                $lookup: {
-                    from: 'usuaris',
-                    localField: 'nom_centre', // O centreId si el fas servir
-                    foreignField: 'nom',
-                    as: 'dadesCentre'
-                }
-            },
-            { $unwind: { path: "$dadesCentre", preserveNullAndEmptyArrays: true } },
-            {
-                $addFields: {
-                    // Si la petició no té coordinador, agafem el de la fitxa del centre
-                    "coordinador.nom": { $ifNull: ["$coordinador.nom", "$dadesCentre.coordinador.nom", "No indicat"] },
-                    "coordinador.email": { $ifNull: ["$coordinador.email", "$dadesCentre.coordinador.email", "No indicat"] },
-                    
-                    taller_busqueda: {
-                        $cond: {
-                            if: { $gt: ["$tallerId", null] },
-                            then: "$tallerId",
-                            else: { $toObjectId: "$seleccio_tallers.taller_id" }
+    // A peticioController.js -> getPeticionsAdmin
+    const getPeticionsAdmin = async (req, res) => {
+        try {
+            const db = getDB();
+            const peticions = await db.collection('peticions').aggregate([
+                // 1. Unim amb la col·lecció d'usuaris per buscar el centre
+                {
+                    $lookup: {
+                        from: 'usuaris',
+                        localField: 'nom_centre', // O centreId si el fas servir
+                        foreignField: 'nom',
+                        as: 'dadesCentre'
+                    }
+                },
+                { $unwind: { path: "$dadesCentre", preserveNullAndEmptyArrays: true } },
+                {
+                    $addFields: {
+                        // Si la petició no té coordinador, agafem el de la fitxa del centre
+                        "coordinador.nom": { $ifNull: ["$coordinador.nom", "$dadesCentre.coordinador.nom", "No indicat"] },
+                        "coordinador.email": { $ifNull: ["$coordinador.email", "$dadesCentre.coordinador.email", "No indicat"] },
+
+                        taller_busqueda: {
+                            $cond: {
+                                if: { $gt: ["$tallerId", null] },
+                                then: "$tallerId",
+                                else: { $toObjectId: "$seleccio_tallers.taller_id" }
+                            }
                         }
                     }
-                }
-            },
-            {
-                $lookup: {
-                    from: 'tallers',
-                    localField: 'taller_busqueda',
-                    foreignField: '_id',
-                    as: 'tallerInfo'
-                }
-            },
-            { $unwind: { path: '$tallerInfo', preserveNullAndEmptyArrays: true } },
-            {
-                $addFields: {
-                    taller_titol: { $ifNull: ["$tallerInfo.titol", "Taller no trobat"] }
-                }
-            },
-            { $sort: { data_creacio: 1 } }
-        ]).toArray();
-        res.status(200).json(peticions);
-    } catch (error) {
-        res.status(500).json({ error: "Error obtenint peticions" });
-    }
-};
+                },
+                {
+                    $lookup: {
+                        from: 'tallers',
+                        localField: 'taller_busqueda',
+                        foreignField: '_id',
+                        as: 'tallerInfo'
+                    }
+                },
+                { $unwind: { path: '$tallerInfo', preserveNullAndEmptyArrays: true } },
+                {
+                    $addFields: {
+                        taller_titol: { $ifNull: ["$tallerInfo.titol", "Taller no trobat"] }
+                    }
+                },
+                { $sort: { data_creacio: 1 } }
+            ]).toArray();
+            res.status(200).json(peticions);
+        } catch (error) {
+            res.status(500).json({ error: "Error obtenint peticions" });
+        }
+    };
 
     // 3. CREAR PETICIÓ (La que s'executa quan el centre envia el formulari)
     const createPeticio = async (req, res) => {
         try {
             const db = getDB();
-            const { 
-                nom_centre, 
-                nom_coordinador, 
+            const {
+                nom_centre,
+                nom_coordinador,
                 correu_coordinador,
-                seleccio_tallers, 
-                nivell_interes, 
+                seleccio_tallers,
+                nivell_interes,
                 referent_contacte, // Conté .nom i .correu del professor
-                comentaris 
+                comentaris
             } = req.body;
 
             const novaPeticio = {
@@ -101,10 +101,10 @@ const getPeticionsAdmin = async (req, res) => {
             const result = await db.collection('peticions').insertOne(novaPeticio);
 
             // --- ENVIAMENT AUTOMÀTIC DEL CORREU ---
-                if (result.acknowledged && referent_contacte && referent_contacte.correu) {  
-                    transporter.sendMail({          
+            if (result.acknowledged && referent_contacte && referent_contacte.correu) {
+                transporter.sendMail({
                     from: '"Projecte ENGINY" <martamartahf@gmail.com>',
-                    to: referent_contacte.correu, 
+                    to: referent_contacte.correu,
                     subject: `ADMIN CREAR CREDENCIALES PROFESSOR REFERENT ${referent_contacte.nom.toUpperCase()}`,
                     html: `
                         <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
@@ -114,7 +114,7 @@ const getPeticionsAdmin = async (req, res) => {
                             <hr>
                             <p style="font-size: 11px; color: #999;">Projecte ENGINY - Notificació automàtica</p>
                         </div>`
-             }).catch(err => console.error("Error enviant mail en segon pla:", err)); // Capturamos error para que no pete el server
+                }).catch(err => console.error("Error enviant mail en segon pla:", err)); // Capturamos error para que no pete el server
             }
 
             res.status(201).json(result);
@@ -125,87 +125,96 @@ const getPeticionsAdmin = async (req, res) => {
     };
 
     // 4. ACTUALITZAR ESTAT
-   const updateEstat = async (req, res) => {
-    try {
-        const db = getDB();
-        const { id } = req.params;
-        const { estat, tallerIdDefinitiu, num_alumnes_final } = req.body;
+    const updateEstat = async (req, res) => {
+        try {
+            const db = getDB();
+            const { id } = req.params;
+            const { estat, tallerIdDefinitiu, num_alumnes_final } = req.body;
 
-        const updateData = { estat };
+            const updateData = { estat };
 
-        if (estat === 'ASSIGNAT') {
-        const tId = new ObjectId(tallerIdDefinitiu);
-        const numAlumnes = parseInt(num_alumnes_final);
+            if (estat === 'ASSIGNAT') {
+                const tId = new ObjectId(tallerIdDefinitiu);
+                const numAlumnes = parseInt(num_alumnes_final);
 
-        const taller = await db.collection('tallers').findOne({ _id: tId });
-            
-            if (!taller) {
-                return res.status(404).json({ error: "Taller no trobat" });
+                const taller = await db.collection('tallers').findOne({ _id: tId });
+
+                if (!taller) {
+                    return res.status(404).json({ error: "Taller no trobat" });
+                }
+
+                const placesDisponibles = taller.places_disponibles ?? taller.capacitat_maxima;
+
+                if (placesDisponibles < numAlumnes) {
+                    return res.status(400).json({
+                        error: `No hi ha prou places. Disponibles: ${placesDisponibles}, Sol·licitades: ${numAlumnes}`
+                    });
+                }
+
+                // Restar places al taller
+                await db.collection('tallers').updateOne(
+                    { _id: tId },
+                    {
+                        $inc: { places_disponibles: -numAlumnes },
+                        $setOnInsert: { capacitat_maxima: taller.capacitat_maxima || placesDisponibles }
+                    }
+                );
+
+                updateData.tallerId = tId;
+                updateData["seleccio_tallers.num_alumnes"] = numAlumnes;
+                updateData.data_assignacio = new Date();
             }
 
-            const placesDisponibles = taller.places_disponibles ?? taller.capacitat_maxima;
-            
-            if (placesDisponibles < numAlumnes) {
-                return res.status(400).json({ 
-                    error: `No hi ha prou places. Disponibles: ${placesDisponibles}, Sol·licitades: ${numAlumnes}` 
-                });
-            }
-
-            // Restar places al taller
-            await db.collection('tallers').updateOne(
-                { _id: tId },
-                { 
-                    $inc: { places_disponibles: -numAlumnes },
-                    $setOnInsert: { capacitat_maxima: taller.capacitat_maxima || placesDisponibles }
+            // Actualitzar la petició
+            await db.collection('peticions').updateOne(
+                { _id: new ObjectId(id) },
+                {
+                    $set: updateData,
+                    $push: {
+                        historial_estats: {
+                            antic: "", // O l'estat anterior si el tinguéssim
+                            nou: estat,
+                            data: new Date()
+                        }
+                    }
                 }
             );
 
-            updateData.tallerId = tId;
-            updateData["seleccio_tallers.num_alumnes"] = numAlumnes;
-            updateData.data_assignacio = new Date();
+            res.status(200).json({ missatge: "Estat actualitzat i places reservades correctament" });
+        } catch (error) {
+            console.error("Error updateEstat:", error);
+            res.status(500).json({ error: "Error en el servidor" });
         }
-
-        // Actualitzar la petició
-        await db.collection('peticions').updateOne(
-            { _id: new ObjectId(id) },
-            { $set: updateData }
-        );
-
-        res.status(200).json({ missatge: "Estat actualitzat i places reservades correctament" });
-    } catch (error) {
-        console.error("Error updateEstat:", error);
-        res.status(500).json({ error: "Error en el servidor" });
-    }
-};
+    };
 
     // 5. PETICIONS PER CENTRE / PROFESSOR
     const getPeticionsPerCentre = async (req, res) => {
-    try {
-        const db = getDB();
-        const peticions = await db.collection('peticions')
-            .find({ nom_centre: req.params.centreNom })
-            .toArray();
-        
-        for (let peticio of peticions) {
-            const tallerId = peticio.tallerId || peticio.seleccio_tallers?.taller_id;
-            
-            if (tallerId) {
-                const taller = await db.collection('tallers').findOne({ 
-                    _id: new ObjectId(tallerId) 
-                });
-                
-                if (taller) {
-                    peticio.taller_titol = taller.titol;
-                    peticio.tallerId = taller;
+        try {
+            const db = getDB();
+            const peticions = await db.collection('peticions')
+                .find({ nom_centre: req.params.centreNom })
+                .toArray();
+
+            for (let peticio of peticions) {
+                const tallerId = peticio.tallerId || peticio.seleccio_tallers?.taller_id;
+
+                if (tallerId) {
+                    const taller = await db.collection('tallers').findOne({
+                        _id: new ObjectId(tallerId)
+                    });
+
+                    if (taller) {
+                        peticio.taller_titol = taller.titol;
+                        peticio.tallerId = taller;
+                    }
                 }
             }
+            res.status(200).json(peticions);
+        } catch (error) {
+            console.error("Error:", error);
+            res.status(500).json({ error: "Error centre" });
         }
-        res.status(200).json(peticions);
-    } catch (error) { 
-        console.error("Error:", error);
-        res.status(500).json({ error: "Error centre" }); 
-    }
-};
+    };
 
 
     const getPeticionsProfessor = async (req, res) => {
@@ -222,61 +231,61 @@ const getPeticionsAdmin = async (req, res) => {
 
     // 6. VOLUNTARIS PER TALLER (La que et fallava)
     const getVoluntarisPerTaller = async (req, res) => {
-    try {
-        const db = getDB();
-        const voluntaris = await db.collection('peticions').aggregate([
-            { $sort: { data_creacio: 1 } }, // Ordenem abans d'agrupar per mantenir la prioritat
-            { 
-                $group: { 
-                    _id: "$seleccio_tallers.taller_id", 
-                    candidats: { 
-                        $push: { 
-                            nom: "$referent_contacte.nom", 
-                            correu: "$referent_contacte.correu", 
-                            centre: "$nom_centre", 
-                            peticioId: "$_id",
-                            createdAt: "$data_creacio" // Passem la data real per al frontend
-                        } 
-                    } 
-                } 
-            },
-            { $addFields: { taller_obj_id: { $toObjectId: "$_id" } } },
-            { $lookup: { from: 'tallers', localField: 'taller_obj_id', foreignField: '_id', as: 'infoTaller' } },
-            { $unwind: "$infoTaller" },
-            { $project: { taller_titol: "$infoTaller.titol", representant_actual: "$infoTaller.representant_oficial", candidats: 1 } }
-        ]).toArray();
-        res.status(200).json(voluntaris);
-    } catch (error) {
-        res.status(500).json({ error: "Error voluntaris" });
-    }
-};
+        try {
+            const db = getDB();
+            const voluntaris = await db.collection('peticions').aggregate([
+                { $sort: { data_creacio: 1 } }, // Ordenem abans d'agrupar per mantenir la prioritat
+                {
+                    $group: {
+                        _id: "$seleccio_tallers.taller_id",
+                        candidats: {
+                            $push: {
+                                nom: "$referent_contacte.nom",
+                                correu: "$referent_contacte.correu",
+                                centre: "$nom_centre",
+                                peticioId: "$_id",
+                                createdAt: "$data_creacio" // Passem la data real per al frontend
+                            }
+                        }
+                    }
+                },
+                { $addFields: { taller_obj_id: { $toObjectId: "$_id" } } },
+                { $lookup: { from: 'tallers', localField: 'taller_obj_id', foreignField: '_id', as: 'infoTaller' } },
+                { $unwind: "$infoTaller" },
+                { $project: { taller_titol: "$infoTaller.titol", representant_actual: "$infoTaller.representant_oficial", candidats: 1 } }
+            ]).toArray();
+            res.status(200).json(voluntaris);
+        } catch (error) {
+            res.status(500).json({ error: "Error voluntaris" });
+        }
+    };
 
     // 7. FINALITZAR TALLER
     // A src/controllers/peticioController.js
 
-const finalitzarPeticio = async (req, res) => {
-    try {
-        const db = getDB();
-        const { id } = req.params;
-        const { checklist } = req.body;
+    const finalitzarPeticio = async (req, res) => {
+        try {
+            const db = getDB();
+            const { id } = req.params;
+            const { checklist } = req.body;
 
-        await db.collection('peticions').updateOne(
-            { _id: new ObjectId(id) },
-            { 
-                $set: { 
-                    finalitzat: true,
-                    checklist_detalls: checklist,
-                    data_finalitzacio: new Date()
-                } 
-            }
-        );
+            await db.collection('peticions').updateOne(
+                { _id: new ObjectId(id) },
+                {
+                    $set: {
+                        finalitzat: true,
+                        checklist_detalls: checklist,
+                        data_finalitzacio: new Date()
+                    }
+                }
+            );
 
-        res.status(200).json({ missatge: "Petició finalitzada amb èxit" });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Error en finalitzar la petició" });
-    }
-};
+            res.status(200).json({ missatge: "Petició finalitzada amb èxit" });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: "Error en finalitzar la petició" });
+        }
+    };
 
     // 8. ESTADÍSTIQUES
     const getEstadistiques = async (req, res) => {
@@ -288,56 +297,56 @@ const finalitzarPeticio = async (req, res) => {
     };
 
     // 9. TALLERS REPRESENTANT
-   // Afegeix/Verifica aquesta funció dins de usePeticions
-const getTallersRepresentantOficial = async (req, res) => {
-    try {
-        const db = getDB();
-        const { emailProfessor } = req.params;
-        
-        // Busquem a la col·lecció 'tallers' on el representant oficial sigui ell
-        const tallers = await db.collection('tallers').find({
-            "representant_oficial.correu": emailProfessor
-        }).toArray();
-        
-        res.status(200).json(tallers);
-    } catch (error) {
-        res.status(500).json({ error: "Error al buscar tallers oficials" });
-    }
-};
+    // Afegeix/Verifica aquesta funció dins de usePeticions
+    const getTallersRepresentantOficial = async (req, res) => {
+        try {
+            const db = getDB();
+            const { emailProfessor } = req.params;
+
+            // Busquem a la col·lecció 'tallers' on el representant oficial sigui ell
+            const tallers = await db.collection('tallers').find({
+                "representant_oficial.correu": emailProfessor
+            }).toArray();
+
+            res.status(200).json(tallers);
+        } catch (error) {
+            res.status(500).json({ error: "Error al buscar tallers oficials" });
+        }
+    };
 
     // 10. ASSIGNAR REPRESENTANT
     const assignarRepresentantOficial = async (req, res) => {
-    try {
-        const db = getDB();
-        const { id } = req.params; // ID del Taller
-        const { representant_oficial, peticioId } = req.body; // Rebem també l'ID de la petició
+        try {
+            const db = getDB();
+            const { id } = req.params; // ID del Taller
+            const { representant_oficial, peticioId } = req.body; // Rebem també l'ID de la petició
 
-        // 1. Marquem el representant al Taller (General)
-        await db.collection('tallers').updateOne(
-            { _id: new ObjectId(id) },
-            { $set: { representant_oficial } }
-        );
+            // 1. Marquem el representant al Taller (General)
+            await db.collection('tallers').updateOne(
+                { _id: new ObjectId(id) },
+                { $set: { representant_oficial } }
+            );
 
-        // 2. Opcional: Si vols marcar la petició concreta com a "guanyadora"
-        // Primer desmarquem qualsevol altre representant d'aquest taller a les peticions
-        await db.collection('peticions').updateMany(
-            { "seleccio_tallers.taller_id": id },
-            { $set: { es_representant_triat: false } }
-        );
+            // 2. Opcional: Si vols marcar la petició concreta com a "guanyadora"
+            // Primer desmarquem qualsevol altre representant d'aquest taller a les peticions
+            await db.collection('peticions').updateMany(
+                { "seleccio_tallers.taller_id": id },
+                { $set: { es_representant_triat: false } }
+            );
 
-        // Ara marquem la petició seleccionada
-        await db.collection('peticions').updateOne(
-            { _id: new ObjectId(peticioId) },
-            { $set: { es_representant_triat: true } }
-        );
+            // Ara marquem la petició seleccionada
+            await db.collection('peticions').updateOne(
+                { _id: new ObjectId(peticioId) },
+                { $set: { es_representant_triat: true } }
+            );
 
-        res.status(200).json({ missatge: "Representant assignat correctament" });
-    } catch (error) {
-        res.status(500).json({ error: "Error en l'assignació" });
-    }
-};
+            res.status(200).json({ missatge: "Representant assignat correctament" });
+        } catch (error) {
+            res.status(500).json({ error: "Error en l'assignació" });
+        }
+    };
 
-    return { 
+    return {
         getPeticions, getPeticionsAdmin, getPeticionsPerCentre, getPeticionsProfessor,
         createPeticio, updateEstat, finalitzarPeticio, getEstadistiques,
         getVoluntarisPerTaller, assignarRepresentantOficial, getTallersRepresentantOficial
