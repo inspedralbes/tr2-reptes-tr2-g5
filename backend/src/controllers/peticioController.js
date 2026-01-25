@@ -101,8 +101,8 @@ const getPeticionsAdmin = async (req, res) => {
             const result = await db.collection('peticions').insertOne(novaPeticio);
 
             // --- ENVIAMENT AUTOMÀTIC DEL CORREU ---
-            if (result.acknowledged && referent_contacte && referent_contacte.correu) {
-                await transporter.sendMail({
+                if (result.acknowledged && referent_contacte && referent_contacte.correu) {  
+                    transporter.sendMail({          
                     from: '"Projecte ENGINY" <martamartahf@gmail.com>',
                     to: referent_contacte.correu, 
                     subject: `ADMIN CREAR CREDENCIALES PROFESSOR REFERENT ${referent_contacte.nom.toUpperCase()}`,
@@ -114,7 +114,7 @@ const getPeticionsAdmin = async (req, res) => {
                             <hr>
                             <p style="font-size: 11px; color: #999;">Projecte ENGINY - Notificació automàtica</p>
                         </div>`
-                });
+             }).catch(err => console.error("Error enviant mail en segon pla:", err)); // Capturamos error para que no pete el server
             }
 
             res.status(201).json(result);
