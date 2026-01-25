@@ -137,28 +137,34 @@ const usePeticions = () => {
                 const tId = new ObjectId(tallerIdDefinitiu);
                 const numAlumnes = parseInt(num_alumnes_final);
 
-                const taller = await db.collection('tallers').findOne({ _id: tId });
-
-                if (!taller) {
-                    return res.status(404).json({ error: "Taller no trobat" });
-                }
-
-                const placesDisponibles = taller.places_disponibles ?? taller.capacitat_maxima;
-
-                if (placesDisponibles < numAlumnes) {
-                    return res.status(400).json({
-                        error: `No hi ha prou places. Disponibles: ${placesDisponibles}, Sol·licitades: ${numAlumnes}`
-                    });
-                }
-
-                // Restar places al taller
-                await db.collection('tallers').updateOne(
-                    { _id: tId },
+                // 1. ATOMIC UPDATE (Race Condition Prevented)
+                // Intentamos restar plazas SOLO si hay suficientes (places_disponibles >= numAlumnes)
+                // Esto es atómico: si dos llegan a la vez, solo uno modificará el documento.
+                const resultUpdate = await db.collection('tallers').updateOne(
                     {
-                        $inc: { places_disponibles: -numAlumnes },
-                        $setOnInsert: { capacitat_maxima: taller.capacitat_maxima || placesDisponibles }
+                        _id: tId,
+                        $or: [
+                            { places_disponibles: { $gte: numAlumnes } },
+                            { places_disponibles: null } // Por si es un taller sin límite inicial estricto manejado así
+                        ]
+                    },
+                    {
+                        $inc: { places_disponibles: -numAlumnes }
                     }
                 );
+
+                if (resultUpdate.matchedCount === 0) {
+                    // Si no ha encontrado documento, puede ser que no exista o que no queden plazas
+                    // Hacemos una comprobación rápida para dar el error exacto
+                    const tallerCheck = await db.collection('tallers').findOne({ _id: tId });
+                    if (!tallerCheck) {
+                        return res.status(404).json({ error: "Taller no trobat" });
+                    } else {
+                        return res.status(400).json({
+                            error: `No hi ha prou places (Race Condition Avoided). Disponibles: ${tallerCheck.places_disponibles}`
+                        });
+                    }
+                }
 
                 updateData.tallerId = tId;
                 updateData["seleccio_tallers.num_alumnes"] = numAlumnes;
@@ -221,7 +227,14 @@ const usePeticions = () => {
         try {
             const db = getDB();
             const peticions = await db.collection('peticions').aggregate([
-                { $match: { "referent_contacte.correu": req.params.emailProfessor, estat: 'ASSIGNAT' } },
+                {
+                    $match: {
+                        $and: [
+                            { "referent_contacte.correu": req.params.emailProfessor },
+                            { estat: 'ASSIGNAT' }
+                        ]
+                    }
+                },
                 { $lookup: { from: 'tallers', localField: 'tallerId', foreignField: '_id', as: 'tallerInfo' } },
                 { $unwind: '$tallerInfo' }
             ]).toArray();

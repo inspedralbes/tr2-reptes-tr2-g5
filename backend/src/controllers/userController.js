@@ -8,7 +8,7 @@ const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: 'martamartahf@gmail.com',
-        pass: 'zvol wsbs kljw zvqs ' 
+        pass: 'zvol wsbs kljw zvqs '
     }
 });
 
@@ -163,7 +163,7 @@ const inviteCentre = async (req, res) => {
         }
 
         const token = crypto.randomBytes(20).toString('hex');
-        
+
         const nouCentrePendent = {
             nom,
             email,
@@ -179,11 +179,11 @@ const inviteCentre = async (req, res) => {
         // 2. URL Dinàmica (Local vs Producció)
         const BASE_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
         const linkAceptar = `${BASE_URL}/confirmar-participacion?token=${token}`;
-        
+
         // 3. Enviament de mail en segon pla (sense await)
         transporter.sendMail({
             from: '"Projecte ENGINY" <martamartahf@gmail.com>',
-            to: email, 
+            to: email,
             subject: `Invitació Projecte ENGINY - Centre ${nom}`,
             html: `
                 <div style="font-family: sans-serif; max-width: 600px; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
@@ -223,12 +223,12 @@ const confirmParticipation = async (req, res) => {
             return res.status(404).json({ error: "No s'ha trobat la invitació o ja ha caducat" });
         }
 
-        const passwordAuto = crypto.randomBytes(4).toString('hex'); 
+        const passwordAuto = crypto.randomBytes(4).toString('hex');
 
         await db.collection('usuaris').updateOne(
             { _id: usuariPendent._id },
-            { 
-                $set: { 
+            {
+                $set: {
                     password: passwordAuto,
                     estat: 'actiu',
                     rol: 'centre',
@@ -237,9 +237,9 @@ const confirmParticipation = async (req, res) => {
                         email: emailCoordinador
                     },
                     primera_vegada: esPrimeraVegada,
-                    token_invitacio: null, 
+                    token_invitacio: null,
                     data_confirmacio: new Date()
-                } 
+                }
             }
         );
         const BASE_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -268,12 +268,12 @@ const confirmParticipation = async (req, res) => {
                         Si teniu qualsevol dubte, contacteu amb l'administrador del projecte.
                     </p>
                 </div>`
-        }) .catch(err => console.error("Error enviant credencials per mail:", err.message));
+        }).catch(err => console.error("Error enviant credencials per mail:", err.message));
 
-        res.status(200).json({ 
+        res.status(200).json({
             missatge: "Participació confirmada",
             email: usuariPendent.email,
-            password: passwordAuto 
+            password: passwordAuto
         });
 
     } catch (error) {
@@ -294,33 +294,36 @@ const inviteMultiple = async (req, res) => {
 
         const BASE_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-        // Procesamos la base de datos con await para asegurar que se guardan
-        const resultados = await Promise.all(centres.map(async (centro) => {
-            const { nom, email } = centro;
-            if (!nom || !email) return null;
+        const validCentres = centres.filter(c => c.nom && c.email);
 
-            const token = crypto.randomBytes(20).toString('hex');
-            
-            await db.collection('usuaris').insertOne({
-                nom,
-                email,
+        if (validCentres.length === 0) {
+            return res.status(400).json({ error: "Cap centre vàlid per processar" });
+        }
+
+        const documents = validCentres.map(centro => {
+            return {
+                nom: centro.nom,
+                email: centro.email,
                 rol: 'centre',
                 estat: 'invitat',
-                token_invitacio: token,
+                token_invitacio: crypto.randomBytes(20).toString('hex'),
                 data_invitacio: new Date()
-            });
+            };
+        });
 
-            const linkAceptar = `${BASE_URL}/confirmar-participacion?token=${token}`;
+        db.collection('usuaris').insertMany(documents).catch(err => console.error("Error crítico insertando usuarios en background:", err));
 
-            // ENVIAMOS EL MAIL SIN AWAIT
-            // Dejamos que Nodemailer los gestione en paralelo sin bloquear la respuesta HTTP
+        // 2. Envío de correos (iteramos sobre los documentos ya preparados)
+        documents.forEach(doc => {
+            const linkAceptar = `${BASE_URL}/confirmar-participacion?token=${doc.token_invitacio}`;
+
             transporter.sendMail({
                 from: '"Projecte ENGINY" <martamartahf@gmail.com>',
-                to: email,
-                subject: `Invitació Projecte ENGINY - Centre ${nom}`,
+                to: doc.email,
+                subject: `Invitació Projecte ENGINY - Centre ${doc.nom}`,
                 html: `
                     <div style="font-family: sans-serif; max-width: 600px; border: 1px solid #eee; padding: 20px; border-radius: 8px;">
-                        <h2 style="color: #333;">Hola ${nom},</h2>
+                        <h2 style="color: #333;">Hola ${doc.nom},</h2>
                         <p>L'equip de <strong>ENGINY</strong> us convida a participar en els tallers.</p>
                         <div style="text-align: center; margin: 35px 0;">
                             <a href="${linkAceptar}" 
@@ -329,17 +332,15 @@ const inviteMultiple = async (req, res) => {
                             </a>
                         </div>
                     </div>`
-            }).catch(err => console.error(`Error enviando mail a ${email}:`, err.message));
+            }).catch(err => console.error(`Error enviando mail a ${doc.email}:`, err.message));
+        });
 
-            return email;
-        }));
+        const enviados = documents.map(d => d.email);
 
-        const enviados = resultados.filter(r => r !== null);
-        
         // Respondemos rápido al admin
-        res.status(201).json({ 
-            missatge: `${enviados.length} invitacions processades correctament`, 
-            count: enviados.length 
+        res.status(201).json({
+            missatge: `${enviados.length} invitacions processades correctament`,
+            count: enviados.length
         });
 
     } catch (error) {
