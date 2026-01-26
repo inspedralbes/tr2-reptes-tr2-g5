@@ -18,7 +18,7 @@ const useTallers = () => {
 
 
             const nouTaller = {
-                ...req.body, 
+                ...req.body,  // REQUISIT: Configuracions variables per tipologia (Schemaless permet camps arbitraris com 'materials' o 'requisits' sense canviar l'schema)
                 data_creacio: new Date(),
                 capacitat_maxima: parseInt(req.body.places) || 0,
                 places_disponibles: parseInt(req.body.places) || 0

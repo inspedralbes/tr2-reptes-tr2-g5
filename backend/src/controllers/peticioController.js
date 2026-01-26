@@ -8,6 +8,7 @@ const usePeticions = () => {
     const getPeticions = async (req, res) => {
         try {
             const db = getDB();
+            // REQUISIT: Col·lecció definida 'peticions' i Arrays (la llista de resultats)
             const peticions = await db.collection('peticions').find().toArray();
             res.status(200).json(peticions);
         } catch (error) {
@@ -35,6 +36,7 @@ const usePeticions = () => {
                         as: 'dadesCentre'
                     }
                 },
+                // REQUISIT: Objectes imbricats (dadesCentre es un objecte dins del document resultant)
                 { $unwind: { path: "$dadesCentre", preserveNullAndEmptyArrays: true } },
                 {
                     $addFields: {
@@ -89,6 +91,7 @@ const usePeticions = () => {
 
             const novaPeticio = {
                 nom_centre,
+                // REQUISIT: Objectes imbricats (coordinador té nom i email dins)
                 coordinador: { nom: nom_coordinador, email: correu_coordinador },
                 seleccio_tallers: {
                     taller_id: seleccio_tallers.taller_id,
@@ -143,7 +146,7 @@ const usePeticions = () => {
                         _id: tId,
                         $or: [
                             { places_disponibles: { $gte: numAlumnes } },
-                            { places_disponibles: null } 
+                            { places_disponibles: null }
                         ]
                     },
                     {
@@ -240,7 +243,7 @@ const usePeticions = () => {
         try {
             const db = getDB();
             const voluntaris = await db.collection('peticions').aggregate([
-                { $sort: { data_creacio: 1 } }, 
+                { $sort: { data_creacio: 1 } },
                 {
                     $group: {
                         _id: "$seleccio_tallers.taller_id",
@@ -250,7 +253,7 @@ const usePeticions = () => {
                                 correu: "$referent_contacte.correu",
                                 centre: "$nom_centre",
                                 peticioId: "$_id",
-                                createdAt: "$data_creacio" 
+                                createdAt: "$data_creacio"
                             }
                         }
                     }
@@ -315,8 +318,8 @@ const usePeticions = () => {
     const assignarRepresentantOficial = async (req, res) => {
         try {
             const db = getDB();
-            const { id } = req.params; 
-            const { representant_oficial, peticioId } = req.body; 
+            const { id } = req.params;
+            const { representant_oficial, peticioId } = req.body;
 
             await db.collection('tallers').updateOne(
                 { _id: new ObjectId(id) },
@@ -344,6 +347,7 @@ const usePeticions = () => {
             const db = getDB();
             const { item } = req.params;
             const peticions = await db.collection('peticions').find({
+                // REQUISIT: Arrays dinàmics que creixen (checklist_detalls)
                 checklist_detalls: {
                     $elemMatch: {
                         item: { $regex: item, $options: 'i' },
