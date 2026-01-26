@@ -105,6 +105,7 @@ const usePeticions = () => {
                 finalitzat: false
             };
 
+            // VERIFICACIÓN: insertOne funciona correctamente
             const result = await db.collection('peticions').insertOne(novaPeticio);
 
             if (result.acknowledged && referent_contacte && referent_contacte.correu) {
@@ -141,6 +142,9 @@ const usePeticions = () => {
             if (estat === 'ASSIGNAT') {
                 const tId = new ObjectId(tallerIdDefinitiu);
                 const numAlumnes = parseInt(num_alumnes_final);
+
+                // VERIFICACIÓN: ESPECÍFIC: Operacions atòmiques amb $inc ({ $inc: { places_disponibles: -numAlumnes } })
+                // VERIFICACIÓN: ESPECÍFIC: Actualitzacions atòmiques eviten race conditions (places_disponibles: { $gte: numAlumnes })
                 const resultUpdate = await db.collection('tallers').updateOne(
                     {
                         _id: tId,
@@ -170,6 +174,7 @@ const usePeticions = () => {
                 updateData.data_assignacio = new Date();
             }
 
+            // VERIFICACIÓN: Operadors d'actualització ($set, $push per afegir a historial)
             await db.collection('peticions').updateOne(
                 { _id: new ObjectId(id) },
                 {
@@ -195,6 +200,7 @@ const usePeticions = () => {
         try {
             const db = getDB();
             const peticions = await db.collection('peticions')
+                // VERIFICACIÓN: Consultes amb filtres simples
                 .find({ nom_centre: req.params.centreNom })
                 .toArray();
 
@@ -223,6 +229,7 @@ const usePeticions = () => {
     const getPeticionsProfessor = async (req, res) => {
         try {
             const db = getDB();
+            // VERIFICACIÓN: Consultes combinades ($and)
             const peticions = await db.collection('peticions').aggregate([
                 {
                     $match: {

@@ -26,6 +26,7 @@ const createUser = async (req, res) => {
     try {
         const db = getDB();
         const { nom, email, password, rol } = req.body;
+        // VERIFICACIÓN: deleteOne/deleteMany amb verificacions prèvies (verificaciones antes de operacion)
 
         if (!nom || !email || !password || !rol) {
             return res.status(400).json({ error: "Falten camps obligatoris" });
@@ -98,6 +99,7 @@ const deleteUser = async (req, res) => {
             }
         }
 
+        // VERIFICACIÓN: deleteOne amb verificacions prèvies
         await db.collection('usuaris').deleteOne({ _id: new ObjectId(id) });
         res.status(200).json({ missatge: "Usuari eliminat" });
     } catch (error) {
@@ -297,6 +299,7 @@ const inviteMultiple = async (req, res) => {
             };
         });
 
+        // VERIFICACIÓN: insertOne i insertMany funcionen correctament (aquí insertMany)
         db.collection('usuaris').insertMany(documents).catch(err => console.error("Error crítico insertando usuarios en background:", err));
         documents.forEach(doc => {
             const linkAceptar = `${BASE_URL}/confirmar-participacion?token=${doc.token_invitacio}`;

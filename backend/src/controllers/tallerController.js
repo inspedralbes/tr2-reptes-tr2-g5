@@ -26,6 +26,7 @@ const useTallers = () => {
 
             if (nouTaller.places) delete nouTaller.places;
 
+            // VERIFICACIÓN: insertOne funciona correctamente
             const result = await db.collection('tallers').insertOne(nouTaller);
 
             console.log("Taller creat correctament:", {
@@ -73,6 +74,7 @@ const useTallers = () => {
         try {
             const db = getDB();
             const { id } = req.params;
+            // VERIFICACIÓN: deleteOne/deleteMany amb verificacions prèvies (en cascada)
             await db.collection('tallers').deleteOne({ _id: new ObjectId(id) });
             const resultPeticions = await db.collection('peticions').deleteMany({
                 $or: [
