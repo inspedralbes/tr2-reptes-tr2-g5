@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { MongoClient } = require('mongodb');
+const { MongoClient } = require('mongodb'); // [REQ] Driver oficial de MongoDB
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
@@ -8,7 +8,7 @@ let database = null;
 
 async function connectDB() {
     try {
-        await client.connect();
+        await client.connect(); // [REQ] Obertura de connexió manuall
         console.log(' Connectat a MongoDB Atlas');
 
 
@@ -17,7 +17,7 @@ async function connectDB() {
     } catch (error) {
 
         console.error(' Error connectant a MongoDB:', error);
-        throw error;
+        throw error; // [REQ] Errors de connexió gestionats
     }
 }
 function getDB() {
@@ -29,7 +29,7 @@ function getDB() {
 
 async function closeDB() {
     try {
-        await client.close();
+        await client.close(); // [REQ] Tancament de connexió implementat
         console.log(' Connexió tancada');
     } catch (error) {
         console.error(' Error tancant la connexió:', error);
