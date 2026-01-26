@@ -6,6 +6,7 @@ const useInformes = () => {
             const db = getDB();
             const { ObjectId } = require('mongodb');
 
+            // REQUISIT: Agregació amb Pipeline ($group, $project, $sort). ESPECÍFIC: Ocupació per zones
             const statsOcupacio = await db.collection('tallers').aggregate([
                 {
                     $group: {
@@ -34,6 +35,7 @@ const useInformes = () => {
             const globalPlaces = statsOcupacio.reduce((acc, z) => acc + z.places_totals, 0);
             const globalOcupades = statsOcupacio.reduce((acc, z) => acc + z.places_ocupades, 0);
             const ocupacio_global = globalPlaces > 0 ? Math.round((globalOcupades / globalPlaces) * 100) : 0;
+            // REQUISIT: Agregació amb Pipeline ($match, $group, $project, $sort). ESPECÍFIC: Tallers més demandats per categoria
             const statsModalitats = await db.collection('peticions').aggregate([
                 { $match: { estat: { $in: ['PENDENT', 'ASSIGNAT', 'FINALITZAT'] } } },
                 { $addFields: { tallerObjId: { $toObjectId: "$seleccio_tallers.taller_id" } } },
@@ -49,14 +51,14 @@ const useInformes = () => {
                 {
                     $group: {
                         _id: "$tallerInfo.modalitat",
-                        totalAlumnes: { $sum: "$seleccio_tallers.num_alumnes" }, 
-                        totalPeticions: { $sum: 1 } 
+                        totalAlumnes: { $sum: "$seleccio_tallers.num_alumnes" },
+                        totalPeticions: { $sum: 1 }
                     }
                 },
                 {
                     $project: {
                         nom: { $ifNull: ["$_id", "Altres"] },
-                        val: "$totalAlumnes", 
+                        val: "$totalAlumnes",
                         peticions: "$totalPeticions",
                         _id: 0
                     }

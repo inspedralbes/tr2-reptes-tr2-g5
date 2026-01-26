@@ -20,6 +20,7 @@ const usePeticions = () => {
         try {
             const db = getDB();
             const pipeline = [];
+            // REQUISIT: Agregació amb Pipeline ($match, $lookup, $unwind, $addFields, $sort)
             if (req.query.estats) {
                 const estatsArray = req.query.estats.split(',');
                 pipeline.push({
@@ -306,6 +307,7 @@ const usePeticions = () => {
     const getEstadistiques = async (req, res) => {
         try {
             const db = getDB();
+            // REQUISIT: ESPECÍFIC: Estadístiques per estat
             const stats = await db.collection('peticions').aggregate([{ $group: { _id: "$estat", total: { $sum: 1 } } }]).toArray();
             res.status(200).json(stats);
         } catch (error) { res.status(500).json({ error: "Error stats" }); }
