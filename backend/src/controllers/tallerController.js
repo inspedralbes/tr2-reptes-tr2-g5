@@ -77,9 +77,11 @@ const useTallers = () => {
             // VERIFICACIÓN: deleteOne/deleteMany amb verificacions prèvies (en cascada)
             await db.collection('tallers').deleteOne({ _id: new ObjectId(id) });
             const resultPeticions = await db.collection('peticions').deleteMany({
+                // REQUISIT: Operadors avançats ($or)
                 $or: [
                     { tallerId: new ObjectId(id) },
                     { tallerId: id },
+                    // REQUISIT: Dot notation en camps imbricats
                     { "seleccio_tallers.taller_id": id },
                     { "seleccio_tallers.taller_id": new ObjectId(id) }
                 ]

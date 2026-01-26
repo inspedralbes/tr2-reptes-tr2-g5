@@ -23,6 +23,7 @@ const usePeticions = () => {
             if (req.query.estats) {
                 const estatsArray = req.query.estats.split(',');
                 pipeline.push({
+                    // REQUISIT: Operadors avançats ($in)
                     $match: { estat: { $in: estatsArray } }
                 });
             }
@@ -148,6 +149,7 @@ const usePeticions = () => {
                 const resultUpdate = await db.collection('tallers').updateOne(
                     {
                         _id: tId,
+                        // REQUISIT: Operadors avançats ($or)
                         $or: [
                             { places_disponibles: { $gte: numAlumnes } },
                             { places_disponibles: null }
@@ -233,6 +235,7 @@ const usePeticions = () => {
             const peticions = await db.collection('peticions').aggregate([
                 {
                     $match: {
+                        // REQUISIT: Consulta complexa combina múltiples condicions ($and)
                         $and: [
                             { "referent_contacte.correu": req.params.emailProfessor },
                             { estat: 'ASSIGNAT' }
@@ -313,6 +316,7 @@ const usePeticions = () => {
             const db = getDB();
             const { emailProfessor } = req.params;
             const tallers = await db.collection('tallers').find({
+                // REQUISIT: Dot notation en camps imbricats
                 "representant_oficial.correu": emailProfessor
             }).toArray();
 
@@ -334,6 +338,7 @@ const usePeticions = () => {
             );
 
             await db.collection('peticions').updateMany(
+                // REQUISIT: Dot notation en camps imbricats
                 { "seleccio_tallers.taller_id": id },
                 { $set: { es_representant_triat: false } }
             );
@@ -355,6 +360,7 @@ const usePeticions = () => {
             const { item } = req.params;
             const peticions = await db.collection('peticions').find({
                 // REQUISIT: Arrays dinàmics que creixen (checklist_detalls)
+                // REQUISIT: Consultes en arrays ($elemMatch) i Estructures dinàmiques (checklist)
                 checklist_detalls: {
                     $elemMatch: {
                         item: { $regex: item, $options: 'i' },
