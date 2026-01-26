@@ -38,16 +38,6 @@ El programa té una llarga trajectòria (des dels tallers TECNE de 2003) i s'adr
 * **Descoberta vocacional:** Eines per orientar el futur laboral des de l'etapa escolar.
 * **Èxit educatiu:** Evitar l'abandonament prematur potenciant nous aprenentatges.
 * **Itineraris inclusius:** Consolidar camins formatius no excloents adaptats a diferents ritmes.
-
-### Àmbits Professionals (Tastets d'oficis)
-L'alumnat explora l'entorn laboral a través de 6 àmbits:
-* 💻 Tecnològic
-* 🎨 Artístic
-* 🔨 Ocupacional
-* 📚 Humanístic
-* ⚽ Esportiu
-* 🧪 Científic
-
 ---
 
 ## 🛠️ Stack Tecnològic
