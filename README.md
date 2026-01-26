@@ -26,7 +26,7 @@
 ### Gestió i Disseny
 - **Taiga:** [Link de Taiga](https://tree.taiga.io/project/a24judsarand-enginy/backlog)
 ### Direccions Web
-- **Projecte desplegat:** [Link de la web](https://enginycat.dam.inspedralbes.cat/)
+- **Projecte desplegat:** [Link de la Web](https://enginycat.dam.inspedralbes.cat/)
 
 ---
 
@@ -68,7 +68,7 @@ L'alumnat explora l'entorn laboral a través de 6 àmbits:
 ## 🚀 Configuració i Desplegament
 
 ### Variables d'Entorn
-Crea un fitxer `.env` a la carpeta backend:
+Crea un fitxer `.env`:
 ```bash
 PORT=8088
 MONGODB_URI=mongodb+srv://fiona222:giaramita@cluster0.gpu1c2r.mongodb.net/enginy?retryWrites=true&w=majority
