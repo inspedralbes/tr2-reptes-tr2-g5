@@ -26,7 +26,7 @@
 - **Taiga (Backlog):** [https://tree.taiga.io/project/a24judsarand-enginy/backlog](https://tree.taiga.io/project/a24judsarand-enginy/backlog)
 
 ### Direccions Web
-- **Projecte desplegat:** [[Link de producció](https://enginycat.dam.inspedralbes.cat/)
+- **Projecte desplegat:** [Link de producció](https://enginycat.dam.inspedralbes.cat/)
 
 ---
 
