@@ -2,7 +2,6 @@
   <v-container fluid class="fill-height login-background pa-0">
     <v-row no-gutters class="fill-height justify-center align-center">
       <div class="background-overlay"></div>
-
       <v-col cols="12" sm="8" md="6" lg="4" class="z-index-form">
         <v-card class="elevation-12 rounded-xl pa-4">
           <v-card-text class="pa-8">
@@ -15,7 +14,6 @@
                 Accedeix al teu espai de gestió
               </p>
             </div>
-
             <v-form @submit.prevent="handleSubmit">
               <v-text-field
                 v-model="email"
@@ -27,7 +25,6 @@
                 prepend-inner-icon="mdi-email-outline"
                 bg-color="grey-lighten-5"
               ></v-text-field>
-
               <v-text-field
                 v-model="password"
                 label="Contrasenya"
@@ -38,7 +35,6 @@
                 prepend-inner-icon="mdi-lock-outline"
                 bg-color="grey-lighten-5"
               ></v-text-field>
-
               <v-alert 
                 v-if="authStore.error" 
                 type="error" 
@@ -48,7 +44,6 @@
               >
                 {{ authStore.error }}
               </v-alert>
-
               <v-btn
                 type="submit"
                 block
@@ -75,17 +70,13 @@ import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const authStore = useAuthStore();
-
 const email = ref('');
 const password = ref('');
-
 const handleSubmit = async () => {
   const usuario = await authStore.login(email.value, password.value);
   
   if (usuario && usuario.rol) {
-    // Normalizamos el rol a minúsculas para que la comparación no falle
     const rolNormalizado = usuario.rol.toLowerCase();
-
     if (rolNormalizado === 'centre') {
       localStorage.setItem('userName', usuario.nom);
       if (usuario.coordinador) {
@@ -94,13 +85,11 @@ const handleSubmit = async () => {
       }
     }
 
-    // Redirección basada en el rol normalizado
     if (rolNormalizado === 'admin') {
       router.push('/admin/indexadmin');
     } else if (rolNormalizado === 'centre') {
       router.push('/centre/indexcentre');
     } else if (rolNormalizado === 'professor') {
-      // Esta ruta coincide con tu archivo src/pages/professor/iniciprofessor.vue
       router.push('/professor/iniciprofessor');
     } else {
       console.warn("Rol no reconocido:", usuario.rol);
@@ -109,7 +98,6 @@ const handleSubmit = async () => {
   }
 };
 </script>
-
 <style scoped>
 .login-background {
   background-image: url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070');
@@ -117,7 +105,6 @@ const handleSubmit = async () => {
   background-position: center;
   position: relative;
 }
-
 .background-overlay {
   position: absolute;
   top: 0;
@@ -127,12 +114,10 @@ const handleSubmit = async () => {
   background: rgba(13, 71, 161, 0.4);
   backdrop-filter: blur(4px);
 }
-
 .z-index-form {
   position: relative;
   z-index: 2;
 }
-
 :deep(.v-card) {
   background-color: white !important;
   border: 1px solid rgba(0, 0, 0, 0.1);

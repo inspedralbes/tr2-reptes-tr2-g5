@@ -1,11 +1,10 @@
 const { getDB } = require('../config/db');
 const { ObjectId } = require('mongodb');
-const { transporter } = require('./userController'); // <--- IMPORTA EL TRANSPORTER AQUÍ
+const { transporter } = require('./userController');
 
 
 const usePeticions = () => {
 
-    // 1. OBTENIR PETICIONS (General)
     const getPeticions = async (req, res) => {
         try {
             const db = getDB();
@@ -16,16 +15,10 @@ const usePeticions = () => {
         }
     };
 
-    // 2. OBTENIR PETICIONS (Admin)
-    // A peticioController.js -> getPeticionsAdmin
     const getPeticionsAdmin = async (req, res) => {
         try {
             const db = getDB();
-
-            // 0. DEFINIM PIPELINE BASE
             const pipeline = [];
-
-            // IMPLEMENTACIÓ DE $in: Si ens passen ?estats=PENDENT,ASSIGNAT
             if (req.query.estats) {
                 const estatsArray = req.query.estats.split(',');
                 pipeline.push({
@@ -33,12 +26,11 @@ const usePeticions = () => {
                 });
             }
 
-            // Afegim la resta d'etapes (Lookup, Unwind, etc.)
             pipeline.push(
                 {
                     $lookup: {
                         from: 'usuaris',
-                        localField: 'nom_centre', // O centreId si el fas servir
+                        localField: 'nom_centre',
                         foreignField: 'nom',
                         as: 'dadesCentre'
                     }
@@ -46,7 +38,6 @@ const usePeticions = () => {
                 { $unwind: { path: "$dadesCentre", preserveNullAndEmptyArrays: true } },
                 {
                     $addFields: {
-                        // Si la petició no té coordinador, agafem el de la fitxa del centre
                         "coordinador.nom": { $ifNull: ["$coordinador.nom", "$dadesCentre.coordinador.nom", "No indicat"] },
                         "coordinador.email": { $ifNull: ["$coordinador.email", "$dadesCentre.coordinador.email", "No indicat"] },
 
@@ -83,7 +74,6 @@ const usePeticions = () => {
         }
     };
 
-    // 3. CREAR PETICIÓ (La que s'executa quan el centre envia el formulari)
     const createPeticio = async (req, res) => {
         try {
             const db = getDB();
@@ -93,7 +83,7 @@ const usePeticions = () => {
                 correu_coordinador,
                 seleccio_tallers,
                 nivell_interes,
-                referent_contacte, // Conté .nom i .correu del professor
+                referent_contacte,
                 comentaris
             } = req.body;
 
@@ -114,7 +104,6 @@ const usePeticions = () => {
 
             const result = await db.collection('peticions').insertOne(novaPeticio);
 
-            // --- ENVIAMENT AUTOMÀTIC DEL CORREU ---
             if (result.acknowledged && referent_contacte && referent_contacte.correu) {
                 transporter.sendMail({
                     from: '"Projecte ENGINY" <martamartahf@gmail.com>',
@@ -138,7 +127,6 @@ const usePeticions = () => {
         }
     };
 
-    // 4. ACTUALITZAR ESTAT
     const updateEstat = async (req, res) => {
         try {
             const db = getDB();
@@ -150,16 +138,12 @@ const usePeticions = () => {
             if (estat === 'ASSIGNAT') {
                 const tId = new ObjectId(tallerIdDefinitiu);
                 const numAlumnes = parseInt(num_alumnes_final);
-
-                // 1. ATOMIC UPDATE (Race Condition Prevented)
-                // Intentamos restar plazas SOLO si hay suficientes (places_disponibles >= numAlumnes)
-                // Esto es atómico: si dos llegan a la vez, solo uno modificará el documento.
                 const resultUpdate = await db.collection('tallers').updateOne(
                     {
                         _id: tId,
                         $or: [
                             { places_disponibles: { $gte: numAlumnes } },
-                            { places_disponibles: null } // Por si es un taller sin límite inicial estricto manejado así
+                            { places_disponibles: null } 
                         ]
                     },
                     {
@@ -168,8 +152,6 @@ const usePeticions = () => {
                 );
 
                 if (resultUpdate.matchedCount === 0) {
-                    // Si no ha encontrado documento, puede ser que no exista o que no queden plazas
-                    // Hacemos una comprobación rápida para dar el error exacto
                     const tallerCheck = await db.collection('tallers').findOne({ _id: tId });
                     if (!tallerCheck) {
                         return res.status(404).json({ error: "Taller no trobat" });
@@ -185,14 +167,13 @@ const usePeticions = () => {
                 updateData.data_assignacio = new Date();
             }
 
-            // Actualitzar la petició
             await db.collection('peticions').updateOne(
                 { _id: new ObjectId(id) },
                 {
                     $set: updateData,
                     $push: {
                         historial_estats: {
-                            antic: "", // O l'estat anterior si el tinguéssim
+                            antic: "",
                             nou: estat,
                             data: new Date()
                         }
@@ -207,7 +188,6 @@ const usePeticions = () => {
         }
     };
 
-    // 5. PETICIONS PER CENTRE / PROFESSOR
     const getPeticionsPerCentre = async (req, res) => {
         try {
             const db = getDB();
@@ -256,12 +236,11 @@ const usePeticions = () => {
         } catch (error) { res.status(500).json({ error: "Error professor" }); }
     };
 
-    // 6. VOLUNTARIS PER TALLER (La que et fallava)
     const getVoluntarisPerTaller = async (req, res) => {
         try {
             const db = getDB();
             const voluntaris = await db.collection('peticions').aggregate([
-                { $sort: { data_creacio: 1 } }, // Ordenem abans d'agrupar per mantenir la prioritat
+                { $sort: { data_creacio: 1 } }, 
                 {
                     $group: {
                         _id: "$seleccio_tallers.taller_id",
@@ -271,7 +250,7 @@ const usePeticions = () => {
                                 correu: "$referent_contacte.correu",
                                 centre: "$nom_centre",
                                 peticioId: "$_id",
-                                createdAt: "$data_creacio" // Passem la data real per al frontend
+                                createdAt: "$data_creacio" 
                             }
                         }
                     }
@@ -286,9 +265,6 @@ const usePeticions = () => {
             res.status(500).json({ error: "Error voluntaris" });
         }
     };
-
-    // 7. FINALITZAR TALLER
-    // A src/controllers/peticioController.js
 
     const finalitzarPeticio = async (req, res) => {
         try {
@@ -314,7 +290,6 @@ const usePeticions = () => {
         }
     };
 
-    // 8. ESTADÍSTIQUES
     const getEstadistiques = async (req, res) => {
         try {
             const db = getDB();
@@ -323,14 +298,10 @@ const usePeticions = () => {
         } catch (error) { res.status(500).json({ error: "Error stats" }); }
     };
 
-    // 9. TALLERS REPRESENTANT
-    // Afegeix/Verifica aquesta funció dins de usePeticions
     const getTallersRepresentantOficial = async (req, res) => {
         try {
             const db = getDB();
             const { emailProfessor } = req.params;
-
-            // Busquem a la col·lecció 'tallers' on el representant oficial sigui ell
             const tallers = await db.collection('tallers').find({
                 "representant_oficial.correu": emailProfessor
             }).toArray();
@@ -341,27 +312,22 @@ const usePeticions = () => {
         }
     };
 
-    // 10. ASSIGNAR REPRESENTANT
     const assignarRepresentantOficial = async (req, res) => {
         try {
             const db = getDB();
-            const { id } = req.params; // ID del Taller
-            const { representant_oficial, peticioId } = req.body; // Rebem també l'ID de la petició
+            const { id } = req.params; 
+            const { representant_oficial, peticioId } = req.body; 
 
-            // 1. Marquem el representant al Taller (General)
             await db.collection('tallers').updateOne(
                 { _id: new ObjectId(id) },
                 { $set: { representant_oficial } }
             );
 
-            // 2. Opcional: Si vols marcar la petició concreta com a "guanyadora"
-            // Primer desmarquem qualsevol altre representant d'aquest taller a les peticions
             await db.collection('peticions').updateMany(
                 { "seleccio_tallers.taller_id": id },
                 { $set: { es_representant_triat: false } }
             );
 
-            // Ara marquem la petició seleccionada
             await db.collection('peticions').updateOne(
                 { _id: new ObjectId(peticioId) },
                 { $set: { es_representant_triat: true } }
@@ -373,18 +339,14 @@ const usePeticions = () => {
         }
     };
 
-    // 11. CERCA PER CHECKLIST ($elemMatch)
     const getSearchByChecklist = async (req, res) => {
         try {
             const db = getDB();
             const { item } = req.params;
-
-            // Busquem peticions on l'array 'checklist_detalls' contingui un element
-            // que coincideixi amb l'item buscat I que estigui marcat com a fet.
             const peticions = await db.collection('peticions').find({
                 checklist_detalls: {
                     $elemMatch: {
-                        item: { $regex: item, $options: 'i' }, // Regex per fer la cerca flexible
+                        item: { $regex: item, $options: 'i' },
                         fet: true
                     }
                 }

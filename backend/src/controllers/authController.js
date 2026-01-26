@@ -1,5 +1,4 @@
-const { getDB } = require('../config/db'); // <--- ESTA LÍNEA ES IMPRESCINDIBLE
-// 1. INICIAR SESSIÓ (LOGIN) con DEBUG
+const { getDB } = require('../config/db');
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -9,7 +8,6 @@ exports.login = async (req, res) => {
         console.log(`Email rebut: [${email}]`);
         console.log(`Password rebut: [${password}]`);
 
-        // Buscar usuario por email
         const user = await db.collection('usuaris').findOne({ email: email });
 
         if (!user) {
@@ -19,7 +17,6 @@ exports.login = async (req, res) => {
 
         console.log(`Password a la DB: [${user.password}]`);
 
-        // Verificación con log de comparación
         if (user.password !== password) {
             console.log(" ERROR: Les contrasenyes no coincideixen exactament");
             return res.status(401).json({ error: "Credencials incorrectes" });
@@ -43,24 +40,20 @@ exports.login = async (req, res) => {
     }
 };
 
-// 2. REGISTRAR USUARI (REGISTER)
 exports.register = async (req, res) => {
     try {
         const db = getDB();
         const { nom, email, password, rol } = req.body;
 
-        // Validaciones básicas
         if (!nom || !email || !password || !rol) {
             return res.status(400).json({ error: "Tots els camps són obligatoris" });
         }
 
-        // Comprobar si el usuario ya existe
         const existeix = await db.collection('usuaris').findOne({ email: email });
         if (existeix) {
             return res.status(409).json({ error: "Aquest email ja està registrat" });
         }
 
-        // Crear objeto usuario
         const nouUsuari = {
             nom,
             email,
@@ -69,7 +62,6 @@ exports.register = async (req, res) => {
             data_registre: new Date()
         };
 
-        // Guardar en MongoDB
         const result = await db.collection('usuaris').insertOne(nouUsuari);
         
         console.log("👤 Nou usuari creat:", { email, rol });

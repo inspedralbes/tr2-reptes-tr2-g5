@@ -2,11 +2,9 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-
 const router = useRouter()
 const peticions = ref([])
 const llistaTallers = ref([])
-
 const state = reactive({
   filterStatus: 'ACTIVES', 
   subFilter: 'PENDENTS', 
@@ -51,7 +49,6 @@ const groupedData = computed(() => {
     const nomTaller = p.taller_titol || p.tallerId?.titol || ''
     const coincideixInstitut = nomCentre.includes(state.searchInstitut.toLowerCase())
     const coincideixTaller = state.selectedTallerFilter === 'Tots els tallers' || nomTaller === state.selectedTallerFilter
-    
     if (state.filterStatus === 'REBUTJADES') {
       return p.estat === 'REBUTJADA' && coincideixInstitut && coincideixTaller
     } else {
@@ -62,7 +59,6 @@ const groupedData = computed(() => {
     }
   })
 
-  // ORDENACIÓ FIFO: El més antic primer
   filteredList.sort((a, b) => new Date(a.data_creacio) - new Date(b.data_creacio))
 
   const groups = {}
@@ -76,10 +72,7 @@ const groupedData = computed(() => {
 
 const obrir = (p) => {
   state.selected = p
-  // 1. Assignem el taller que el centre demanava per defecte
   state.selectedTaller = p.tallerId?._id || p.seleccio_tallers?.taller_id || null
-  
-  // 2. Eliminat: state.selectedTaller = null (això trencava la càrrega inicial)
   
   state.accepted = false
   state.placesAssignades = p.seleccio_tallers?.num_alumnes || 0 
@@ -90,8 +83,6 @@ const getPlacesRestants = (tId) => {
   if (!tId) return 0;
   const taller = llistaTallers.value.find(t => t._id === tId);
   if (!taller) return 0;
-  
-  // Lògica: si hem restat places usem places_disponibles, si no, la capacitat_maxima original
   return taller.places_disponibles ?? taller.capacitat_maxima ?? 0;
 };
 const accio = async (tipus) => {
@@ -118,7 +109,6 @@ const accio = async (tipus) => {
     if (res.ok) { 
       state.dialog = false
       state.accepted = false
-      // AQUESTA LÍNIA ÉS CLAU: Torna a demanar tallers i peticions a la DB
       await carregarDades() 
       alert("Assignació realitzada i places actualitzades")
     }
@@ -126,8 +116,6 @@ const accio = async (tipus) => {
     console.error("Error:", e)
   }
 }
-
-
 </script>
 
 <template>
@@ -137,7 +125,6 @@ const accio = async (tipus) => {
       <h1 class="text-h4 font-weight-bold text-black">Gestió de Peticions</h1>
       <v-spacer />
     </div>
-
     <v-row class="mb-6">
       <v-col cols="12" md="4">
         <label class="text-overline font-weight-bold text-black">Filtrar per Taller</label>
@@ -155,26 +142,22 @@ const accio = async (tipus) => {
         </v-btn-toggle>
       </v-col>
     </v-row>
-
     <div v-if="state.filterStatus === 'ACTIVES'" class="mb-8 d-flex gap-2">
       <v-btn :variant="state.subFilter === 'PENDENTS' ? 'flat' : 'outlined'" color="orange-darken-3" rounded="pill" @click="state.subFilter = 'PENDENTS'">PENDENTS</v-btn>
       <v-btn :variant="state.subFilter === 'ASSIGNATS' ? 'flat' : 'outlined'" color="teal-darken-2" rounded="pill" @click="state.subFilter = 'ASSIGNATS'">ASSIGNATS</v-btn>
       <v-btn :variant="state.subFilter === 'TOTS' ? 'flat' : 'outlined'" color="black" rounded="pill" @click="state.subFilter = 'TOTS'">TOTS</v-btn>
     </div>
-
     <div v-for="(peticionsTaller, tallerNom) in groupedData" :key="tallerNom" class="mb-12">
       <h2 class="text-h5 font-weight-black mb-4 border-bottom pb-2 text-black">{{ tallerNom }}</h2>
       <v-row>
         <v-col v-for="p in peticionsTaller" :key="p._id" cols="12" sm="6" md="4">
           <v-card class="rounded-xl card-peticio" elevation="1" border>
   <v-card-text class="pa-5">
-    
     <div class="d-flex justify-space-between align-center mb-4">
   <div class="d-flex align-center" style="max-width: 75%;">
     <span class="text-subtitle-1 font-weight-bold text-truncate text-black">
       {{ p.nom_centre }}
     </span>
-    
     <v-icon 
       v-if="p.primera_vegada === true || p.primera_vegada === 'true'" 
       color="indigo-darken-2" 
@@ -184,18 +167,15 @@ const accio = async (tipus) => {
       mdi-star-circle
     </v-icon>
   </div>
-
   <div class="d-flex align-center gap-1">
     <v-icon v-if="p.comentaris" color="orange-darken-2" size="small" class="mr-1">mdi-comment-text</v-icon>
     <v-chip size="x-small" :color="colors[p.estat]" class="text-white font-weight-bold">{{ p.estat }}</v-chip>
   </div>
 </div>
-
     <div class="text-body-2 font-weight-bold text-indigo-darken-4 mb-4">
       <v-icon size="small" class="mr-1">mdi-hammer-wrench</v-icon>
       {{ p.taller_titol || 'Pendent de carregar' }}
     </div>
-
     <div class="d-flex justify-space-between align-end">
       <div class="text-caption text-grey-darken-1">
         <div><strong>Coordinador/a:</strong> {{ p.coordinador?.nom || 'No assignat' }}</div>
@@ -207,7 +187,6 @@ const accio = async (tipus) => {
       </div>
       <v-btn icon="mdi-plus" variant="flat" color="black" size="small" class="text-white" @click="obrir(p)"></v-btn>
     </div>
-
   </v-card-text> </v-card>
         </v-col>
       </v-row>
@@ -215,7 +194,6 @@ const accio = async (tipus) => {
 <v-dialog v-model="state.dialog" max-width="600">
   <v-card class="rounded-xl overflow-hidden" v-if="state.selected">
     <v-card-title class="pa-6 bg-black text-white">Detalls de la Sol·licitud</v-card-title>
-    
     <v-card-text class="pa-6 bg-grey-lighten-4 text-black">
       <v-row dense>
         <v-col cols="12" class="mb-4">
@@ -226,14 +204,12 @@ const accio = async (tipus) => {
             </v-chip>
           </v-card>
         </v-col>
-
         <v-col cols="12">
           <label class="text-overline text-grey">TALLER SOL·LICITAT PEL CENTRE</label>
           <div class="text-h6 font-weight-black text-indigo-darken-4 mb-4">
             {{ state.selected.taller_titol || 'No especificat' }}
           </div>
         </v-col>
-
         <v-col cols="12" md="6">
           <label class="text-overline text-grey">INSTITUT</label>
           <div class="text-body-1 font-weight-bold">{{ state.selected.nom_centre }}</div>
@@ -241,27 +217,21 @@ const accio = async (tipus) => {
             Rebuda: {{ state.selected.data_creacio ? new Date(state.selected.data_creacio).toLocaleString('ca-ES') : '--' }}
           </div>
         </v-col>
-
         <v-col cols="12" md="6">
           <label class="text-overline text-grey">ALUMNES</label>
           <div class="text-body-1 font-weight-bold mb-4">{{ state.selected.seleccio_tallers?.num_alumnes }} alumnes</div>
         </v-col>
-        
         <v-col cols="12" md="6">
           <label class="text-overline text-grey">COORDINADOR/A GENERAL</label>
           <div class="text-body-2 font-weight-bold">{{ state.selected.coordinador?.nom || 'No indicat' }}</div>
           <div class="text-caption text-grey-darken-2">{{ state.selected.coordinador?.email }}</div>
         </v-col>
-
         <v-col cols="12" md="6">
           <label class="text-overline text-grey">PROFESSOR/A REFERENT</label>
           <div class="text-body-2 font-weight-bold">{{ state.selected.referent_contacte?.nom }}</div>
           <div class="text-caption text-grey-darken-2">{{ state.selected.referent_contacte?.correu }}</div>
         </v-col>
       </v-row> 
-
-     
-
       <v-row dense>
         <v-col cols="12" class="mt-4">
           <v-card variant="outlined" class="pa-4 rounded-lg bg-white" border>
@@ -269,13 +239,10 @@ const accio = async (tipus) => {
               <v-icon size="small" class="mr-2" color="grey-darken-3">mdi-comment-text-multiple</v-icon>
               <label class="text-overline font-weight-bold mb-0">Comentaris del Centre</label>
             </div>
-            
             <div class="text-body-2 pa-3 rounded bg-grey-lighten-5 mb-3" style="border-left: 4px solid #000; font-style: italic;">
               {{ state.selected.comentaris || 'El centre no ha deixat cap comentari addicional.' }}
             </div>
-
             <v-divider class="mb-3"></v-divider>
-
             <div class="d-flex align-center">
               <v-chip 
                 size="small" 
@@ -291,20 +258,16 @@ const accio = async (tipus) => {
           </v-card>
         </v-col>
       </v-row>
-
       <v-divider class="my-6"></v-divider>
-      
       <div v-if="state.selected.estat === 'PENDENT'">
-        <!-- Botons inicials -->
+
         <div v-if="!state.accepted" class="d-flex gap-2">
           <v-btn color="red-darken-2" variant="tonal" class="flex-grow-1" @click="accio('REBUTJAR')" prepend-icon="mdi-close">REBUTJAR</v-btn>
           <v-btn color="green-darken-2" class="flex-grow-1 text-white" @click="state.accepted = true" prepend-icon="mdi-check">ACCEPTAR</v-btn>
         </div>
 
-        <!-- Configuració final -->
         <div v-else class="bg-white pa-4 rounded-lg border">
           <p class="text-caption font-weight-black mb-2 text-uppercase text-grey">Configuració final de l'assignació</p>
-          
           <v-select 
             v-model="state.selectedTaller" 
             :items="llistaTallers" 
@@ -323,7 +286,6 @@ const accio = async (tipus) => {
               </v-list-item>
             </template>
           </v-select>
-
           <v-select
             v-model="state.placesAssignades"
             :items="Array.from({length: Math.min(getPlacesRestants(state.selectedTaller) || 10, 10)}, (_, i) => i + 1)"
@@ -332,7 +294,6 @@ const accio = async (tipus) => {
             density="comfortable"
             prepend-inner-icon="mdi-account-group"
           ></v-select>
-
           <v-alert
             v-if="state.selectedTaller"
             :type="getPlacesRestants(state.selectedTaller) < state.placesAssignades ? 'error' : 'info'"
@@ -358,7 +319,6 @@ const accio = async (tipus) => {
           >
             FINALITZAR ASSIGNACIÓ
           </v-btn>
-          
           <v-btn block variant="text" size="small" class="mt-2" @click="state.accepted = false">Enrere</v-btn>
         </div>
       </div>
@@ -374,9 +334,7 @@ const accio = async (tipus) => {
 </template>
 
 <style scoped>
-.border-indigo {
-  border: 1px solid #303f9f !important;
-}
+.border-indigo {border: 1px solid #303f9f !important;}
 .admin-wrapper { min-height: 100vh; background-color: #f5f5f5; }
 .card-peticio { transition: all 0.2s; background: white; }
 .card-peticio:hover { border-color: #000 !important; transform: translateY(-2px); }

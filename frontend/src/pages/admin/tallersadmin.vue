@@ -49,17 +49,14 @@ const obrir = (t, i = -1) => {
     state.dialog = true 
   } 
 }
-// frontend/src/pages/admin/tallersadmin.vue
 
-const esborrar = async (id, i) => { 
-  // Mensaje de advertencia más claro
+const esborrar = async (id, i) => {
   const confirmar = confirm('ATENCIÓ: Si esborres aquest taller, s\'ELIMINARAN PER SEMPRE totes les sol·licituds associades. Vols continuar?');
   
   if (confirmar) {
     const success = await apiCall(`${API_URL}/${id}`, 'DELETE');
     if (success) {
       tallers.value.splice(i, 1);
-      // Opcional: podrías recargar las peticiones si tienes una store global
     } else {
       alert("Error al eliminar el taller i les peticions.");
     }
@@ -79,13 +76,11 @@ const getPlaces = (taller) => {
       </div>
       <v-btn color="black" class="text-white mt-1" prepend-icon="mdi-plus" @click="obrir(initForm())">Afegir Taller</v-btn>
     </div>
-
     <v-row dense class="mb-6">
       <v-col cols="12" md="4">
         <v-select v-model="state.filter" :items="['Totes', 'Modalitat A', 'Modalitat B', 'Modalitat C']" label="Filtrar per Modalitat" variant="outlined" density="compact" color="black" class="filtre-superior" :menu-props="{ contentClass: 'custom-menu' }"/>
       </v-col>
     </v-row>
-    
     <v-row>
       <v-col v-for="(t, i) in filtered" :key="t._id" cols="12" sm="6" md="4">
         <v-card variant="flat" class="card-taller bg-white h-100 d-flex flex-column">
@@ -93,18 +88,14 @@ const getPlaces = (taller) => {
             <span class="text-white font-weight-bold text-caption">TALLER #{{ i + 1 }}</span>
             <v-chip size="x-small" variant="flat" color="white" class="text-black font-weight-bold">{{ t.modalitat }}</v-chip>
           </div>
-
           <v-card-text class="flex-grow-1 pa-5">
             <div class="font-weight-bold text-h6 text-black mb-1 line-clamp-1">{{ t.titol }}</div>
             <div class="d-flex align-center text-caption text-primary font-weight-bold mb-3">
               <v-icon size="small" class="mr-1">mdi-map-marker</v-icon>
               {{ t.ubicacio || 'Ubicació no definida' }}
             </div>
-            
             <div class="text-body-2 text-grey-darken-1 mb-4">{{ t.descripcio }}</div>
-            
             <v-divider class="mb-4"></v-divider>
-            
             <v-row dense class="text-center">
               <v-col cols="4">
                 <div class="text-overline text-grey-lighten-1" style="line-height: 1rem">DATA</div>
@@ -122,21 +113,17 @@ const getPlaces = (taller) => {
               </v-col>
             </v-row>
           </v-card-text>
-
           <v-divider></v-divider>
-
           <v-card-actions class="justify-end px-4 py-2 bg-grey-lighten-5">
             <v-btn variant="text" icon="mdi-pencil-outline" color="black" @click="obrir(t, i)"/>
             <v-btn variant="text" icon="mdi-trash-can-outline" color="red" @click="esborrar(t._id, i)"/>
           </v-card-actions>
         </v-card>
       </v-col>
-
       <v-col cols="12" v-if="!filtered.length" class="text-center pa-10 text-grey-darken-1">
         No existeix cap taller de tipus <strong>{{ state.filter }}</strong>.
       </v-col>
     </v-row>
-
     <v-dialog v-model="state.dialog" max-width="600px" persistent>
       <v-card class="pa-6 rounded-lg bg-custom-dark">
         <v-card-title class="text-h5 font-weight-bold text-white">Nou Taller</v-card-title>
@@ -158,7 +145,6 @@ const getPlaces = (taller) => {
         </v-card-actions>
       </v-card>
     </v-dialog>
-
     <v-dialog v-model="state.dialogEdit" max-width="600px" persistent>
       <v-card class="pa-6 rounded-lg bg-custom-dark">
         <v-card-title class="text-h5 font-weight-bold text-white d-flex align-center">

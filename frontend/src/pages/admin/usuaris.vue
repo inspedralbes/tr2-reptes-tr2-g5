@@ -31,7 +31,6 @@
           clearable
         ></v-text-field>
       </v-col>
-
       <v-col cols="12" md="3">
         <v-select
           v-model="roleFilter"
@@ -63,7 +62,6 @@
             <span class="font-weight-medium">{{ item.nom }}</span>
           </div>
         </template>
-
         <template v-slot:item.rol="{ item }">
           <v-chip
             :color="getRoleColor(item.rol)"
@@ -74,7 +72,6 @@
             {{ item.rol }}
           </v-chip>
         </template>
-
         <template v-slot:item.actions="{ item }">
           <div class="d-flex">
             <v-btn icon="mdi-pencil" variant="text" size="small" color="blue" @click="openDialog(item)" />
@@ -99,7 +96,6 @@
               density="comfortable"
               :rules="[v => !!v || 'El nom és obligatori']"
             ></v-text-field>
-
             <v-text-field
               v-model="editedItem.email"
               label="Email"
@@ -108,7 +104,6 @@
               type="email"
               :rules="[v => !!v || 'L\'email és obligatori']"
             ></v-text-field>
-
             <v-select
               v-model="editedItem.rol"
               :items="['Admin', 'Centre', 'Professor']"
@@ -116,7 +111,6 @@
               variant="outlined"
               density="comfortable"
             ></v-select>
-
             <v-text-field
               v-if="editedIndex === -1"
               v-model="editedItem.password"
@@ -126,7 +120,6 @@
               type="password"
               :rules="[v => !!v || 'La contrasenya és obligatòria']"
             ></v-text-field>
-            
             <v-text-field
               v-else
               v-model="editedItem.password"
@@ -137,10 +130,8 @@
               hint="Deixar en blanc per mantenir l'actual"
               persistent-hint
             ></v-text-field>
-
           </v-form>
         </v-card-text>
-
         <v-card-actions class="pa-4 pt-0">
           <v-spacer></v-spacer>
           <v-btn color="grey-darken-1" variant="text" @click="close">Cancel·lar</v-btn>
@@ -148,7 +139,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
     <v-dialog v-model="dialogDelete" max-width="400px">
       <v-card>
         <v-card-title class="text-h6 pa-4">Confirmar eliminació</v-card-title>
@@ -160,7 +150,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
     <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="3000">
       {{ snackbarText }}
       <template v-slot:actions>
@@ -175,7 +164,6 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter()
-
 const users = ref([]);
 const loading = ref(true);
 const search = ref(''); 
@@ -184,7 +172,6 @@ const dialogDelete = ref(false);
 const editedIndex = ref(-1);
 const valid = ref(false);
 const roleFilter = ref('Tots'); 
-
 const filteredUsers = computed(() => {
   if (roleFilter.value === 'Tots') return users.value;
   
@@ -208,7 +195,6 @@ const defaultItem = {
 };
 
 const editedItem = reactive({ ...defaultItem });
-
 const snackbar = ref(false);
 const snackbarText = ref('');
 const snackbarColor = ref('success');
@@ -265,7 +251,6 @@ const save = async () => {
     const url = editedIndex.value === -1 
         ? '/api/users' 
         : `/api/users/${editedItem._id}`;
-    
     const method = editedIndex.value === -1 ? 'POST' : 'PUT';
     
     try {
@@ -274,7 +259,6 @@ const save = async () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(editedItem)
         });
-
         if (res.ok) {
             showSnackbar(`Usuari ${editedIndex.value === -1 ? 'creat' : 'actualitzat'} correctament`, 'success');
             fetchUsers();
@@ -290,7 +274,6 @@ const save = async () => {
 
 const canDelete = (userToDelete) => {
     const myEmail = localStorage.getItem('userEmail');
-
     if (myEmail === 'admin@admin.com') {
         if (userToDelete.email === 'admin@admin.com') {
             return false;
@@ -298,11 +281,9 @@ const canDelete = (userToDelete) => {
             return true;
         }
     }
-
     if (userToDelete.rol?.toLowerCase() === 'admin') {
         return false;
     }
-
     return true;
 };
 
@@ -318,7 +299,6 @@ const closeDelete = () => {
 const deleteItemConfirm = async () => {
     try {
         const myEmail = localStorage.getItem('userEmail');
-        
         const res = await fetch(`/api/users/${editedItem._id}`, { 
             method: 'DELETE',
             headers: {

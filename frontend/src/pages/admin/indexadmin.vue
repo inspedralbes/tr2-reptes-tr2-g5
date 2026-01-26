@@ -4,23 +4,16 @@ import { useRouter } from 'vue-router'
 
 const API_URL = '/api'
 const router = useRouter()
-
-// --- ESTATS DE NOTIFICACIONS ---
 const notifs = ref([])
 const ultimCompteVist = ref(parseInt(localStorage.getItem('ultimCompteVist') || '0'))
 const vistes = ref(false)
-
-// --- UTILITATS ---
 const nav = (r) => router.push(`/admin/${r}`)
 const totalPendents = computed(() => notifs.value.length)
-
-// --- LÒGICA NOTIFICACIONS ---
 const marcarComVistes = () => {
   vistes.value = true
   ultimCompteVist.value = notifs.value.length
   localStorage.setItem('ultimCompteVist', ultimCompteVist.value.toString())
 }
-
 const esborrarNotificacions = () => {
   notifs.value = []
   ultimCompteVist.value = 0
@@ -48,9 +41,6 @@ onMounted(async () => {
         <h1 class="text-h4 font-weight-bold mb-2" style="color: black;">Panell de Control Administració</h1>
         <p class="text-subtitle-1 text-grey-darken-1">Gestió centralitzada de tallers, sol·licituds i usuaris.</p>
       </div>
-
-   
-
       <div class="d-flex align-center">
         <v-menu width="320" location="bottom end" :close-on-content-click="false">
           <template v-slot:activator="{ props }">
@@ -66,14 +56,12 @@ onMounted(async () => {
               </v-badge>
             </v-btn>
           </template>
-
           <v-card class="border-consorci shadow-xl menu-notificacions">
             <v-card-title class="text-subtitle-2 font-weight-bold pa-4 bg-white text-black d-flex justify-space-between align-center">
               NOTIFICACIONS
               <v-btn variant="text" size="x-small" color="red" icon="mdi-trash-can-outline" @click="esborrarNotificacions" />
             </v-card-title>
             <v-divider/>
-            
             <v-list class="pa-0 bg-white" max-height="400">
               <v-list-item v-for="n in notifs" :key="n.id" class="pa-4 item-notificacio" @click="nav('peticionsadmin')">
                 <template v-slot:prepend>
@@ -84,12 +72,10 @@ onMounted(async () => {
                   <div class="text-caption text-grey-darken-3">{{ n.d }}</div>
                 </div>
               </v-list-item>
-              
               <v-list-item v-if="notifs.length === 0" class="pa-10 text-center">
                 <v-list-item-title class="text-grey">No hi ha notificacions noves</v-list-item-title>
               </v-list-item>
             </v-list>
-            
             <v-btn block variant="flat" color="black" class="text-white rounded-0 py-4" @click="nav('peticionsadmin')">
               VEURE TOTES LES PETICIONS
             </v-btn>
@@ -97,7 +83,6 @@ onMounted(async () => {
         </v-menu>
       </div>
     </header>
-
     <v-row>
       <v-col 
         v-for="c in [
@@ -117,7 +102,6 @@ onMounted(async () => {
         </v-card>
       </v-col>
     </v-row>
-
   </v-container>
 </template>
 
@@ -127,7 +111,6 @@ onMounted(async () => {
   70% { transform: scale(1.2); box-shadow: 0 0 0 10px rgba(244, 67, 54, 0); }
   100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
 }
-
 .pulse-alert :deep(.v-badge__badge) { animation: pulse-badge 2s infinite; }
 .admin-wrapper { min-height: 100vh; background-color: white; }
 .admin-card { 

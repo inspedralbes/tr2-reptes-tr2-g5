@@ -15,9 +15,7 @@
             <p class="text-subtitle-1 text-grey-darken-1">Gestió de la identitat digital i perfil</p>
           </div>
         </div>
-
         <v-divider class="mb-8"></v-divider>
-
         <v-row>
           <v-col cols="12" md="4">
             <v-card variant="flat" border class="pa-6 text-center bg-white rounded-xl shadow-sm">
@@ -26,7 +24,6 @@
                   <v-img v-if="user.foto" :src="user.foto" cover></v-img>
                   <v-icon v-else size="70" color="#3465a4">mdi-account</v-icon>
                 </v-avatar>
-                
                 <v-btn
                   icon="mdi-camera"
                   size="small"
@@ -35,7 +32,6 @@
                   elevation="2"
                   @click="$refs.fileInput.click()"
                 ></v-btn>
-                
                 <input
                   ref="fileInput"
                   type="file"
@@ -44,7 +40,6 @@
                   @change="onFileChange"
                 />
               </div>
-
               <h3 class="text-h6 font-weight-bold grey-darken-4">{{ user.nom }}</h3>
               <v-chip
                 size="small"
@@ -54,9 +49,7 @@
               >
                 {{ user.rol }}
               </v-chip>
-
               <v-divider class="my-6"></v-divider>
-              
               <div class="text-left">
                 <p class="text-caption text-grey-darken-1 mb-1 font-weight-bold uppercase-tracking">Estat del compte</p>
                 <div class="d-flex align-center text-body-2 mb-4">
@@ -70,7 +63,6 @@
               </div>
             </v-card>
           </v-col>
-
           <v-col cols="12" md="8">
             <v-card variant="flat" border class="rounded-xl bg-white overflow-hidden">
               <v-toolbar color="transparent" class="px-4" flat>
@@ -78,31 +70,24 @@
                   Informació Personal
                 </v-toolbar-title>
               </v-toolbar>
-              
               <v-card-text class="pa-6 pt-0">
                 <div v-if="loading" class="text-center py-10">
                   <v-progress-circular indeterminate color="#3465a4"></v-progress-circular>
                 </div>
-
                 <v-alert v-else-if="error" type="error" variant="tonal" class="mb-4">
                   {{ error }}
                 </v-alert>
-
                 <div v-else>
                   <div class="info-row">
                     <span class="label">Nom complet</span>
                     <span class="value font-weight-bold">{{ user.nom }}</span>
                   </div>
-                  
                   <v-divider></v-divider>
-                  
                   <div class="info-row">
                     <span class="label">Adreça electrònica</span>
                     <span class="value">{{ user.email }}</span>
                   </div>
-                  
                   <v-divider></v-divider>
-                  
                   <div class="info-row">
                     <span class="label">Rol assignat</span>
                     <div class="value d-flex align-center">
@@ -110,16 +95,13 @@
                       <span class="text-capitalize">{{ user.rol }}</span>
                     </div>
                   </div>
-
                   <v-divider></v-divider>
-
                   <div class="info-row">
                     <span class="label">ID d'usuari</span>
                     <span class="value font-mono text-grey">{{ user._id || user.id }}</span>
                   </div>
                 </div>
               </v-card-text>
-
               <v-divider></v-divider>
               <div class="pa-6 bg-grey-lighten-5">
                 <p class="text-caption text-grey-darken-1 mb-0">
@@ -142,12 +124,10 @@ import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const authStore = useAuthStore();
-
 const loading = ref(true);
 const error = ref(null);
 const user = ref({});
 const fileInput = ref(null);
-
 const fetchUserData = async () => {
     loading.value = true;
     error.value = null;
@@ -157,16 +137,12 @@ const fetchUserData = async () => {
             router.push('/login');
             return;
         }
-
         const response = await fetch(`/api/users/${userId}`);
         if (!response.ok) {
             throw new Error('No s’ha pogut connectar amb el servidor');
         }
-        
         const data = await response.json();
         user.value = data;
-
-        // Recuperar foto persistente o del store
         const persistentFoto = localStorage.getItem(`userFoto_${data.email}`);
         if (data.foto) {
             authStore.user.foto = data.foto;
@@ -177,7 +153,6 @@ const fetchUserData = async () => {
         } else {
             user.value.foto = localStorage.getItem('userFoto');
         }
-
     } catch (err) {
         console.error(err);
         error.value = "No s'han pogut carregar les dades del perfil.";
@@ -192,25 +167,20 @@ const onFileChange = (e) => {
         const reader = new FileReader();
         reader.onload = (event) => {
             const base64Image = event.target.result;
-            
             user.value.foto = base64Image;
-            
             if (authStore.user) {
                 authStore.user.foto = base64Image;
             }
-
-            // Clave persistente por email para que no se pierda al cerrar sesión
             const userEmail = user.value.email || localStorage.getItem('userEmail');
             if (userEmail) {
                 localStorage.setItem(`userFoto_${userEmail}`, base64Image);
             }
-            
             localStorage.setItem('userFoto', base64Image);
             console.log("Foto de perfil actualizada.");
         };
         reader.readAsDataURL(file);
     }
-}; // <--- AQUÍ FALTABA ESTA LLAVE
+};
 
 const formatDate = (dateString) => {
     if (!dateString) return 'No disponible';
@@ -224,7 +194,6 @@ const formatDate = (dateString) => {
 const goBack = () => {
     router.back();
 };
-
 onMounted(() => {
     fetchUserData();
 });

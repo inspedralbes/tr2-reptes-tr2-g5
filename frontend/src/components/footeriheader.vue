@@ -2,50 +2,37 @@
   <v-app>
     <v-app-bar app color="white" elevation="1" height="90" class="px-4">
       <v-img src="/Logo.jpg" alt="Logo" max-height="70" max-width="320" contain />
-
       <v-spacer></v-spacer>
-
       <div class="d-none d-md-flex align-center">
-        <!-- BOTÓN INICIO -->
         <v-btn to="/" variant="text" class="text-none font-weight-bold px-2 custom-blue">
             Inici
         </v-btn>
         <v-divider vertical inset class="mx-1" length="15"></v-divider>
-
-        <!-- SI NO ESTÁ LOGIN: MOSTRAR LOG IN BUTTON -->
         <template v-if="!isLoggedIn">
             <v-btn to="/login" variant="text" class="text-none font-weight-bold px-2 custom-blue">
                 <v-icon start size="small">mdi-login</v-icon>
                 Inicieu sessió
             </v-btn>
         </template>
-
-        <!-- SI ESTÁ LOGIN: MOSTRAR PANEL Y LOGOUT -->
         <template v-else>
-            
             <v-divider vertical inset class="mx-1" length="15"></v-divider>
-            
             <v-btn @click="logout" variant="text" class="text-none font-weight-bold px-2 text-red">
                 <v-icon start size="small">mdi-logout</v-icon>
                 Sortir
             </v-btn>
         </template>
       </div>
-
       <v-btn icon @click="handleProfileClick" class="ml-2">
         <v-avatar size="40" color="grey-lighten-3">
           <v-img v-if="authStore.user?.foto" :src="authStore.user.foto" cover></v-img>
           <v-icon v-else color="#3465a4">mdi-account-circle</v-icon>
         </v-avatar>
-      </v-btn>
-      
+      </v-btn>      
       <v-app-bar-nav-icon class="d-md-none" />
     </v-app-bar>
-
     <v-main class="bg-grey-lighten-5">
       <slot />
     </v-main>
-
     <v-footer app color="white" class="pa-0 d-flex flex-column">
       <v-divider class="w-100"></v-divider>
       <div class="py-2 text-caption text-grey-darken-1 text-center w-100">
@@ -63,9 +50,7 @@ import { useAuthStore } from '@/stores/auth';
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
-
 const role = ref(null);
-
 const checkSession = () => {
     role.value = localStorage.getItem('userRole');
 };
@@ -74,7 +59,6 @@ onMounted(() => {
     checkSession();
 });
 
-// Re-check session on route change
 watch(() => route.path, () => {
     checkSession();
 });
@@ -84,8 +68,8 @@ const isLoggedIn = computed(() => !!role.value);
 const logout = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userId');
-    localStorage.removeItem('userName'); // AÑADIDO
-    localStorage.removeItem('userEmail'); // AÑADIDO
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
     localStorage.removeItem('userFoto');
     authStore.logout();
     
@@ -93,15 +77,12 @@ const logout = () => {
     router.push('/');
 };
 
-// AÑADIDO: Nueva función para manejar el clic en el icono de usuario
 const handleProfileClick = () => {
     const userId = localStorage.getItem('userId');
     
     if (isLoggedIn.value && userId) {
-        // Si hay sesión e ID, va a su perfil
         router.push('/account');
     } else {
-        // Si no, lo manda a loguearse
         router.push('/login');
     }
 };
@@ -124,7 +105,6 @@ const loginOptions = [
 </script>
 
 <style scoped>
-/* Definim el color personalitzat 3465a4 */
 .custom-blue {
   color: #3465a4 !important;
 }

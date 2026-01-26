@@ -10,8 +10,6 @@
       />
       <h2 class="text-h4 font-weight-bold mb-0">Tallers Confirmats i Assignacions</h2>
     </div>
-
-    <!-- ✅ NOTIFICACIÓ DESPLEGABLE DE REPRESENTANTS SELECCIONATS -->
     <v-expand-transition>
       <v-alert 
         v-if="representantsSeleccionats.length > 0 && mostrarNotificacio"
@@ -25,7 +23,6 @@
         <v-alert-title class="text-h6 mb-2">
           Teniu professors seleccionats com a Representants Oficials
         </v-alert-title>
-
         <div v-for="p in representantsSeleccionats" :key="p._id" class="representant-item">
           <v-chip 
             color="success" 
@@ -43,7 +40,6 @@
         </div>
       </v-alert>
     </v-expand-transition>
-
     <div v-if="assignacions.length === 0" class="no-data">
       Encara no teniu cap taller assignat oficialment.
     </div>
@@ -66,11 +62,9 @@
             <span class="badge">Assignat</span>
           </div>
         </div>
-        
         <div class="card-body">
           <p><strong>Centre:</strong> {{ item.nom_centre }}</p>
           <p><strong>Alumnes:</strong> {{ item.seleccio_tallers.num_alumnes }}</p>
-          
           <div class="referents-box">
             <div class="d-flex justify-space-between align-center mb-2">
               <h4>Professors Referents:</h4>
@@ -86,8 +80,6 @@
               <li>{{ item.referent_contacte.nom }} ({{ item.referent_contacte.correu }})</li>
               <li v-if="item.referent_contacte.nom_segon">{{ item.referent_contacte.nom_segon }}</li>
             </ul>
-            
-            <!-- Missatge especial si és representant -->
             <div v-if="item.es_representant_triat" class="representant-info">
               <v-icon size="16" color="success">mdi-information</v-icon>
               Aquest professor és el Representant Oficial del taller
@@ -106,7 +98,6 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 const assignacions = ref([]);
 const mostrarNotificacio = ref(true);
-
 const representantsSeleccionats = computed(() => {
   return assignacions.value.filter(p => p.es_representant_triat === true);
 });
@@ -147,9 +138,7 @@ onMounted(() => {
 .gap-2 { gap: 8px; }
 
 
-.notificacio-representant {
-  animation: slideDown 0.5s ease-out;
-}
+.notificacio-representant {animation: slideDown 0.5s ease-out;}
 
 @keyframes slideDown {
   from {

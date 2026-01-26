@@ -18,7 +18,6 @@ exports.getConfig = async (req, res) => {
     }
 };
 
-// Actualizar la fase (Admin)
 exports.updateFase = async (req, res) => {
     try {
         const db = getDB();
@@ -27,7 +26,7 @@ exports.updateFase = async (req, res) => {
         const result = await db.collection('configuracio').updateOne(
             {}, 
             { $set: { faseActual: parseInt(nuevaFase) } },
-            { upsert: true } // Si no existe, lo crea
+            { upsert: true }
         );
 
         res.json({ missatge: "Fase actualitzada correctament", fase: nuevaFase });

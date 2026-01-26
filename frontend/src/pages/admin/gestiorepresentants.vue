@@ -4,13 +4,11 @@
       <v-btn icon="mdi-arrow-left" variant="text" color="black" class="mr-4" @click="router.back()"/>
       <h1 class="text-h4 font-weight-bold ml-4 text-black">Gestió de Representants</h1>
     </div>
-
     <v-row v-if="loading">
       <v-col cols="12" class="text-center">
         <v-progress-circular indeterminate color="black" size="64" />
       </v-col>
     </v-row>
-
     <v-row v-else>
       <v-col v-for="taller in voluntarisPerTaller" :key="taller._id" cols="12" md="6" lg="4">
         <v-card class="rounded-xl h-100" elevation="1" border>
@@ -19,10 +17,8 @@
               {{ taller.taller_titol }}
             </v-card-title>
           </v-card-item>
-
           <v-card-text class="pa-4">
             <div class="text-caption text-uppercase font-weight-bold text-grey mb-2">Candidats disponibles:</div>
-            
             <v-list class="pa-0">
               <v-list-item v-for="v in taller.candidats" :key="v.peticioId" class="px-0 py-3 border-bottom">
                 <template v-slot:prepend>
@@ -30,10 +26,8 @@
                     <v-icon color="black">mdi-account-school</v-icon>
                   </v-avatar>
                 </template>
-
                 <v-list-item-title class="font-weight-bold text-body-2">{{ v.nom }}</v-list-item-title>
                 <v-list-item-subtitle class="text-caption">{{ v.centre }}</v-list-item-subtitle>
-
                 <template v-slot:append>
                   <v-btn 
                     :color="taller.representant_actual?.correu === v.correu ? 'success' : 'black'"
@@ -51,7 +45,6 @@
         </v-card>
       </v-col>
     </v-row>
-
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" rounded="pill" elevation="24">
       {{ snackbar.text }}
     </v-snackbar>
@@ -66,12 +59,10 @@ const router = useRouter()
 const voluntarisPerTaller = ref([])
 const loading = ref(true)
 const snackbar = ref({ show: false, text: '', color: '' })
-
 const mostrarNotificacio = (text, color) => {
   snackbar.value = { show: true, text, color }
 }
 
-// 1. Carregar voluntaris agrupats per taller
 const carregarDades = async () => {
   loading.value = true
   try {
@@ -86,7 +77,6 @@ const carregarDades = async () => {
   }
 }
 
-// 2. Assignar el representant
 const assignar = async (tallerId, v) => {
   try {
     const res = await fetch(`/api/tallers/${tallerId}/representant`, {
@@ -98,13 +88,12 @@ const assignar = async (tallerId, v) => {
           correu: v.correu, 
           centre: v.centre 
         },
-        peticioId: v.peticioId // Passem l'ID de la petició per marcar-la al backend
+        peticioId: v.peticioId
       })
     })
     
     if (res.ok) {
       mostrarNotificacio(`Representant assignat: ${v.nom}`, "success")
-      // Actualitzem les dades localment per veure el canvi de color immediat
       await carregarDades()
     }
   } catch (error) {

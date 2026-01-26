@@ -11,12 +11,10 @@ const checklist = ref({ material: false, espai: false, satisfaccio: false })
 onMounted(async () => {
   try {
     const id = route.query.id
-    // Fem la crida a admin per obtenir les dades del taller
     const res = await fetch(`/api/peticions/admin`)
     const data = await res.json()
     peticio.value = data.find(p => p._id === id)
     
-    // Si ja s'ha finalitzat, marquem els checks
     if (peticio.value?.finalitzat) {
       checklist.value = peticio.value.checklist_detalls || { material: true, espai: true, satisfaccio: true }
     }
@@ -27,27 +25,23 @@ onMounted(async () => {
   }
 })
 
-// A detallsprofessor.vue
 const enviarChecklist = async () => {
   try {
     const res = await fetch(`/api/peticions/${peticio.value._id}/finalitzar`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ checklist: checklist.value })
-    }); // <--- Aquí acaba el fetch
+    });
 
     if (res.ok) {
       alert("Validació enviada correctament!");
       router.push('/professor/iniciprofessor');
     }
-    // AQUÍ ÉS ON SOL ESTAR L'ERROR: Només hi ha d'haver UNA clau tancant el try.
   } catch (e) {
     console.error("Error a la petició:", e);
   }
 };
-    
 </script>
-
 <template>
   <v-container class="details-wrapper pa-0" fluid v-if="peticio">
     <v-sheet color="indigo-darken-4" class="pa-10 pb-16" flat>
@@ -75,24 +69,19 @@ const enviarChecklist = async () => {
               <v-icon color="indigo" class="mr-2" size="20">mdi-file-document-outline</v-icon>
               Resum de l'expedient
             </h3>
-            
             <div class="info-group mb-4">
               <div class="text-caption text-grey-darken-1 font-weight-bold text-uppercase">Taller</div>
               <div class="text-body-1 font-weight-bold text-indigo-darken-4">{{ peticio.taller_titol }}</div>
             </div>
-
             <div class="info-group mb-4">
               <div class="text-caption text-grey-darken-1 font-weight-bold text-uppercase">Centre</div>
               <div class="text-body-1">{{ peticio.nom_centre }}</div>
             </div>
-
             <v-divider class="my-4" />
-
             <div class="info-group mb-4">
               <div class="text-caption text-grey-darken-1 font-weight-bold text-uppercase">Ubicació</div>
               <div class="text-body-1">{{ peticio.poblacio }}</div>
             </div>
-
             <div class="info-group">
               <div class="text-caption text-grey-darken-1 font-weight-bold text-uppercase">Alumnes participants</div>
               <div class="text-body-1">{{ peticio.seleccio_tallers?.num_alumnes || 0 }} estudiants</div>
@@ -105,12 +94,10 @@ const enviarChecklist = async () => {
             <v-toolbar color="white" flat border class="px-4">
               <v-toolbar-title class="text-h6 font-weight-bold text-indigo-darken-4">Checklist de Conformitat</v-toolbar-title>
             </v-toolbar>
-
             <v-card-text class="pa-8">
               <p class="text-body-2 text-grey-darken-1 mb-6">
                 Marqueu els següents punts per certificar que el taller s'ha realitzat correctament:
               </p>
-
               <div 
                 v-for="(label, key) in { Actitud: 'Actitud adecuada i escolta activa', Assistencia: 'Assistencia completa dels inscrits', Responsabilitat: 'Tenir cura dels materials i les instalacions utilitzades' }" 
                 :key="key"
@@ -136,9 +123,7 @@ const enviarChecklist = async () => {
                   </div>
                 </v-card>
               </div>
-
               <v-divider class="my-8" />
-
               <div class="d-flex align-center justify-space-between">
                 <div class="text-caption text-grey-darken-1 mr-4" style="max-width: 300px;">
                   En clicar aquest botó, es donarà l'activitat per finalitzada al sistema del Consorci.
@@ -161,7 +146,6 @@ const enviarChecklist = async () => {
       </v-row>
     </v-container>
   </v-container>
-
   <v-overlay v-model="loading" class="align-center justify-center" persistent>
     <v-progress-circular indeterminate color="indigo-darken-4" size="64" />
   </v-overlay>

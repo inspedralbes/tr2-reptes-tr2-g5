@@ -28,7 +28,6 @@
         </v-row>
       </v-container>
     </v-sheet>
-
     <v-container class="py-12 px-6">
       <v-row>
         <v-col cols="12" md="8">
@@ -39,7 +38,6 @@
               El <strong>Programa Enginy</strong> té una llarga trajectòria al Consorci d’Educació de Barcelona. Evolucionant des dels antics tallers TECNE (2003/04), avui es consolida com un 
               <strong>recurs orientador i inclusiu</strong>. El seu objectiu principal és garantir l’escolarització de tothom i evitar l’absentisme, ajustant la resposta educativa als diferents ritmes i estils d’aprenentatge.
             </p>
-            
             <v-row class="mt-6">
               <v-col cols="12" sm="4" v-for="(info, i) in dadesClau" :key="i">
                 <div class="pa-4 bg-blue-lighten-5 rounded-lg border-left-highlight">
@@ -49,7 +47,6 @@
               </v-col>
             </v-row>
           </section>
-
           <section class="mb-10">
             <div class="section-tag mb-2">QUÈ VOLEM ACONSEGUIR?</div>
             <h2 class="text-h4 font-weight-bold text-grey-darken-4 mb-6">Objectius Estratègics</h2>
@@ -62,7 +59,6 @@
               </v-col>
             </v-row>
           </section>
-
           <section>
             <div class="section-tag mb-2">ÀMBITS PROFESSIONALS</div>
             <h2 class="text-h4 font-weight-bold text-grey-darken-4 mb-4">Exploració de l'entorn laboral</h2>
@@ -76,7 +72,6 @@
             </div>
           </section>
         </v-col>
-
         <v-col cols="12" md="4">
           <div class="sticky-sidebar">
             <v-card variant="flat" border class="rounded-xl overflow-hidden shadow-soft mb-6">
@@ -89,7 +84,6 @@
                   <h3 class="text-h6 font-weight-bold text-blue-darken-3">Iniciar sessió</h3>
                   <p class="text-caption text-grey">Inicieu sessió per accedir a la plataforma</p>
                 </div>
-                
                 <v-btn 
                   block 
                   color="#3465a4" 
@@ -102,7 +96,6 @@
                 </v-btn>
               </v-card-text>
             </v-card>
-
             <v-card variant="tonal" color="grey-darken-3" class="rounded-xl pa-6">
               <h4 class="text-subtitle-1 font-weight-bold mb-3 d-flex align-center">
                 <v-icon class="mr-2">mdi-account-school</v-icon> A qui s'adreça?
@@ -145,59 +138,46 @@ const ambits = [
   background-image: radial-gradient(rgba(214, 12, 12, 0.1) 1px, transparent 1px);
   background-size: 40px 40px;
 }
-
 .main-title {
   line-height: 1.1;
   font-size: 3.5rem !important;
 }
-
 .linea-gencat-vibrant {
   width: 8px;
   height: 90px;
-  /* Hem posat un blau més fosc i profund per millorar el contrast */
   background-color: #1e3a5f; 
-  /* Opcional: una vora subtil per donar relleu */
   border-left: 2px solid #3465a4; 
-  border-radius: 4px; /* Un radi més petit el fa veure més modern i recte */
+  border-radius: 4px; 
 }
-
 .section-tag {
   color: #3465a4;
   font-weight: 900;
   font-size: 0.7rem;
   letter-spacing: 2px;
 }
-
 .leading-extra-relaxed {
   line-height: 1.9 !important;
 }
-
 .leading-normal {
   line-height: 1.5 !important;
 }
-
 .border-left-highlight {
   border-left: 4px solid #3465a4;
 }
-
 .border-white-thin {
   border: 1px solid rgba(255,255,255,0.2) !important;
 }
-
 .gradient-accent {
   height: 6px;
   background: linear-gradient(90deg, #3465a4, #DA2131);
 }
-
 .shadow-soft {
   box-shadow: 0 10px 30px rgba(0,0,0,0.05) !important;
 }
-
 .sticky-sidebar {
   position: sticky;
   top: 40px;
 }
-
 .gap-2 {
   gap: 8px;
 }

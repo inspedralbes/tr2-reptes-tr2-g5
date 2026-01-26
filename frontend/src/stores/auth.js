@@ -1,20 +1,15 @@
-// stores/auth.js
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 
 export const useAuthStore = defineStore('auth', () => {
-  // Estado
   const loading = ref(false);
   const error = ref('');
-  const user = ref(null); // Aquí guardaremos los datos del usuario
-
-  // Computed properties (como getters)
+  const user = ref(null);
   const isAuthenticated = computed(() => user.value !== null);
   const userName = computed(() => user.value?.nom || '');
   const userEmail = computed(() => user.value?.email || '');
   const userRole = computed(() => user.value?.rol || '');
 
-  // Función de login
 const login = async (email, password) => {
     error.value = '';
     loading.value = true;
@@ -24,7 +19,6 @@ const login = async (email, password) => {
       loading.value = false;
       return null;
     }
-    // --- DETECTAR ENTORNO ---
     const BASE_URL = window.location.protocol === 'file:' 
       ? 'http://localhost:8088/api' 
       : '/api';
@@ -41,26 +35,19 @@ const login = async (email, password) => {
       if (!response.ok) {
         throw new Error(data.error || 'Error en la petició');
       }
-
-      // 1. Intentar recuperar la foto persistente del localStorage (Truco local)
       const persistentFoto = localStorage.getItem(`userFoto_${data.usuari.email}`);
-      
-      // 2. Prioridad de la foto: 
-      // Primero la del servidor, si no hay, la persistente, si no hay, vacía.
       const finalFoto = data.usuari.foto || persistentFoto || '';
 
-      // 3. Guardar en el store de Pinia (Aseguramos que el objeto tenga la foto)
       user.value = {
         ...data.usuari,
         foto: finalFoto
       };
 
-      // 4. Guardar en localStorage para que persista la sesión
       localStorage.setItem('userId', data.usuari.id || data.usuari._id);
       localStorage.setItem('userRole', data.usuari.rol);
       localStorage.setItem('userName', data.usuari.nom);
       localStorage.setItem('userEmail', data.usuari.email);
-      localStorage.setItem('userFoto', finalFoto); // Guardamos la foto final (recuperada o nueva)
+      localStorage.setItem('userFoto', finalFoto); 
 
       return data.usuari;
 
@@ -72,50 +59,44 @@ const login = async (email, password) => {
     }
   };
 
-  // Función de logout
   const logout = () => {
     user.value = null;
     error.value = '';
-    localStorage.removeItem('userId'); // <--- AÑADIR ESTO
+    localStorage.removeItem('userId'); 
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
-    localStorage.removeItem('userFoto'); // AÑADIR ESTO
+    localStorage.removeItem('userFoto'); 
   };
 
-  // Inicializar desde localStorage al cargar
   const initAuth = () => {
-    const storedId = localStorage.getItem('userId'); // <--- AÑADIR ESTO
+    const storedId = localStorage.getItem('userId');
     const storedRole = localStorage.getItem('userRole');
     const storedName = localStorage.getItem('userName');
     const storedEmail = localStorage.getItem('userEmail');
-    const storedFoto = localStorage.getItem('userFoto'); // <--- 1. AÑADIDO AQUÍ
+    const storedFoto = localStorage.getItem('userFoto');
     
     if (storedRole && storedName) {
       user.value = {
-        id: storedId, // <--- AÑADIR ESTO
+        id: storedId,
         rol: storedRole,
         nom: storedName,
         email: storedEmail,
-        foto: storedFoto // <--- 2. AÑADIDO AQUÍ
+        foto: storedFoto
       };
     }
   };
 
-  // Inicializar al crear el store
   initAuth();
 
   return {
-    // Estado
     loading,
     error,
     user,
-    // Computed properties
     isAuthenticated,
     userName,
     userEmail,
     userRole,
-    // Acciones
     login,
     logout
   };

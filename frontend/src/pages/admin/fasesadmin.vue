@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router'
 
 const API_URL = '/api'
 const router = useRouter()
-
 const faseActual = ref(null)
 const cargandoFase = ref(false)
 const mensaje = ref({ show: false, text: '', color: '' })
@@ -28,7 +27,6 @@ const cambiarFase = async (valorFase) => {
       body: JSON.stringify({ nuevaFase: valorFase }) 
     })
     if (!res.ok) throw new Error('Error en la respuesta')
-    
     mensaje.value = { show: true, text: 'Fase actualitzada correctament', color: 'success' }
   } catch (e) {
     mensaje.value = { show: true, text: 'No s’ha pogut connectar amb el servidor', color: 'error' }
@@ -42,7 +40,6 @@ onMounted(cargarConfiguracion)
 
 <template>
   <v-container class="dashboard-wrapper pa-10" fluid>
-    
     <header class="d-flex justify-space-between align-start mb-10 pb-6">
       <div>
         <div class="d-flex align-center">
@@ -60,7 +57,6 @@ onMounted(cargarConfiguracion)
         </p>
       </div>
     </header>
-
     <v-card variant="outlined" class="pa-8 border-consorci bg-white">
       <div class="d-flex align-center mb-6 ga-4">
         <v-icon size="40" color="black">mdi-sync</v-icon>
@@ -69,9 +65,7 @@ onMounted(cargarConfiguracion)
           <div class="text-caption text-grey">Selecciona la fase activa per a tots els usuaris del sistema.</div>
         </div>
       </div>
-
       <v-divider class="mb-8"></v-divider>
-
       <div class="d-flex flex-column ga-4">
         <v-btn-toggle
           v-model="faseActual"
@@ -103,19 +97,16 @@ onMounted(cargarConfiguracion)
           </v-btn>
         </v-btn-toggle>
       </div>
-
       <div v-if="cargandoFase" class="d-flex align-center justify-center mt-6 ga-2">
         <v-progress-circular indeterminate size="20" color="black"></v-progress-circular>
         <span class="text-caption">Actualitzant sistema...</span>
       </div>
     </v-card>
-
     <v-snackbar v-model="mensaje.show" :color="mensaje.color" timeout="3000">
       {{ mensaje.text }}
     </v-snackbar>
   </v-container>
 </template>
-
 
 <style scoped>
 .border-consorci { border: 1px solid #e0e0e0 !important; border-radius: 12px; }
@@ -123,5 +114,4 @@ onMounted(cargarConfiguracion)
 
 .dashboard-wrapper { background-color: #ffffff; }
 .uppercase-ceb { text-transform: uppercase; letter-spacing: 2px; }
-/* He eliminado la clase .border-bottom-ceb de aquí también */
 </style>

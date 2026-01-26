@@ -2,8 +2,6 @@ const { getDB } = require('../config/db');
 const { ObjectId } = require('mongodb');
 
 const useTallers = () => {
-
-    // 1. Obtenir el catàleg de tallers
     const getCatàleg = async (res) => {
         try {
             const db = getDB();
@@ -14,22 +12,18 @@ const useTallers = () => {
         }
     };
 
-    // 2. Crear un taller
     const createTaller = async (req, res) => {
         try {
             const db = getDB();
 
 
             const nouTaller = {
-                ...req.body, // 1. Permet camps extra (Flexible Schema)
-                data_creacio: new Date(), // Afegim data de creació automàtica
-
-                // Camps que volem assegurar que tinguin format correcte (sobreescriuen req.body si cal)
+                ...req.body, 
+                data_creacio: new Date(),
                 capacitat_maxima: parseInt(req.body.places) || 0,
                 places_disponibles: parseInt(req.body.places) || 0
             };
 
-            // Eliminem camps auxiliars que no volem guardar si venen del frontend
             if (nouTaller.places) delete nouTaller.places;
 
             const result = await db.collection('tallers').insertOne(nouTaller);
@@ -48,7 +42,6 @@ const useTallers = () => {
         }
     };
 
-    // 3. Actualitzar un taller
     const updateTaller = async (req, res) => {
         try {
             const db = getDB();
@@ -56,9 +49,7 @@ const useTallers = () => {
 
 
             const dades = { ...req.body };
-            delete dades._id; // Mai actualitzem l'ID
-
-            // Si estan actualitzant 'places', convertir-lo
+            delete dades._id;
             if (dades.places) {
                 dades.capacitat_maxima = parseInt(dades.places);
 
@@ -78,23 +69,16 @@ const useTallers = () => {
         }
     };
 
-    // backend/src/controllers/tallerController.js
-
     const deleteTaller = async (req, res) => {
         try {
             const db = getDB();
             const { id } = req.params;
-
-            // 1. Borrar el taller de la colección 'tallers'
             await db.collection('tallers').deleteOne({ _id: new ObjectId(id) });
-
-            // 2. BORRADO COMPLETO: Eliminar todas las peticiones vinculadas a este taller
-            // Buscamos tanto por ObjectId como por String para mayor seguridad
             const resultPeticions = await db.collection('peticions').deleteMany({
                 $or: [
                     { tallerId: new ObjectId(id) },
                     { tallerId: id },
-                    { "seleccio_tallers.taller_id": id }, // Por si guardas el ID en este subobjeto
+                    { "seleccio_tallers.taller_id": id },
                     { "seleccio_tallers.taller_id": new ObjectId(id) }
                 ]
             });

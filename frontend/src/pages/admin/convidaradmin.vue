@@ -4,20 +4,16 @@ import { useRouter } from 'vue-router'
 
 const API_URL = '/api'
 const router = useRouter()
-
-// --- ESTATS ---
 const loading = ref(false)
 const snackbar = ref({ show: false, text: '', color: '' })
 const dadesInvitacio = ref([{ nom: '', email: '' }])
 const invitacioError = ref('')
 const fitxerCSV = ref(null)
 const masivaLoading = ref(false)
-
 const mostrarNotificacio = (text, color = 'black') => {
   snackbar.value = { show: true, text, color }
 }
 
-// --- LÒGICA MANUAL ---
 const afegirFila = () => dadesInvitacio.value.push({ nom: '', email: '' })
 const eliminarFila = (index) => {
   if (dadesInvitacio.value.length > 1) dadesInvitacio.value.splice(index, 1)
@@ -52,7 +48,6 @@ const enviarInvitacions = async () => {
   }
 }
 
-// --- LÒGICA MASSIVA ---
 const processarCSV = async () => {
   if (!fitxerCSV.value) return
   masivaLoading.value = true
@@ -121,26 +116,20 @@ const processarCSV = async () => {
           <h2 class="text-h6 font-weight-bold mb-6 d-flex align-center">
             <v-icon class="mr-2">mdi-email-plus-outline</v-icon> Invitació Manual
           </h2>
-
           <div v-for="(centre, index) in dadesInvitacio" :key="index" class="d-flex align-center ga-3 mb-4">
             <v-text-field v-model="centre.nom" label="Nom del Centre" variant="outlined" density="compact" hide-details color="black"></v-text-field>
             <v-text-field v-model="centre.email" label="Correu Electrònic" variant="outlined" density="compact" hide-details color="black"></v-text-field>
             <v-btn v-if="dadesInvitacio.length > 1" icon="mdi-close" variant="text" color="red" size="small" @click="eliminarFila(index)"></v-btn>
           </div>
-
           <v-btn variant="text" color="blue-darken-3" prepend-icon="mdi-plus" class="mt-2" @click="afegirFila">Afegir una altra fila</v-btn>
-          
           <v-divider class="my-6"></v-divider>
-          
           <v-alert v-if="invitacioError" type="error" variant="tonal" class="mb-4">{{ invitacioError }}</v-alert>
-
           <div class="d-flex justify-end">
             <v-btn color="black" size="large" class="px-10" :loading="loading" @click="enviarInvitacions">Enviar Invitacions</v-btn>
           </div>
         </v-card>
       </v-col>
     </v-row>
-
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">{{ snackbar.text }}</v-snackbar>
   </v-container>
 </template>

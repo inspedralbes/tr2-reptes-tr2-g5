@@ -3,7 +3,6 @@ const { ObjectId } = require('mongodb');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
-// CONFIGURACIÓN DE CORREO
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -12,7 +11,6 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// LLISTAR USUARIS
 const getUsers = async (req, res) => {
     try {
         const db = getDB();
@@ -24,7 +22,6 @@ const getUsers = async (req, res) => {
     }
 };
 
-// CREAR USUARI (ADMIN)
 const createUser = async (req, res) => {
     try {
         const db = getDB();
@@ -55,7 +52,6 @@ const createUser = async (req, res) => {
     }
 };
 
-// ACTUALITZAR USUARI
 const updateUser = async (req, res) => {
     try {
         const db = getDB();
@@ -79,7 +75,6 @@ const updateUser = async (req, res) => {
     }
 };
 
-// ELIMINAR USUARI
 const deleteUser = async (req, res) => {
     try {
         const db = getDB();
@@ -111,7 +106,6 @@ const deleteUser = async (req, res) => {
     }
 };
 
-// OBTENIR PROFESSORS
 const getProfessors = async (req, res) => {
     try {
         const db = getDB();
@@ -126,7 +120,6 @@ const getProfessors = async (req, res) => {
     }
 };
 
-// OBTENIR USUARI PER ID
 const getUserById = async (req, res) => {
     try {
         const db = getDB();
@@ -152,7 +145,6 @@ const getUserById = async (req, res) => {
     }
 };
 
-// INVITAR CENTRE (ENVIAMENT A CORREU DE CENTRE)
 const inviteCentre = async (req, res) => {
     try {
         const db = getDB();
@@ -173,14 +165,11 @@ const inviteCentre = async (req, res) => {
             data_invitacio: new Date()
         };
 
-        // 1. IMPORTANT: Guardar a la base de dades
         await db.collection('usuaris').insertOne(nouCentrePendent);
 
-        // 2. URL Dinàmica (Local vs Producció)
         const BASE_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
         const linkAceptar = `${BASE_URL}/confirmar-participacion?token=${token}`;
 
-        // 3. Enviament de mail en segon pla (sense await)
         transporter.sendMail({
             from: '"Projecte ENGINY" <martamartahf@gmail.com>',
             to: email,
@@ -201,7 +190,6 @@ const inviteCentre = async (req, res) => {
             console.error("LOG: Error enviant mail (però l'usuari s'ha creat):", err.message);
         });
 
-        // 4. Resposta immediata per evitar el 504 Gateway Timeout
         res.status(201).json({ missatge: "Invitació processada correctament", token });
 
     } catch (error) {
@@ -209,7 +197,6 @@ const inviteCentre = async (req, res) => {
         res.status(500).json({ error: "Error intern del servidor" });
     }
 };
-// CONFIRMAR PARTICIPACIÓ (ENVIAMENT A CORREU DE CENTRE)
 const confirmParticipation = async (req, res) => {
     try {
         const db = getDB();
@@ -282,7 +269,6 @@ const confirmParticipation = async (req, res) => {
     }
 };
 
-// INVITACIÓ MÚLTIPLE (ENVIAMENT A CORREU DE CENTRE)
 const inviteMultiple = async (req, res) => {
     try {
         const db = getDB();
@@ -312,8 +298,6 @@ const inviteMultiple = async (req, res) => {
         });
 
         db.collection('usuaris').insertMany(documents).catch(err => console.error("Error crítico insertando usuarios en background:", err));
-
-        // 2. Envío de correos (iteramos sobre los documentos ya preparados)
         documents.forEach(doc => {
             const linkAceptar = `${BASE_URL}/confirmar-participacion?token=${doc.token_invitacio}`;
 
@@ -336,8 +320,6 @@ const inviteMultiple = async (req, res) => {
         });
 
         const enviados = documents.map(d => d.email);
-
-        // Respondemos rápido al admin
         res.status(201).json({
             missatge: `${enviados.length} invitacions processades correctament`,
             count: enviados.length
@@ -349,10 +331,8 @@ const inviteMultiple = async (req, res) => {
     }
 };
 
-// FUNCIÓ NETEJADA: S'ha eliminat la lògica de Nodemailer per al professor referent.
 const notifyProfessorReferent = async (req, res) => {
     try {
-        // No s'executa cap enviament de correu aquí.
         res.status(200).json({ missatge: "Lògica de correu al professor eliminada. Només es processa internament." });
     } catch (error) {
         res.status(500).json({ error: "Error en la petició" });
