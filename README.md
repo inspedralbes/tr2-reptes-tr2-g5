@@ -105,5 +105,3 @@ enginy/
 
 1. El frontend utilitza **auto-importació** de components.
 2. La base de dades principal a MongoDB s'anomena `enginy`.
-
-```
