@@ -3,7 +3,7 @@
 ## 📋 Informació del Projecte
 
 ### Grup i Integrants
-**Grup:** [Indicar número de grup]
+**Grup:** 5
 **Integrants:**
 - **Fiona Mondelo Giaramita** 
 - **Judit Sarrat Andújar** 
