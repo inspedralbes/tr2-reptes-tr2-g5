@@ -6,17 +6,17 @@
 **Grup:** 5
 
 **Integrants:**
-- **Fiona Mondelo Giaramita** 
-- **Judit Sarrat Andújar** 
-- **Fabrizzio Rodriguez Gonzales** 
-- **Marta Haro Font** 
+- **Fiona Mondelo Giaramita** - [@66fiona66](https://github.com/66fiona66)
+- **Judit Sarrat Andújar** - [@a24judsarand](https://github.com/a24judsarand)
+- **Fabrizzio Rodriguez Gonzales** - [@fabrizzio1112](https://github.com/fabrizzio1112)
+- **Marta Haro Font** - [@Mxrta22](https://github.com/Mxrta22)
 
 ### Objectiu del Projecte
 **Objectiu:** Aplicació web educativa desenvolupada per al **Consorci d'Educació de Barcelona** per digitalitzar el Programa Enginy. És un recurs orientador i inclusiu que busca garantir l'escolarització, evitar l'absentisme i oferir eines per a la descoberta vocacional.
 
 ### Estat del Projecte
-- **Estat:** Acabat
-- **Fase actual:** Acabat
+- **Estat:** Finalitzat
+- **Fase actual:** Finalitzat
 - **Percentatge completat:** 100%
 
 ---
